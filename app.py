@@ -5,62 +5,48 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 
-# تحميل المتغيرات من .env
 load_dotenv()
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 
 app = Flask(__name__)
-
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
-# جلب ID البوت نفسه
 try:
     bot_info = line_bot_api.get_bot_info()
     BOT_ID = bot_info.user_id
 except Exception:
     BOT_ID = "غير متاح (تأكد من التوكن)"
 
-
 @app.route("/callback", methods=["POST"])
 def callback():
     signature = request.headers["X-Line-Signature"]
     body = request.get_data(as_text=True)
-
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
         abort(400)
-
     return "OK"
-
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     user_id = event.source.user_id
     group_id = None
-
     if event.source.type == "group":
         group_id = event.source.group_id
     elif event.source.type == "room":
         group_id = event.source.room_id
-
-    # نخلي الأوامر كلها تتحول سمول
     text = event.message.text.strip().lower()
+    reply_text = None
 
-    reply_text = None  # مبدئياً لا يوجد رد
-
-    # ----- أوامر IDs -----
     if text in ["id", "معرفي"]:
         reply_text = f"🆔 USER ID: {user_id.upper()}"
-
     elif text in ["idg", "معرف_القروب"]:
         if group_id:
             reply_text = f"🆔 GROUP/ROOM ID: {group_id.upper()}"
         else:
             reply_text = "❌ هَذَا الأَمْر يَعْمَل فَقَط دَاخِل قُرُوب أَو رُوم"
-
     elif text in ["idall", "الكل"]:
         if group_id:
             try:
@@ -68,7 +54,6 @@ def handle_message(event):
                     member_ids = line_bot_api.get_group_member_ids(group_id)
                 else:
                     member_ids = line_bot_api.get_room_member_ids(group_id)
-
                 members_text = []
                 for uid in member_ids:
                     try:
@@ -79,7 +64,6 @@ def handle_message(event):
                         members_text.append(f"🆔 {profile.display_name.upper()} — {uid.upper()}")
                     except:
                         members_text.append(f"🆔 {uid.upper()}")
-
                 reply_text = (
                     f"🆔 GROUP/ROOM ID: {group_id.upper()}\n"
                     f"🆔 BOT ID: {BOT_ID.upper()}\n\n"
@@ -89,23 +73,20 @@ def handle_message(event):
                 reply_text = f"⚠️ خَطَأ أَثْنَاء جَلْب الأَعْضَاء: {str(e).upper()}"
         else:
             reply_text = "❌ هَذَا الأَمْر يَعْمَل فَقَط دَاخِل قُرُوب أَو رُوم"
-
     elif text in ["help", "مساعدة"]:
         reply_text = (
             "📌 أَوَامِر البُوت:\n\n"
-            "• ID / مَعْرِفِي → يُظْهِر مَعْرِفَك الشَّخْصِي (🆔 USER ID)\n"
+            "• ID / مَعْرِفِي → يُظْهِر مَعْرِفَك الشَّخْصِي (🆔 USER ID)\n"
             "• IDG / مَعْرِف_القُرُوب → يُظْهِر مَعْرِف القُرُوب/الرُوم (🆔 GROUP/ROOM ID)\n"
             "• IDALL / الكُل → يُظْهِر مَعْرِف القُرُوب + مَعْرِف البُوت + جَمِيع أَعْضَاء القُرُوب مَع 🆔\n"
             "• HELP / مُسَاعَدَة → عَرْض قَائِمَة الأَوَامِر"
         )
 
-    # الرد فقط إذا فيه أمر مطلوب
     if reply_text:
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text=reply_text)
         )
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
