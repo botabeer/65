@@ -47,38 +47,11 @@ def handle_message(event):
             reply_text = f"🆔 GROUP/ROOM ID: {group_id.upper()}"
         else:
             reply_text = "❌ هذا الامر يعمل فقط داخل قروب او روم"
-    elif text in ["idall", "الكل"]:
-        if group_id:
-            try:
-                if event.source.type == "group":
-                    member_ids = line_bot_api.get_group_member_ids(group_id)
-                else:
-                    member_ids = line_bot_api.get_room_member_ids(group_id)
-                members_text = []
-                for uid in member_ids:
-                    try:
-                        if event.source.type == "group":
-                            profile = line_bot_api.get_group_member_profile(group_id, uid)
-                        else:
-                            profile = line_bot_api.get_room_member_profile(group_id, uid)
-                        members_text.append(f"🆔 {profile.display_name.upper()} — {uid.upper()}")
-                    except:
-                        members_text.append(f"🆔 {uid.upper()}")
-                reply_text = (
-                    f"🆔 GROUP/ROOM ID: {group_id.upper()}\n"
-                    f"🆔 BOT ID: {BOT_ID.upper()}\n\n"
-                    "🆔 MEMBERS:\n" + "\n".join(members_text)
-                )
-            except Exception as e:
-                reply_text = f"⚠️ خطأ اثناء جلب الاعضاء: {str(e).upper()}"
-        else:
-            reply_text = "❌ هذا الامر يعمل فقط داخل قروب او روم"
     elif text in ["help", "مساعدة"]:
         reply_text = (
             "\u202B📌 اوامر البوت:\n\n"
             "• يظهر معرفك / ID\n"
             "• يظهر معرف القروب او الروم / IDG\n"
-            "• يظهر جميع المعرفات / IDALL\n"
             "• عرض الاوامر / HELP"
         )
 
