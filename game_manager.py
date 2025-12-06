@@ -1,13 +1,268 @@
-def play_word(self, event, user_id, group_id):
-        """لعبة كلمة"""
+import random
+from linebot.models import TextSendMessage, FlexSendMessage
+from constants import *
+import json
+
+class GameManager:
+    def __init__(self, db, ui, line_bot_api):
+        self.db = db
+        self.ui = ui
+        self.line_bot_api = line_bot_api
+        
+        # بيانات الألعاب
+        self.truth_questions = [
+            "ما هو أكبر كذبة قلتها في حياتك؟",
+            "من هو الشخص الذي تحبه سراً؟",
+            "ما هو أكثر شيء تندم عليه؟",
+            "هل سبق وغششت في امتحان؟",
+            "ما هو أغرب حلم رأيته؟",
+            "من هو الشخص الذي لا تطيقه ولكنك تتظاهر بعكس ذلك؟",
+            "ما هو أكثر موقف محرج مررت به؟",
+            "هل سبق وسرقت شيئاً؟",
+            "ما هو أكبر سر تخفيه عن أصدقائك؟",
+            "من هو آخر شخص بحثت عنه على وسائل التواصل؟"
+        ]
+        
+        self.dare_challenges = [
+            "ارسل رسالة لآخر شخص في جهات الاتصال تقول فيها: أنا أفكر فيك",
+            "انشر صورة قديمة لك وأنت صغير",
+            "اتصل بصديق واطلب منه مبلغ مالي",
+            "ارقص أمام الكاميرا لمدة 30 ثانية",
+            "اكتب منشور على حسابك يمدح فيه شخص عشوائي",
+            "قلد صوت أحد المشاهير",
+            "اعترف بشيء لم تخبر به أحد من قبل",
+            "اتصل بأحد أقاربك وقل له أنك تحبه",
+            "غير اسمك إلى اسم مضحك ليوم كامل",
+            "ارسل صورة سيلفي بوجه مضحك"
+        ]
+        
+        self.would_you_rather = [
+            ("تفقد القدرة على الكلام", "تفقد القدرة على المشي"),
+            ("تعيش في الماضي", "تعيش في المستقبل"),
+            ("تكون غنياً وحيداً", "تكون فقيراً ومحاطاً بالأحباء"),
+            ("تقرأ أفكار الناس", "تكون غير مرئي"),
+            ("تعيش بدون موسيقى", "تعيش بدون أفلام"),
+            ("تأكل نفس الوجبة كل يوم", "لا تأكل لحم أبداً"),
+            ("تسافر للفضاء", "تستكشف أعماق البحار"),
+            ("تعيش 200 سنة", "تعيش حياة قصيرة وسعيدة"),
+            ("تكون ذكياً جداً", "تكون جميلاً جداً"),
+            ("تفقد ذكرياتك", "تفقد قدرتك على تكوين ذكريات جديدة")
+        ]
+        
+        self.trivia_questions = [
+            {"q": "ما هي عاصمة فرنسا؟", "options": ["باريس", "لندن", "برلين", "مدريد"], "answer": 0},
+            {"q": "كم عدد قارات العالم؟", "options": ["5", "6", "7", "8"], "answer": 2},
+            {"q": "من هو مخترع المصباح الكهربائي؟", "options": ["نيوتن", "أديسون", "تسلا", "آينشتاين"], "answer": 1},
+            {"q": "ما هو أكبر كوكب في المجموعة الشمسية؟", "options": ["الأرض", "المشتري", "زحل", "المريخ"], "answer": 1},
+            {"q": "كم عدد أيام السنة الميلادية؟", "options": ["364", "365", "366", "360"], "answer": 1},
+            {"q": "ما هي أكبر دولة في العالم من حيث المساحة؟", "options": ["الصين", "كندا", "روسيا", "أمريكا"], "answer": 2},
+            {"q": "من هو أسرع حيوان في العالم؟", "options": ["الفهد", "النمر", "الأسد", "الذئب"], "answer": 0},
+            {"q": "كم عدد ألوان قوس قزح؟", "options": ["5", "6", "7", "8"], "answer": 2},
+            {"q": "ما هو أطول نهر في العالم؟", "options": ["النيل", "الأمازون", "الفرات", "دجلة"], "answer": 0},
+            {"q": "كم عدد أسنان الإنسان البالغ؟", "options": ["28", "30", "32", "34"], "answer": 2}
+        ]
+        
+        self.words = [
+            "مدرسة", "كتاب", "قلم", "شجرة", "سيارة", "بيت", "باب", "نافذة",
+            "طائرة", "سفينة", "جبل", "بحر", "نهر", "غابة", "صحراء", "مدينة",
+            "قرية", "مطعم", "مستشفى", "جامعة", "مكتبة", "حديقة", "متحف", "مسجد"
+        ]
+        
+        self.cities = {
+            "أ": ["أبها", "أبوظبي"],
+            "ب": ["بغداد", "بيروت", "برلين"],
+            "ت": ["تونس", "طهران", "تبوك"],
+            "ج": ["جدة", "جنيف"],
+            "د": ["دمشق", "دبي", "دلهي"],
+            "ر": ["الرياض", "روما", "رابغ"],
+            "ع": ["عمان", "عدن"],
+            "ق": ["القاهرة", "قطر", "القصيم"],
+            "م": ["مكة", "المدينة", "مسقط", "مراكش"],
+            "ن": ["نيويورك", "نجران"]
+        }
+        
+        self.countries = {
+            "أ": ["الأردن", "الإمارات", "أفغانستان"],
+            "ب": ["البحرين", "باكستان", "بنغلاديش"],
+            "ت": ["تركيا", "تونس", "تايلاند"],
+            "ج": ["الجزائر", "جيبوتي"],
+            "س": ["السعودية", "سوريا", "السودان", "سلطنة عمان"],
+            "ع": ["العراق", "عمان"],
+            "ف": ["فلسطين", "فرنسا", "فنلندا"],
+            "ق": ["قطر", "الكويت"],
+            "ل": ["لبنان", "ليبيا"],
+            "م": ["مصر", "المغرب", "ماليزيا", "موريتانيا"],
+            "ي": ["اليمن", "اليابان"]
+        }
+        
+        self.animals = {
+            "أ": ["أسد", "أرنب", "أفعى"],
+            "ب": ["بقرة", "ببغاء", "بطة"],
+            "ت": ["تمساح", "ثعلب", "ثور"],
+            "ج": ["جمل", "جاموس"],
+            "ح": ["حمار", "حصان", "حوت"],
+            "خ": ["خروف", "خنزير"],
+            "د": ["دب", "ديك", "دجاجة"],
+            "ذ": ["ذئب", "ذبابة"],
+            "ز": ["زرافة", "زواحف"],
+            "س": ["سمكة", "سلحفاة", "سنجاب"],
+            "ف": ["فيل", "فهد", "فراشة"],
+            "ق": ["قط", "قرد", "قنفذ"],
+            "ك": ["كلب", "كنغر"],
+            "ن": ["نمر", "نحلة", "نسر"]
+        }
+    
+    def handle_game_command(self, event, text, user_id, group_id):
+        """معالجة أوامر الألعاب"""
+        complex_games = ['احزر', 'لوريت', 'مافيا']
+        if any(cmd in text for cmd in complex_games):
+            if self.db.has_active_game(group_id):
+                self.line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text=SYSTEM_MESSAGES['game_active'])
+                )
+                return
+        
+        if text in ['صراحة', '/truth']:
+            self.play_truth(event, user_id)
+        elif text in ['جرأة', '/dare']:
+            self.play_dare(event, user_id)
+        elif text in ['لو خيروك', '/wouldyourather']:
+            self.play_would_you_rather(event, user_id, group_id)
+        elif text in ['سؤال', '/question']:
+            self.play_trivia(event, user_id, group_id)
+        elif text in ['رياضيات', '/math']:
+            self.play_math(event, user_id, group_id)
+        elif text in ['احزر', '/guess']:
+            self.start_guess_game(event, user_id, group_id)
+        elif text in ['كلمة', '/word']:
+            self.play_word(event, user_id, group_id)
+        elif text in ['عكس', '/reverse']:
+            self.play_reverse(event, user_id, group_id)
+        elif text in ['مدن', '/cities']:
+            self.play_category(event, user_id, group_id, 'cities')
+        elif text in ['دول', '/countries']:
+            self.play_category(event, user_id, group_id, 'countries')
+        elif text in ['حيوانات', '/animals']:
+            self.play_category(event, user_id, group_id, 'animals')
+        elif text in ['لوريت', '/lariat']:
+            self.start_lariat_game(event, user_id, group_id)
+        elif text in ['مافيا', '/mafia']:
+            self.start_mafia_game(event, user_id, group_id)
+        else:
+            self.check_active_game_answer(event, text, user_id, group_id)
+    
+    def play_truth(self, event, user_id):
+        question = random.choice(self.truth_questions)
+        try:
+            profile = self.line_bot_api.get_profile(user_id)
+            name = profile.display_name
+        except:
+            name = "اللاعب"
+        
+        self.line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=f"{name}\n\n{question}")
+        )
+        self.db.record_game_stat(user_id, 'truth', 'played', 5)
+        self.db.update_user_stats(user_id, points=5)
+    
+    def play_dare(self, event, user_id):
+        challenge = random.choice(self.dare_challenges)
+        try:
+            profile = self.line_bot_api.get_profile(user_id)
+            name = profile.display_name
+        except:
+            name = "اللاعب"
+        
+        self.line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=f"{name}\n\nتحدي: {challenge}")
+        )
+        self.db.record_game_stat(user_id, 'dare', 'played', 5)
+        self.db.update_user_stats(user_id, points=5)
+    
+    def play_would_you_rather(self, event, user_id, group_id):
+        options = random.choice(self.would_you_rather)
+        theme = self.db.get_user_theme(user_id)
+        flex = self.ui.create_would_you_rather_flex(options[0], options[1], theme)
+        
+        self.db.create_active_game(group_id, 'wouldyourather', {
+            'options': options,
+            'votes': {}
+        })
+        
+        self.line_bot_api.reply_message(
+            event.reply_token,
+            FlexSendMessage(alt_text='لو خيروك', contents=flex)
+        )
+    
+    def play_trivia(self, event, user_id, group_id):
+        question_data = random.choice(self.trivia_questions)
+        theme = self.db.get_user_theme(user_id)
+        flex = self.ui.create_game_question_flex(
+            question_data['q'],
+            question_data['options'],
+            theme
+        )
+        
+        self.db.create_active_game(group_id, 'trivia', {
+            'question': question_data,
+            'answered': False
+        })
+        
+        self.line_bot_api.reply_message(
+            event.reply_token,
+            FlexSendMessage(alt_text='سؤال', contents=flex)
+        )
+    
+    def play_math(self, event, user_id, group_id):
+        num1 = random.randint(10, 99)
+        num2 = random.randint(10, 99)
+        operation = random.choice(['+', '-', '*'])
+        
+        if operation == '+':
+            answer = num1 + num2
+            question = f"{num1} + {num2} = ؟"
+        elif operation == '-':
+            answer = num1 - num2
+            question = f"{num1} - {num2} = ؟"
+        else:
+            answer = num1 * num2
+            question = f"{num1} × {num2} = ؟"
+        
+        self.db.create_active_game(group_id, 'math', {
+            'question': question,
+            'answer': answer,
+            'answered': False
+        })
+        
+        self.line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=f"احسب:\n\n{question}")
+        )
+    
+    def start_guess_game(self, event, user_id, group_id):
+        number = random.randint(1, 100)
+        
+        self.db.create_active_game(group_id, 'guess', {
+            'number': number,
+            'attempts': 0,
+            'max_attempts': 7
+        })
+        
+        self.line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="لعبة احزر الرقم\n\nفكرت في رقم بين 1 و 100\nحاول تخمينه في 7 محاولات")
+        )
+    
+    def play_word(self, event, user_id, group_id):
         word = random.choice(self.words)
         shuffled = ''.join(random.sample(word, len(word)))
         
-        # التأكد من أن الكلمة مبعثرة فعلاً
         while shuffled == word:
             shuffled = ''.join(random.sample(word, len(word)))
         
-        # حفظ اللعبة
         self.db.create_active_game(group_id, 'word', {
             'word': word,
             'shuffled': shuffled,
@@ -20,11 +275,9 @@ def play_word(self, event, user_id, group_id):
         )
     
     def play_reverse(self, event, user_id, group_id):
-        """لعبة عكس"""
         word = random.choice(self.words)
         reversed_word = word[::-1]
         
-        # حفظ اللعبة
         self.db.create_active_game(group_id, 'reverse', {
             'word': word,
             'answered': False
@@ -36,7 +289,6 @@ def play_word(self, event, user_id, group_id):
         )
     
     def play_category(self, event, user_id, group_id, category):
-        """لعبة الفئات (مدن، دول، حيوانات)"""
         if category == 'cities':
             data = self.cities
             name = "مدينة"
@@ -49,7 +301,6 @@ def play_word(self, event, user_id, group_id):
         
         letter = random.choice(list(data.keys()))
         
-        # حفظ اللعبة
         self.db.create_active_game(group_id, category, {
             'letter': letter,
             'valid_answers': data[letter],
@@ -62,14 +313,12 @@ def play_word(self, event, user_id, group_id):
         )
     
     def start_lariat_game(self, event, user_id, group_id):
-        """بدء لعبة لوريت"""
         try:
             profile = self.line_bot_api.get_profile(user_id)
             name = profile.display_name
         except:
             name = "اللاعب"
         
-        # التحقق من وجود لعبة نشطة
         existing = self.db.get_lariat_game(group_id)
         if existing:
             self.line_bot_api.reply_message(
@@ -78,10 +327,7 @@ def play_word(self, event, user_id, group_id):
             )
             return
         
-        # كلمة البداية
         first_word = random.choice(self.words)
-        
-        # إنشاء اللعبة
         self.db.create_lariat_game(group_id, first_word, [user_id])
         
         last_letter = first_word[-1]
@@ -93,14 +339,12 @@ def play_word(self, event, user_id, group_id):
         )
     
     def start_mafia_game(self, event, user_id, group_id):
-        """بدء لعبة المافيا"""
         try:
             profile = self.line_bot_api.get_profile(user_id)
             name = profile.display_name
         except:
             name = "اللاعب"
         
-        # التحقق من وجود لعبة نشطة
         existing = self.db.get_mafia_game(group_id)
         if existing:
             self.line_bot_api.reply_message(
@@ -116,17 +360,33 @@ def play_word(self, event, user_id, group_id):
             )
         )
         
-        # إنشاء لعبة مافيا مؤقتة
         self.db.create_active_game(group_id, 'mafia_lobby', {
             'players': [user_id],
             'ready': False
         })
     
-    def handle_postback(self, event, data, user_id, source_id, is_group):
-        """معالجة الأزرار"""
+    def leave_game(self, user_id, group_id):
+        try:
+            profile = self.line_bot_api.get_profile(user_id)
+            name = profile.display_name
+        except:
+            name = "اللاعب"
         
+        lariat = self.db.get_lariat_game(group_id)
+        if lariat and user_id in lariat['players']:
+            players = lariat['players']
+            players.remove(user_id)
+            
+            if len(players) < 2:
+                self.db.delete_lariat_game(group_id)
+                return f"{name} انسحب\nانتهت اللعبة - لا يوجد لاعبين كافيين"
+            
+            return f"{name} انسحب من اللعبة"
+        
+        return "أنت لست في لعبة نشطة"
+    
+    def handle_postback(self, event, data, user_id, source_id, is_group):
         if data == 'data=stats':
-            # عرض الإحصائيات
             stats = self.db.get_user_stats(user_id)
             theme = self.db.get_user_theme(user_id)
             stats_flex = self.ui.create_stats_card(stats, theme)
@@ -137,7 +397,6 @@ def play_word(self, event, user_id, group_id):
             )
         
         elif data == 'data=themes':
-            # عرض الثيمات
             current_theme = self.db.get_user_theme(user_id)
             themes_flex = self.ui.create_themes_menu(current_theme)
             
@@ -147,7 +406,6 @@ def play_word(self, event, user_id, group_id):
             )
         
         elif data.startswith('answer='):
-            # إجابة سؤال
             if not is_group:
                 return
             
@@ -167,13 +425,11 @@ def play_word(self, event, user_id, group_id):
                     points = GAME_SETTINGS['points_correct']
                     self.db.update_user_stats(user_id, won=True, points=points)
                     self.db.record_game_stat(user_id, 'trivia', 'win', points)
-                    
                     message = f"إجابة صحيحة {name}\n+{points} نقطة"
                 else:
                     points = GAME_SETTINGS['points_wrong']
                     self.db.update_user_stats(user_id, points=points)
                     self.db.record_game_stat(user_id, 'trivia', 'lose', points)
-                    
                     correct_answer = game_data['question']['options'][game_data['question']['answer']]
                     message = f"إجابة خاطئة {name}\nالإجابة الصحيحة: {correct_answer}"
                 
@@ -186,7 +442,6 @@ def play_word(self, event, user_id, group_id):
                 )
         
         elif data.startswith('choice='):
-            # لو خيروك
             if not is_group:
                 return
             
@@ -211,8 +466,6 @@ def play_word(self, event, user_id, group_id):
                 )
     
     def check_active_game_answer(self, event, text, user_id, group_id):
-        """التحقق من إجابات الألعاب النشطة"""
-        
         try:
             profile = self.line_bot_api.get_profile(user_id)
             name = profile.display_name
@@ -339,9 +592,7 @@ def play_word(self, event, user_id, group_id):
             last_letter = lariat['current_word'][-1]
             word = text.strip()
             
-            # التحقق من صحة الكلمة
             if word[0] == last_letter and word not in lariat['used_words'] and len(word) > 1:
-                # تحديث اللعبة
                 players = lariat['players']
                 current_idx = players.index(lariat['current_player'])
                 next_idx = (current_idx + 1) % len(players)
@@ -385,15 +636,12 @@ def play_word(self, event, user_id, group_id):
                 )
                 return
             
-            # توزيع الأدوار
             players = mafia_lobby['players']
             roles = self.assign_mafia_roles(players)
             
-            # إنشاء اللعبة
             self.db.delete_active_game(group_id, 'mafia_lobby')
             self.db.create_mafia_game(group_id, players, roles)
             
-            # إرسال الأدوار للاعبين
             for player_id, role in roles.items():
                 try:
                     role_text = self.get_role_description(role)
@@ -410,7 +658,6 @@ def play_word(self, event, user_id, group_id):
             )
     
     def assign_mafia_roles(self, players):
-        """توزيع أدوار المافيا"""
         roles = {}
         player_list = players.copy()
         random.shuffle(player_list)
@@ -418,11 +665,9 @@ def play_word(self, event, user_id, group_id):
         count = len(players)
         mafia_count = max(1, count // 3)
         
-        # المافيا
         for i in range(mafia_count):
             roles[player_list[i]] = 'mafia'
         
-        # الطبيب
         if count >= 7:
             roles[player_list[mafia_count]] = 'doctor'
             roles[player_list[mafia_count + 1]] = 'detective'
@@ -433,18 +678,16 @@ def play_word(self, event, user_id, group_id):
         else:
             start_citizens = mafia_count
         
-        # المواطنين
         for i in range(start_citizens, count):
             roles[player_list[i]] = 'citizen'
         
         return roles
     
     def get_role_description(self, role):
-        """وصف الدور"""
         descriptions = {
             'mafia': 'أنت من المافيا\nهدفك: القضاء على جميع المواطنين',
             'doctor': 'أنت الطبيب\nيمكنك إنقاذ شخص كل ليلة',
             'detective': 'أنت المحقق\nيمكنك الكشف عن دور شخص كل ليلة',
             'citizen': 'أنت مواطن\nحاول اكتشاف المافيا'
         }
-        return descriptions.get(role, '')
+        return descriptions.get(role, ''
