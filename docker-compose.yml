@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  botmesh:
+    build: .
+    container_name: botmesh
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - LINE_CHANNEL_SECRET=${LINE_CHANNEL_SECRET}
+      - LINE_CHANNEL_ACCESS_TOKEN=${LINE_CHANNEL_ACCESS_TOKEN}
+      - DB_PATH=/app/data/botmesh.db
+      - PORT=8080
+      - WORKERS=4
+      - ENV=production
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
