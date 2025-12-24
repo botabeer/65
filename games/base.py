@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from config import Config
+from config import SYSTEM_SETTINGS, THEMES, normalize_arabic
 
 class BaseGame(ABC):
-    QUESTIONS_PER_GAME = Config.QUESTIONS_PER_GAME
+    QUESTIONS_PER_GAME = SYSTEM_SETTINGS["questions_per_game"]
     
     def __init__(self, db, theme="light"):
         self.db = db
@@ -55,7 +55,7 @@ class BaseGame(ABC):
         return self.build_reveal_message()
     
     def build_question_flex(self, question_text, hint=None):
-        c = Config.THEMES[self.theme]
+        c = THEMES[self.theme]
         self.hint_text = hint
         
         bubble = {
@@ -146,7 +146,7 @@ class BaseGame(ABC):
         if self.supports_hint and hint:
             buttons.append({
                 "type": "button",
-                "action": {"type": "message", "label": "تلميح", "text": "تلميح"},
+                "action": {"type": "message", "label": "تلميح", "text": "لمح"},
                 "style": "secondary",
                 "color": c["info"],
                 "height": "sm"
@@ -155,7 +155,7 @@ class BaseGame(ABC):
         if self.supports_reveal:
             buttons.append({
                 "type": "button",
-                "action": {"type": "message", "label": "الإجابة", "text": "الاجابه"},
+                "action": {"type": "message", "label": "الإجابة", "text": "جاوب"},
                 "style": "secondary",
                 "color": c["warning"],
                 "height": "sm"
@@ -174,7 +174,7 @@ class BaseGame(ABC):
         return {"type": "flex", "altText": question_text, "contents": bubble}
     
     def build_hint_message(self):
-        c = Config.THEMES[self.theme]
+        c = THEMES[self.theme]
         return {
             "type": "flex",
             "altText": "تلميح",
@@ -207,7 +207,7 @@ class BaseGame(ABC):
         }
     
     def build_reveal_message(self):
-        c = Config.THEMES[self.theme]
+        c = THEMES[self.theme]
         return {
             "type": "flex",
             "altText": "الإجابة",
