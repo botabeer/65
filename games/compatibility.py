@@ -1,6 +1,6 @@
 import random
 from games.base import BaseGame
-from config import Config
+
 
 class CompatibilityGame(BaseGame):
     def __init__(self, db, theme="light"):
@@ -9,49 +9,53 @@ class CompatibilityGame(BaseGame):
         self.supports_hint = False
         self.supports_reveal = False
         self.total_q = 1
-    
+
     def get_question(self):
-        question = "اكتب اسمين مع 'و' بينهما\nمثال: احمد و سارة"
+        question = "اكتب اسمين مع (و) بينهما\nمثال: احمد و سارة"
         return self.build_question_flex(question, None)
-    
+
     def check_answer(self, answer: str) -> bool:
-        if " و " not in answer and " و" not in answer and "و " not in answer:
+        if "و" not in answer:
             return False
-        
-        parts = answer.replace(" و ", "|").replace(" و", "|").replace("و ", "|").split("|")
+
+        parts = (
+            answer.replace(" و ", "|")
+            .replace(" و", "|")
+            .replace("و ", "|")
+            .split("|")
+        )
+
         if len(parts) != 2:
             return False
-        
-        name1 = parts[0].strip()
-        name2 = parts[1].strip()
-        
+
+        name1, name2 = parts[0].strip(), parts[1].strip()
         if not name1 or not name2:
             return False
-        
+
         percentage = self._calculate_compatibility(name1, name2)
         message = self._get_message(percentage)
-        
-        self.current_answer = f"{name1} و {name2}\nنسبة التوافق: {percentage}%\n{message}"
+
+        self.current_answer = (
+            f"{name1} و {name2}\n"
+            f"نسبة التوافق: {percentage}%\n{message}"
+        )
         return True
-    
+
     def _calculate_compatibility(self, name1, name2):
-        seed = sum(ord(c) for c in name1 + name2)
+        seed = sum(ord(c) for c in (name1 + name2))
         random.seed(seed)
         return random.randint(20, 100)
-    
+
     def _get_message(self, percentage):
         if percentage >= 90:
-            return "توافق ممتاز جدا! علاقة مثالية"
-        elif percentage >= 75:
-            return "توافق رائع! علاقة قوية"
-        elif percentage >= 60:
-            return "توافق جيد! علاقة جيدة"
-        elif percentage >= 45:
-            return "توافق متوسط! تحتاج لمزيد من التفاهم"
-        elif percentage >= 30:
-            return "توافق ضعيف! قد تواجه بعض التحديات"
-        else:
-            return "توافق منخفض! علاقة صعبة"
-    
+            return "توافق ممتاز جدا"
+        if percentage >= 75:
+            return "توافق رائع"
+        if percentage >= 60:
+            return "توافق جيد"
+        if percentage >= 45:
+            return "توافق متوسط"
+        return "توافق ضعيف"
+
     def finish(self):
         return None
