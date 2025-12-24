@@ -29,13 +29,13 @@ class TextManager:
         try:
             with open(path, "r", encoding="utf-8") as f:
                 lines = [line.strip() for line in f if line.strip()]
-                return lines if lines else ["المحتوى غير متوفر"]
-        except:
-            return ["المحتوى غير متوفر"]
+                return lines if lines else [f"المحتوى غير متوفر: {filename}"]
+        except Exception as e:
+            return [f"خطأ في تحميل {filename}"]
     
     def get_content(self, cmd):
         content_list = self.cmd_mapping.get(cmd)
-        if content_list:
+        if content_list and len(content_list) > 0:
             return random.choice(content_list)
         return None
 
