@@ -1,7 +1,17 @@
 from flask import Flask, request, abort
-from linebot import LineBotApi, WebhookHandler
-from linebot.exceptions import InvalidSignatureError, LineBotApiError
-from linebot.models import MessageEvent, TextMessage
+from linebot.v3 import WebhookHandler
+from linebot.v3.exceptions import InvalidSignatureError
+from linebot.v3.messaging import (
+    Configuration,
+    ApiClient,
+    MessagingApi,
+    ReplyMessageRequest,
+    TextMessage
+)
+from linebot.v3.webhooks import (
+    MessageEvent,
+    TextMessageContent
+)
 import threading
 import time
 from config import LINE_CHANNEL_ACCESS_TOKEN, LINE_CHANNEL_SECRET, SYSTEM_SETTINGS, BOT_NAME, BOT_VERSION
@@ -15,9 +25,13 @@ logger = setup_logging()
 app = Flask(__name__)
 
 try:
-    line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
+    configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
     handler = WebhookHandler(LINE_CHANNEL_SECRET)
-    message_handler = MessageHandler(line_bot_api)
+    
+    with ApiClient(configuration) as api_client:
+        line_bot_api = MessagingApi(api_client)
+    
+    message_handler = MessageHandler(line_bot_api, configuration)
     logger.info(f"{BOT_NAME} v{BOT_VERSION} - LINE API initialized")
 except Exception as e:
     logger.error(f"Failed to initialize LINE API: {e}")
@@ -29,6 +43,10 @@ logger.info(f"Loaded {games_count} games from games folder")
 @app.route("/", methods=['GET'])
 def home():
     return f"{BOT_NAME} v{BOT_VERSION} - Running", 200
+
+@app.route("/health", methods=['GET'])
+def health():
+    return "OK", 200
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -50,16 +68,21 @@ def callback():
     
     return 'OK'
 
-@handler.add(MessageEvent, message=TextMessage)
+@handler.add(MessageEvent, message=TextMessageContent)
 def handle_text_message(event):
     try:
         messages = message_handler.handle_message(event)
         
         if messages:
-            line_bot_api.reply_message(event.reply_token, messages)
+            with ApiClient(configuration) as api_client:
+                line_bot_api = MessagingApi(api_client)
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=messages
+                    )
+                )
     
-    except LineBotApiError as e:
-        logger.error(f"LINE API Error: {e.status_code} - {e.error.message}")
     except Exception as e:
         logger.error(f"Error in message handler: {e}", exc_info=True)
 
