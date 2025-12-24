@@ -2,25 +2,25 @@
 Bot 65 - بوت ألعاب LINE
 تطبيق رئيسي شامل
 """
-from flask import Flask, request, abort
+from flask import Flask, request, abort, jsonify
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import Configuration, ApiClient, MessagingApi, ReplyMessageRequest, TextMessage, FlexMessage, FlexContainer
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
-from apscheduler.schedulers.background import BackgroundScheduler
 import os, sys, logging
 from datetime import datetime
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
-                   handlers=[logging.FileHandler('bot.log'), logging.StreamHandler(sys.stdout)])
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
 LINE_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN')
 LINE_SECRET = os.getenv('LINE_CHANNEL_SECRET')
+
 if not LINE_TOKEN or not LINE_SECRET:
-    raise ValueError("Missing LINE credentials")
+    logger.error("Missing LINE credentials")
+    sys.exit(1)
 
 configuration = Configuration(access_token=LINE_TOKEN)
 handler = WebhookHandler(LINE_SECRET)
@@ -32,9 +32,6 @@ from text_commands import TextCommands
 
 DB.init()
 TextCommands.load_all()
-scheduler = BackgroundScheduler()
-scheduler.add_job(func=DB.cleanup_inactive, trigger="interval", hours=24)
-scheduler.start()
 
 game_sessions = {}
 waiting_for_name = set()
@@ -46,6 +43,7 @@ def callback():
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
+        logger.error("Invalid signature")
         abort(400)
     except Exception as e:
         logger.error(f"Webhook error: {e}")
@@ -159,7 +157,6 @@ def process(text, user_id, group_id):
 
 @app.route('/health')
 def health():
-    from flask import jsonify
     return jsonify({'status': 'ok', 'time': datetime.now().isoformat()}), 200
 
 @app.route('/')
