@@ -1,16 +1,10 @@
-from linebot.v3.messaging import (
-    TextMessage,
-    FlexMessage,
-    FlexContainer,
-    ApiClient,
-    MessagingApi
-)
+from linebot.v3.messaging import TextMessage, FlexMessage, ApiClient, MessagingApi
 from database import db
 from game_loader import game_loader
 from security import security
-from config import MESSAGES, BOT_NAME
+from config import MESSAGES, BOT_NAME, Config
+from text_manager import text_manager
 import logging
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +12,7 @@ class MessageHandler:
     def __init__(self, line_bot_api, configuration):
         self.bot = line_bot_api
         self.configuration = configuration
+        self.user_themes = {}
     
     def _get_profile(self, user_id):
         try:
@@ -28,11 +23,20 @@ class MessageHandler:
         except:
             return "مستخدم"
     
-    def handle_message(self, event) -> list:
+    def _get_theme(self, user_id):
+        return self.user_themes.get(user_id, "light")
+    
+    def _toggle_theme(self, user_id):
+        current = self._get_theme(user_id)
+        new_theme = "dark" if current == "light" else "light"
+        self.user_themes[user_id] = new_theme
+        return new_theme
+    
+    def handle_message(self, event):
         if not isinstance(event.message, type(event.message)):
             return []
         
-        text = security.sanitize_input(event.message.text)
+        text = security.sanitize_input(event.message.text).strip()
         user_id = event.source.user_id
         
         is_allowed, spam_msg = security.check_spam(user_id)
@@ -41,100 +45,377 @@ class MessageHandler:
         
         is_group = hasattr(event.source, 'group_id')
         group_id = event.source.group_id if is_group else None
-        
         display_name = self._get_profile(user_id)
+        theme = self._get_theme(user_id)
         
-        if text.startswith('/'):
-            return self._handle_command(event, text, user_id, group_id, display_name, is_group)
+        normalized = Config.normalize(text)
         
-        if is_group and group_id:
-            session = db.get_session(group_id)
-            if session and session.is_active and db.is_player_registered(group_id, user_id):
-                return self._handle_game_message(group_id, user_id, text)
+        # أوامر النصوص (تعمل بدون تسجيل)
+        txt_content = text_manager.get_content(normalized)
+        if txt_content:
+            return [self._build_text_card(txt_content, normalized, theme)]
         
-        return []
-    
-    def _handle_command(self, event, text, user_id, group_id, display_name, is_group):
-        parts = text.lower().split()
-        command = parts[0]
+        # التحقق من الأوامر
+        if normalized in ['بدايه', 'بداية', 'القائمة', 'قائمه']:
+            return [FlexMessage(alt_text="القائمة", contents=self._main_menu(theme))]
         
-        if command in ['/تسجيل', '/join']:
-            if not is_group:
-                return [TextMessage(text="هذا الأمر للمجموعات فقط")]
-            return self._cmd_register(user_id, group_id, display_name)
+        elif normalized in ['العاب', 'الالعاب']:
+            return [FlexMessage(alt_text="الألعاب", contents=self._games_menu(theme))]
         
-        elif command in ['/انسحاب', '/leave']:
-            if not is_group:
-                return [TextMessage(text="هذا الأمر للمجموعات فقط")]
-            return self._cmd_leave(user_id, group_id, display_name)
+        elif normalized in ['ثيم', 'الثيم']:
+            new_theme = self._toggle_theme(user_id)
+            theme_name = "الداكن" if new_theme == "dark" else "الفاتح"
+            return [FlexMessage(alt_text="الثيم", contents=self._theme_changed(theme_name, new_theme))]
         
-        elif command in ['/العاب', '/games']:
-            return self._cmd_list_games()
+        elif normalized in ['مساعده', 'مساعدة']:
+            return [FlexMessage(alt_text="المساعدة", contents=self._help_menu(theme))]
         
-        elif command in ['/اختر', '/select']:
-            if not is_group:
-                return [TextMessage(text="هذا الأمر للمجموعات فقط")]
-            if len(parts) < 2:
-                return [TextMessage(text="الاستخدام: /اختر اسم_اللعبة")]
-            return self._cmd_select_game(group_id, parts[1])
+        # أوامر المجموعات
+        if not is_group:
+            return [TextMessage(text=MESSAGES['group_only'])]
         
-        elif command in ['/بدء', '/start']:
-            if not is_group:
-                return [TextMessage(text="هذا الأمر للمجموعات فقط")]
-            return self._cmd_start_game(group_id)
+        if normalized in ['تسجيل', 'انضم']:
+            return self._cmd_register(user_id, group_id, display_name, theme)
         
-        elif command in ['/سؤال', '/next']:
-            if not is_group:
-                return [TextMessage(text="هذا الأمر للمجموعات فقط")]
-            return self._cmd_next_question(group_id)
+        elif normalized in ['انسحاب', 'انسحب']:
+            return self._cmd_leave(user_id, group_id, display_name, theme)
         
-        elif command in ['/انهاء', '/end']:
-            if not is_group:
-                return [TextMessage(text="هذا الأمر للمجموعات فقط")]
-            return self._cmd_end_game(group_id)
+        elif normalized in game_loader.games.keys():
+            return self._cmd_select_game(group_id, normalized, theme)
         
-        elif command in ['/نقاط', '/score']:
-            if not is_group:
-                return [TextMessage(text="هذا الأمر للمجموعات فقط")]
-            return self._cmd_scoreboard(group_id)
+        elif normalized in ['بدء', 'ابدا', 'ابدأ']:
+            return self._cmd_start_game(group_id, theme)
         
-        elif command in ['/لاعبين', '/players']:
-            if not is_group:
-                return [TextMessage(text="هذا الأمر للمجموعات فقط")]
-            return self._cmd_list_players(group_id)
+        elif normalized in ['انهاء', 'انهي', 'ايقاف']:
+            return self._cmd_end_game(group_id, theme)
         
-        elif command in ['/مساعدة', '/help']:
-            return self._cmd_help()
+        elif normalized in ['نقاط', 'النقاط']:
+            return self._cmd_scoreboard(group_id, theme)
         
-        elif command in ['/حظر', '/ban']:
-            if not security.is_owner(user_id):
-                return []
-            return self._cmd_ban(parts)
+        elif normalized in ['لاعبين', 'اللاعبين']:
+            return self._cmd_list_players(group_id, theme)
         
-        elif command in ['/فك_حظر', '/unban']:
-            if not security.is_owner(user_id):
-                return []
-            return self._cmd_unban(parts)
-        
-        elif command in ['/اضافة_ادمن', '/addadmin']:
-            if not security.is_owner(user_id):
-                return []
-            return self._cmd_add_admin(parts)
-        
-        elif command in ['/حذف_ادمن', '/removeadmin']:
-            if not security.is_owner(user_id):
-                return []
-            return self._cmd_remove_admin(parts)
+        # معالجة رسائل اللعبة
+        session = db.get_session(group_id)
+        if session and session.is_active and db.is_player_registered(group_id, user_id):
+            return self._handle_game_message(group_id, user_id, text, theme)
         
         return []
     
-    def _cmd_register(self, user_id, group_id, display_name):
+    def _build_text_card(self, content, cmd_type, theme):
+        c = Config.THEMES[theme]
+        
+        titles = {
+            'تحدي': 'تحدي',
+            'اعتراف': 'اعتراف',
+            'منشن': 'منشن',
+            'شخصيه': 'سؤال شخصي',
+            'شخصية': 'سؤال شخصي',
+            'سؤال': 'سؤال',
+            'حكمه': 'حكمة',
+            'حكمة': 'حكمة',
+            'موقف': 'موقف'
+        }
+        
+        title = titles.get(cmd_type, 'محتوى')
+        
+        bubble = {
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": title,
+                        "size": "xl",
+                        "weight": "bold",
+                        "color": c["primary"]
+                    },
+                    {
+                        "type": "separator",
+                        "margin": "md",
+                        "color": c["border"]
+                    },
+                    {
+                        "type": "text",
+                        "text": content,
+                        "size": "lg",
+                        "wrap": True,
+                        "color": c["text"],
+                        "margin": "lg"
+                    }
+                ],
+                "backgroundColor": c["bg"],
+                "paddingAll": "20px"
+            }
+        }
+        
+        return FlexMessage(alt_text=title, contents=bubble)
+    
+    def _main_menu(self, theme):
+        c = Config.THEMES[theme]
+        
+        return {
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": BOT_NAME,
+                        "size": "xxl",
+                        "weight": "bold",
+                        "color": c["primary"],
+                        "align": "center"
+                    },
+                    {
+                        "type": "separator",
+                        "margin": "lg",
+                        "color": c["border"]
+                    },
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {
+                                "type": "button",
+                                "action": {"type": "message", "label": "الألعاب", "text": "العاب"},
+                                "style": "primary",
+                                "color": c["primary"],
+                                "height": "md"
+                            },
+                            {
+                                "type": "button",
+                                "action": {"type": "message", "label": "تحدي", "text": "تحدي"},
+                                "style": "secondary",
+                                "color": c["success"],
+                                "height": "md",
+                                "margin": "md"
+                            },
+                            {
+                                "type": "button",
+                                "action": {"type": "message", "label": "اعتراف", "text": "اعتراف"},
+                                "style": "secondary",
+                                "color": c["info"],
+                                "height": "md",
+                                "margin": "md"
+                            },
+                            {
+                                "type": "button",
+                                "action": {"type": "message", "label": "سؤال", "text": "سؤال"},
+                                "style": "secondary",
+                                "color": c["warning"],
+                                "height": "md",
+                                "margin": "md"
+                            },
+                            {
+                                "type": "box",
+                                "layout": "horizontal",
+                                "contents": [
+                                    {
+                                        "type": "button",
+                                        "action": {"type": "message", "label": "حكمة", "text": "حكمه"},
+                                        "style": "secondary",
+                                        "color": c["secondary"],
+                                        "height": "sm",
+                                        "flex": 1
+                                    },
+                                    {
+                                        "type": "button",
+                                        "action": {"type": "message", "label": "موقف", "text": "موقف"},
+                                        "style": "secondary",
+                                        "color": c["secondary"],
+                                        "height": "sm",
+                                        "flex": 1
+                                    }
+                                ],
+                                "spacing": "sm",
+                                "margin": "md"
+                            },
+                            {
+                                "type": "box",
+                                "layout": "horizontal",
+                                "contents": [
+                                    {
+                                        "type": "button",
+                                        "action": {"type": "message", "label": "تغيير الثيم", "text": "ثيم"},
+                                        "style": "secondary",
+                                        "color": c["danger"],
+                                        "height": "sm",
+                                        "flex": 1
+                                    },
+                                    {
+                                        "type": "button",
+                                        "action": {"type": "message", "label": "مساعدة", "text": "مساعده"},
+                                        "style": "secondary",
+                                        "color": c["text_secondary"],
+                                        "height": "sm",
+                                        "flex": 1
+                                    }
+                                ],
+                                "spacing": "sm",
+                                "margin": "md"
+                            }
+                        ],
+                        "margin": "lg"
+                    }
+                ],
+                "backgroundColor": c["bg"],
+                "paddingAll": "20px"
+            }
+        }
+    
+    def _games_menu(self, theme):
+        c = Config.THEMES[theme]
+        games = game_loader.list_games()
+        
+        contents = [
+            {
+                "type": "text",
+                "text": "اختر لعبة",
+                "size": "xl",
+                "weight": "bold",
+                "color": c["primary"]
+            },
+            {
+                "type": "separator",
+                "margin": "md",
+                "color": c["border"]
+            }
+        ]
+        
+        for game_name, desc in games.items():
+            contents.append({
+                "type": "button",
+                "action": {"type": "message", "label": desc, "text": game_name},
+                "style": "primary",
+                "color": c["primary"],
+                "height": "md",
+                "margin": "md"
+            })
+        
+        return {
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": contents,
+                "backgroundColor": c["bg"],
+                "paddingAll": "20px"
+            }
+        }
+    
+    def _theme_changed(self, theme_name, theme):
+        c = Config.THEMES[theme]
+        
+        return {
+            "type": "bubble",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": f"تم التبديل للثيم {theme_name}",
+                        "size": "lg",
+                        "weight": "bold",
+                        "color": c["success"],
+                        "align": "center"
+                    }
+                ],
+                "backgroundColor": c["bg"],
+                "paddingAll": "20px"
+            }
+        }
+    
+    def _help_menu(self, theme):
+        c = Config.THEMES[theme]
+        
+        return {
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "المساعدة",
+                        "size": "xl",
+                        "weight": "bold",
+                        "color": c["primary"]
+                    },
+                    {
+                        "type": "separator",
+                        "margin": "md",
+                        "color": c["border"]
+                    },
+                    {
+                        "type": "text",
+                        "text": "الأوامر الأساسية:",
+                        "size": "md",
+                        "weight": "bold",
+                        "color": c["text"],
+                        "margin": "lg"
+                    },
+                    {
+                        "type": "text",
+                        "text": "بداية - القائمة الرئيسية\nالعاب - قائمة الألعاب\nثيم - تغيير الثيم",
+                        "size": "sm",
+                        "color": c["text_secondary"],
+                        "wrap": True,
+                        "margin": "sm"
+                    },
+                    {
+                        "type": "text",
+                        "text": "أوامر المجموعات:",
+                        "size": "md",
+                        "weight": "bold",
+                        "color": c["text"],
+                        "margin": "md"
+                    },
+                    {
+                        "type": "text",
+                        "text": "تسجيل - الانضمام للعبة\nانسحاب - الخروج من اللعبة\nبدء - بدء اللعبة\nايقاف - إيقاف اللعبة\nنقاط - عرض النقاط\nلاعبين - قائمة اللاعبين",
+                        "size": "sm",
+                        "color": c["text_secondary"],
+                        "wrap": True,
+                        "margin": "sm"
+                    },
+                    {
+                        "type": "text",
+                        "text": "أوامر أخرى:",
+                        "size": "md",
+                        "weight": "bold",
+                        "color": c["text"],
+                        "margin": "md"
+                    },
+                    {
+                        "type": "text",
+                        "text": "تحدي - تحديات عشوائية\nاعتراف - اعترافات\nسؤال - أسئلة عامة\nحكمه - حكم وأقوال\nموقف - مواقف افتراضية",
+                        "size": "sm",
+                        "color": c["text_secondary"],
+                        "wrap": True,
+                        "margin": "sm"
+                    }
+                ],
+                "backgroundColor": c["bg"],
+                "paddingAll": "20px"
+            }
+        }
+    
+    def _cmd_register(self, user_id, group_id, display_name, theme):
         if db.is_player_registered(group_id, user_id):
             return []
         
         session = db.get_session(group_id)
         if not session:
-            return [TextMessage(text="يجب اختيار لعبة اولا\nاستخدم /العاب لعرض الألعاب")]
+            return [TextMessage(text=MESSAGES['need_game'])]
         
         if db.add_player(group_id, user_id, display_name):
             count = len(session.players)
@@ -142,47 +423,90 @@ class MessageHandler:
         
         return []
     
-    def _cmd_leave(self, user_id, group_id, display_name):
+    def _cmd_leave(self, user_id, group_id, display_name, theme):
         if db.is_player_registered(group_id, user_id):
             db.remove_player(group_id, user_id)
             return [TextMessage(text=f"{display_name} انسحب من اللعبة")]
         return []
     
-    def _cmd_list_games(self):
-        games = game_loader.list_games()
-        
-        if not games:
-            return [TextMessage(text="لا توجد العاب متاحة")]
-        
-        text = f"{BOT_NAME}\nالألعاب المتاحة:\n\n"
-        for i, (name, desc) in enumerate(games.items(), 1):
-            text += f"{i}. {name}\n{desc}\n\n"
-        
-        text += "استخدم: /اختر اسم_اللعبة"
-        
-        return [TextMessage(text=text)]
-    
-    def _cmd_select_game(self, group_id, game_name):
+    def _cmd_select_game(self, group_id, game_name, theme):
         if not game_loader.game_exists(game_name):
             return [TextMessage(text=MESSAGES['game_not_found'])]
         
         session = db.get_session(group_id)
         if session and session.is_active:
-            return [TextMessage(text="يوجد لعبة نشطة\nاستخدم /انهاء اولا")]
+            return [TextMessage(text=MESSAGES['already_active'])]
         
         db.create_session(group_id, game_name)
         game = game_loader.get_game(game_name)
         
-        return [TextMessage(text=f"تم اختيار: {game.name}\n{game.description}\n\nاستخدم /تسجيل للانضمام")]
+        c = Config.THEMES[theme]
+        bubble = {
+            "type": "bubble",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": game.name,
+                        "size": "xl",
+                        "weight": "bold",
+                        "color": c["primary"]
+                    },
+                    {
+                        "type": "text",
+                        "text": game.description,
+                        "size": "md",
+                        "color": c["text"],
+                        "wrap": True,
+                        "margin": "md"
+                    },
+                    {
+                        "type": "text",
+                        "text": f"عدد اللاعبين: {game.min_players}-{game.max_players}",
+                        "size": "sm",
+                        "color": c["text_secondary"],
+                        "margin": "md"
+                    },
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {
+                                "type": "button",
+                                "action": {"type": "message", "label": "انضم", "text": "تسجيل"},
+                                "style": "primary",
+                                "color": c["success"],
+                                "flex": 1
+                            },
+                            {
+                                "type": "button",
+                                "action": {"type": "message", "label": "بدء", "text": "بدء"},
+                                "style": "primary",
+                                "color": c["primary"],
+                                "flex": 1
+                            }
+                        ],
+                        "spacing": "sm",
+                        "margin": "lg"
+                    }
+                ],
+                "backgroundColor": c["bg"],
+                "paddingAll": "20px"
+            }
+        }
+        
+        return [FlexMessage(alt_text=game.name, contents=bubble)]
     
-    def _cmd_start_game(self, group_id):
+    def _cmd_start_game(self, group_id, theme):
         session = db.get_session(group_id)
         
         if not session:
-            return [TextMessage(text="يجب اختيار لعبة اولا")]
+            return [TextMessage(text=MESSAGES['need_game'])]
         
         if session.is_active:
-            return [TextMessage(text="اللعبة نشطة بالفعل")]
+            return [TextMessage(text=MESSAGES['already_active'])]
         
         game = game_loader.get_game(session.game_name)
         if not game:
@@ -190,7 +514,7 @@ class MessageHandler:
         
         player_count = len(session.players)
         if player_count < game.min_players:
-            return [TextMessage(text=f"يجب على الأقل {game.min_players} لاعبين\nاللاعبين الحاليين: {player_count}")]
+            return [TextMessage(text=f"{MESSAGES['min_players']}\nالعدد المطلوب: {game.min_players}\nالعدد الحالي: {player_count}")]
         
         success, message = game.start(group_id, session.players)
         
@@ -199,20 +523,7 @@ class MessageHandler:
         
         return [TextMessage(text=message)]
     
-    def _cmd_next_question(self, group_id):
-        session = db.get_session(group_id)
-        
-        if not session or not session.is_active:
-            return [TextMessage(text=MESSAGES['no_active_game'])]
-        
-        game = game_loader.get_game(session.game_name)
-        if not game or not hasattr(game, 'next_question'):
-            return [TextMessage(text="هذه اللعبة لا تدعم هذا الأمر")]
-        
-        success, message = game.next_question(group_id)
-        return [TextMessage(text=message)]
-    
-    def _cmd_end_game(self, group_id):
+    def _cmd_end_game(self, group_id, theme):
         session = db.get_session(group_id)
         
         if not session or not session.is_active:
@@ -229,7 +540,7 @@ class MessageHandler:
         
         return [TextMessage(text=message)]
     
-    def _cmd_scoreboard(self, group_id):
+    def _cmd_scoreboard(self, group_id, theme):
         session = db.get_session(group_id)
         
         if not session:
@@ -242,76 +553,51 @@ class MessageHandler:
         message = game.get_status(group_id)
         return [TextMessage(text=message)]
     
-    def _cmd_list_players(self, group_id):
+    def _cmd_list_players(self, group_id, theme):
         session = db.get_session(group_id)
         
         if not session or not session.players:
             return [TextMessage(text="لا يوجد لاعبون")]
         
-        text = "اللاعبون المسجلون:\n"
+        c = Config.THEMES[theme]
+        contents = [
+            {
+                "type": "text",
+                "text": "اللاعبون المسجلون",
+                "size": "xl",
+                "weight": "bold",
+                "color": c["primary"]
+            },
+            {
+                "type": "separator",
+                "margin": "md",
+                "color": c["border"]
+            }
+        ]
+        
         for i, player in enumerate(session.players.values(), 1):
-            text += f"{i}. {player.display_name}\n"
+            contents.append({
+                "type": "text",
+                "text": f"{i}. {player.display_name}",
+                "size": "md",
+                "color": c["text"],
+                "margin": "sm"
+            })
         
-        return [TextMessage(text=text)]
-    
-    def _cmd_help(self):
-        help_text = f"""{BOT_NAME}
-
-الأوامر الأساسية:
-/العاب - عرض الألعاب المتاحة
-/اختر اسم_اللعبة - اختيار لعبة
-/تسجيل - التسجيل في اللعبة
-/انسحاب - الانسحاب
-/لاعبين - قائمة اللاعبين
-
-اوامر اللعب:
-/بدء - بدء اللعبة
-/سؤال - السؤال التالي
-/نقاط - عرض النقاط
-/انهاء - انهاء اللعبة
-
-/مساعدة - عرض هذه الرسالة"""
+        bubble = {
+            "type": "bubble",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": contents,
+                "backgroundColor": c["bg"],
+                "paddingAll": "20px"
+            }
+        }
         
-        return [TextMessage(text=help_text)]
+        return [FlexMessage(alt_text="اللاعبون", contents=bubble)]
     
-    def _cmd_ban(self, parts):
-        if len(parts) < 2:
-            return [TextMessage(text="الاستخدام: /حظر USER_ID")]
-        
-        user_id = parts[1]
-        from config import SECURITY_SETTINGS
-        db.ban_user(user_id, SECURITY_SETTINGS['ban_duration'])
-        logger.info(f"User {user_id} banned by owner")
-        return [TextMessage(text=f"تم حظر {user_id}")]
-    
-    def _cmd_unban(self, parts):
-        if len(parts) < 2:
-            return [TextMessage(text="الاستخدام: /فك_حظر USER_ID")]
-        
-        user_id = parts[1]
-        db.unban_user(user_id)
-        logger.info(f"User {user_id} unbanned by owner")
-        return [TextMessage(text=f"تم فك حظر {user_id}")]
-    
-    def _cmd_add_admin(self, parts):
-        if len(parts) < 2:
-            return [TextMessage(text="الاستخدام: /اضافة_ادمن USER_ID")]
-        
-        user_id = parts[1]
-        db.add_admin(user_id)
-        logger.info(f"User {user_id} added as admin")
-        return [TextMessage(text=f"تم اضافة {user_id} كأدمن")]
-    
-    def _cmd_remove_admin(self, parts):
-        if len(parts) < 2:
-            return [TextMessage(text="الاستخدام: /حذف_ادمن USER_ID")]
-        
-        user_id = parts[1]
-        db.remove_admin(user_id)
-        logger.info(f"User {user_id} removed from admins")
-        return [TextMessage(text=f"تم حذف {user_id} من الأدمنز")]
-    
-    def _handle_game_message(self, group_id, user_id, text):
+    def _handle_game_message(self, group_id, user_id, text, theme):
         session = db.get_session(group_id)
         
         if not session or not session.is_active:
