@@ -13,10 +13,10 @@ COPY . .
 
 RUN mkdir -p data && chmod 755 data
 
-ENV PORT=8080
+ENV PORT=10000
 ENV DB_PATH=/app/data/botmesh.db
 ENV PYTHONUNBUFFERED=1
 
-EXPOSE 8080
+EXPOSE 10000
 
 CMD ["gunicorn", "-c", "gunicorn_config.py", "app:app"]
