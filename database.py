@@ -1,167 +1,251 @@
+import sqlite3
+import logging
+from threading import Lock
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Set, Any
-from dataclasses import dataclass, field
-import threading
+from contextlib import contextmanager
+from queue import Queue
 
-@dataclass
-class Player:
-    user_id: str
-    display_name: str
-    score: int = 0
-    joined_at: datetime = field(default_factory=datetime.now)
-    last_activity: Optional[datetime] = None
-    is_active: bool = True
-    game_data: Dict[str, Any] = field(default_factory=dict)
-    def touch(self): self.last_activity = datetime.now()
+logger = logging.getLogger(__name__)
 
-@dataclass
-class GameSession:
-    group_id: str
-    game_name: str
-    players: Dict[str, Player] = field(default_factory=dict)
-    game_state: Dict[str, Any] = field(default_factory=dict)
-    is_active: bool = True
-    created_at: datetime = field(default_factory=datetime.now)
-    updated_at: datetime = field(default_factory=datetime.now)
-    def touch(self): self.updated_at = datetime.now()
+class ConnectionPool:
+    def __init__(self, db_name, pool_size=10):
+        self.db_name = db_name
+        self.pool = Queue(maxsize=pool_size)
+        self._initialize()
+    
+    def _initialize(self):
+        for _ in range(self.pool.maxsize):
+            conn = sqlite3.connect(
+                self.db_name,
+                check_same_thread=False,
+                timeout=10.0
+            )
+            conn.row_factory = sqlite3.Row
+            self.pool.put(conn)
+    
+    @contextmanager
+    def get_connection(self):
+        conn = self.pool.get()
+        try:
+            yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            self.pool.put(conn)
 
-@dataclass
-class UserActivity:
-    user_id: str
-    message_count: int = 0
-    last_reset: datetime = field(default_factory=datetime.now)
-    warnings: int = 0
-    ban_until: Optional[datetime] = None
+db_pool = ConnectionPool('game_scores.db', pool_size=10)
 
 class Database:
-    def __init__(self):
-        self.sessions: Dict[str, GameSession] = {}
-        self.user_activities: Dict[str, UserActivity] = {}
-        self.admins: Set[str] = set()
-        self.banned_users: Dict[str, datetime] = {}
-        self.lock = threading.RLock()
-
-    # --- Sessions ---
-    def create_session(self, group_id: str, game_name: str) -> Optional[GameSession]:
-        with self.lock:
-            if group_id in self.sessions: return None
-            session = GameSession(group_id=group_id, game_name=game_name)
-            self.sessions[group_id] = session
-            return session
-    def get_session(self, group_id: str) -> Optional[GameSession]:
-        return self.sessions.get(group_id)
-    def end_session(self, group_id: str) -> bool:
-        with self.lock:
-            session = self.sessions.get(group_id)
-            if not session: return False
-            session.is_active = False
-            session.touch()
-            return True
-    def delete_session(self, group_id: str):
-        with self.lock:
-            self.sessions.pop(group_id, None)
-
-    # --- Players ---
-    def add_player(self, group_id: str, user_id: str, display_name: str) -> bool:
-        with self.lock:
-            session = self.get_session(group_id)
-            if not session or not session.is_active or user_id in session.players: return False
-            player = Player(user_id=user_id, display_name=display_name)
-            player.touch()
-            session.players[user_id] = player
-            session.touch()
-            return True
-    def remove_player(self, group_id: str, user_id: str) -> bool:
-        with self.lock:
-            session = self.get_session(group_id)
-            if not session or user_id not in session.players: return False
-            del session.players[user_id]
-            session.touch()
-            return True
-    def is_player_registered(self, group_id: str, user_id: str) -> bool:
-        session = self.get_session(group_id)
-        return bool(session and user_id in session.players)
-    def get_player(self, group_id: str, user_id: str) -> Optional[Player]:
-        session = self.get_session(group_id)
-        return session.players.get(user_id) if session else None
-    def update_player_score(self, group_id: str, user_id: str, points: int):
-        with self.lock:
-            player = self.get_player(group_id, user_id)
-            if not player: return
-            player.score += points
-            player.touch()
-            self.sessions[group_id].touch()
-
-    # --- Game State ---
-    def update_game_state(self, group_id: str, key: str, value: Any):
-        with self.lock:
-            session = self.get_session(group_id)
-            if not session: return
-            session.game_state[key] = value
-            session.touch()
-    def get_game_state(self, group_id: str, key: str, default: Any = None) -> Any:
-        session = self.get_session(group_id)
-        return session.game_state.get(key, default) if session else default
-
-    # --- Leaderboard ---
-    def get_leaderboard(self, group_id: str, limit: int = 10) -> List[Player]:
-        session = self.get_session(group_id)
-        if not session: return []
-        return sorted(session.players.values(), key=lambda p: p.score, reverse=True)[:limit]
-
-    # --- Anti Spam ---
-    def record_message(self, user_id: str, limit_seconds: int = 60) -> int:
-        with self.lock:
-            now = datetime.now()
-            activity = self.user_activities.setdefault(user_id, UserActivity(user_id=user_id))
-            if (now - activity.last_reset).total_seconds() > limit_seconds:
-                activity.message_count = 0
-                activity.last_reset = now
-            activity.message_count += 1
-            return activity.message_count
-    def is_rate_limited(self, user_id: str, limit: int = 5) -> bool:
-        return self.record_message(user_id) > limit
-
-    # --- Warnings / Ban ---
-    def add_warning(self, user_id: str) -> int:
-        with self.lock:
-            activity = self.user_activities.setdefault(user_id, UserActivity(user_id=user_id))
-            activity.warnings += 1
-            return activity.warnings
-    def ban_user(self, user_id: str, duration: timedelta):
-        with self.lock:
-            until = datetime.now() + duration
-            self.banned_users[user_id] = until
-            activity = self.user_activities.setdefault(user_id, UserActivity(user_id=user_id))
-            activity.ban_until = until
-    def unban_user(self, user_id: str):
-        with self.lock:
-            self.banned_users.pop(user_id, None)
-            if user_id in self.user_activities:
-                self.user_activities[user_id].ban_until = None
-                self.user_activities[user_id].warnings = 0
-    def is_banned(self, user_id: str) -> bool:
-        until = self.banned_users.get(user_id)
-        if not until: return False
-        if datetime.now() > until: self.unban_user(user_id); return False
-        return True
-    def can_interact(self, user_id: str) -> bool:
-        return not self.is_banned(user_id)
-
-    # --- Admins ---
-    def add_admin(self, user_id: str):
-        with self.lock: self.admins.add(user_id)
-    def remove_admin(self, user_id: str):
-        with self.lock: self.admins.discard(user_id)
-    def is_admin(self, user_id: str) -> bool:
-        return user_id in self.admins
-
-    # --- Cleanup ---
-    def cleanup_old_sessions(self, hours: int = 24) -> int:
-        with self.lock:
-            now = datetime.now()
-            expired = [gid for gid, s in self.sessions.items() if (now - s.updated_at).total_seconds() > hours * 3600]
-            for gid in expired: del self.sessions[gid]
-            return len(expired)
-
-db = Database()
+    _lock = Lock()
+    _leaderboard_cache = None
+    _leaderboard_cache_time = 0
+    CACHE_TTL = 300
+    INACTIVITY_DAYS = 30
+    
+    @staticmethod
+    @contextmanager
+    def get_connection():
+        with db_pool.get_connection() as conn:
+            yield conn
+    
+    @staticmethod
+    def init():
+        try:
+            with Database.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS users (
+                        user_id TEXT PRIMARY KEY,
+                        display_name TEXT NOT NULL,
+                        total_points INTEGER DEFAULT 0,
+                        games_played INTEGER DEFAULT 0,
+                        wins INTEGER DEFAULT 0,
+                        last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+                
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS game_history (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id TEXT NOT NULL,
+                        game_type TEXT NOT NULL,
+                        points INTEGER DEFAULT 0,
+                        won BOOLEAN DEFAULT 0,
+                        played_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+                    )
+                ''')
+                
+                cursor.execute('''
+                    CREATE INDEX IF NOT EXISTS idx_users_points 
+                    ON users(total_points DESC, games_played DESC)
+                ''')
+                
+                cursor.execute('''
+                    CREATE INDEX IF NOT EXISTS idx_game_history 
+                    ON game_history(user_id, played_at DESC)
+                ''')
+                
+                cursor.execute('PRAGMA foreign_keys = ON')
+                cursor.execute('ANALYZE')
+                
+                logger.info("Database initialized successfully")
+        
+        except Exception as e:
+            logger.error(f"Database init error: {e}")
+            raise
+    
+    @staticmethod
+    def register_or_update_user(user_id, display_name):
+        with Database._lock:
+            try:
+                with Database.get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        INSERT INTO users (user_id, display_name, last_activity)
+                        VALUES (?, ?, CURRENT_TIMESTAMP)
+                        ON CONFLICT(user_id) DO UPDATE SET
+                            display_name = excluded.display_name,
+                            last_activity = CURRENT_TIMESTAMP
+                    ''', (user_id, display_name))
+                    
+                    logger.info(f"User registered: {user_id}")
+                    return True
+            except Exception as e:
+                logger.error(f"Register error: {e}")
+                return False
+    
+    @staticmethod
+    def update_last_activity(user_id):
+        try:
+            with Database.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    UPDATE users SET last_activity = CURRENT_TIMESTAMP
+                    WHERE user_id = ?
+                ''', (user_id,))
+                return cursor.rowcount > 0
+        except Exception as e:
+            logger.error(f"Update activity error: {e}")
+            return False
+    
+    @staticmethod
+    def update_user_points(user_id, points, won, game_type):
+        with Database._lock:
+            try:
+                with Database.get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('BEGIN IMMEDIATE')
+                    
+                    cursor.execute('''
+                        UPDATE users
+                        SET total_points = total_points + ?,
+                            games_played = games_played + 1,
+                            wins = wins + ?,
+                            last_activity = CURRENT_TIMESTAMP
+                        WHERE user_id = ?
+                    ''', (points, 1 if won else 0, user_id))
+                    
+                    cursor.execute('''
+                        INSERT INTO game_history (user_id, game_type, points, won)
+                        VALUES (?, ?, ?, ?)
+                    ''', (user_id, game_type, points, won))
+                    
+                    conn.commit()
+                    Database._leaderboard_cache = None
+                    
+                    logger.info(f"Points updated for {user_id}: +{points}")
+                    return True
+            except Exception as e:
+                logger.error(f"Update points error: {e}")
+                return False
+    
+    @staticmethod
+    def get_user_stats(user_id):
+        try:
+            with Database.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT total_points, games_played, wins, display_name
+                    FROM users WHERE user_id = ?
+                ''', (user_id,))
+                
+                row = cursor.fetchone()
+                if row:
+                    return {
+                        'total_points': row[0],
+                        'games_played': row[1],
+                        'wins': row[2],
+                        'display_name': row[3]
+                    }
+                return None
+        except Exception as e:
+            logger.error(f"Get stats error: {e}")
+            return None
+    
+    @staticmethod
+    def get_leaderboard(limit=20, force_refresh=False):
+        from time import time
+        now = time()
+        
+        if (not force_refresh and 
+            Database._leaderboard_cache and 
+            now - Database._leaderboard_cache_time < Database.CACHE_TTL):
+            return Database._leaderboard_cache[:limit]
+        
+        try:
+            with Database.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT display_name, total_points, games_played, wins
+                    FROM users
+                    WHERE games_played > 0
+                    ORDER BY total_points DESC, wins DESC
+                    LIMIT ?
+                ''', (limit,))
+                
+                results = cursor.fetchall()
+                leaders = [
+                    {
+                        'display_name': row[0],
+                        'total_points': row[1],
+                        'games_played': row[2],
+                        'wins': row[3]
+                    }
+                    for row in results
+                ]
+                
+                Database._leaderboard_cache = leaders
+                Database._leaderboard_cache_time = now
+                
+                return leaders
+        except Exception as e:
+            logger.error(f"Get leaderboard error: {e}")
+            return []
+    
+    @staticmethod
+    def cleanup_inactive_users():
+        with Database._lock:
+            try:
+                with Database.get_connection() as conn:
+                    cursor = conn.cursor()
+                    cutoff = datetime.now() - timedelta(days=Database.INACTIVITY_DAYS)
+                    
+                    cursor.execute('''
+                        DELETE FROM users
+                        WHERE last_activity < ?
+                    ''', (cutoff.strftime('%Y-%m-%d %H:%M:%S'),))
+                    
+                    deleted = cursor.rowcount
+                    if deleted > 0:
+                        logger.info(f"Cleaned up {deleted} inactive users")
+                        Database._leaderboard_cache = None
+                    
+                    return deleted
+            except Exception as e:
+                logger.error(f"Cleanup error: {e}")
+                return 0

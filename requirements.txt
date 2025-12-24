@@ -1,6 +1,4 @@
 Flask
 line-bot-sdk
-APScheduler
-python-dotenv
 gunicorn
-pytz
+python-dotenv

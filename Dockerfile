@@ -1,22 +1,28 @@
+# Base image
 FROM python:3.11-slim
 
+# Set working directory
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
-
+# Copy and install requirements
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy app source code
 COPY . .
 
-RUN mkdir -p data && chmod 755 data
+# Ensure games directory exists
+RUN mkdir -p games
 
-ENV PORT=10000
-ENV DB_PATH=/app/data/botmesh.db
-ENV PYTHONUNBUFFERED=1
+# Expose port
+EXPOSE 5000
 
-EXPOSE 10000
+# Set default environment
+ENV ENV_MODE=prod
+ENV PORT=5000
 
-CMD ["gunicorn", "-c", "gunicorn_config.py", "app:app"]
+# Entrypoint script to choose Dev/Prod mode
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+CMD ["/entrypoint.sh"]
