@@ -68,6 +68,25 @@ def handle_text_message(event):
     except Exception as e:
         logger.error(f"Message handling error: {e}", exc_info=True)
 
+@handler.default()
+def default_handler(event):
+    try:
+        if hasattr(event, 'type'):
+            if event.type == 'follow':
+                messages = message_handler.handle_follow(event)
+                if messages:
+                    line_bot_api.reply_message(
+                        ReplyMessageRequest(reply_token=event.reply_token, messages=messages)
+                    )
+            elif event.type == 'join':
+                messages = message_handler.handle_join(event)
+                if messages:
+                    line_bot_api.reply_message(
+                        ReplyMessageRequest(reply_token=event.reply_token, messages=messages)
+                    )
+    except Exception as e:
+        logger.error(f"Event handling error: {e}", exc_info=True)
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port, debug=False)
