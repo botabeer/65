@@ -1,253 +1,187 @@
-import sqlite3
-import logging
-import time
 from datetime import datetime, timedelta
-from contextlib import contextmanager
-from threading import Lock
-from config import Config
+from typing import Dict, List, Optional, Set, Any
+from dataclasses import dataclass, field
+import threading
 
-logger = logging.getLogger(__name__)
+@dataclass
+class Player:
+    user_id: str
+    display_name: str
+    score: int = 0
+    joined_at: datetime = field(default_factory=datetime.now)
+    last_activity: Optional[datetime] = None
+    is_active: bool = True
+    game_data: Dict[str, Any] = field(default_factory=dict)
+
+@dataclass
+class GameSession:
+    group_id: str
+    game_name: str
+    players: Dict[str, Player] = field(default_factory=dict)
+    game_state: Dict[str, Any] = field(default_factory=dict)
+    is_active: bool = False
+    created_at: datetime = field(default_factory=datetime.now)
+    updated_at: datetime = field(default_factory=datetime.now)
+
+@dataclass
+class UserActivity:
+    user_id: str
+    message_count: int = 0
+    last_reset: datetime = field(default_factory=datetime.now)
+    warnings: int = 0
+    ban_until: Optional[datetime] = None
 
 class Database:
-    def __init__(self, db_path=None):
-        self.db_path = db_path or Config.DB_PATH
-        self._lock = Lock()
-        self._waiting_names = {}
-        self._changing_names = {}
-        self._game_progress = {}
-        self._unregistered = set()
-        self._init_db()
+    def __init__(self):
+        self.sessions: Dict[str, GameSession] = {}
+        self.user_activities: Dict[str, UserActivity] = {}
+        self.admins: Set[str] = set()
+        self.banned_users: Dict[str, datetime] = {}
+        self.lock = threading.Lock()
     
-    @contextmanager
-    def _get_conn(self):
-        conn = sqlite3.connect(self.db_path, timeout=30, check_same_thread=False, isolation_level=None)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA synchronous=NORMAL")
-        conn.execute("PRAGMA cache_size=-64000")
-        try:
-            yield conn
-        finally:
-            conn.close()
+    def create_session(self, group_id: str, game_name: str) -> GameSession:
+        with self.lock:
+            self.sessions[group_id] = GameSession(group_id=group_id, game_name=game_name)
+            return self.sessions[group_id]
     
-    def _init_db(self):
-        with self._get_conn() as conn:
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    user_id TEXT PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    points INTEGER DEFAULT 0,
-                    games INTEGER DEFAULT 0,
-                    wins INTEGER DEFAULT 0,
-                    theme TEXT DEFAULT 'light',
-                    last_active TIMESTAMP,
-                    created_at TIMESTAMP,
-                    last_reward TIMESTAMP,
-                    streak INTEGER DEFAULT 0,
-                    best_streak INTEGER DEFAULT 0,
-                    games_played TEXT DEFAULT ''
-                )
-            """)
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS achievements (
-                    user_id TEXT,
-                    achievement_id TEXT,
-                    unlocked_at TIMESTAMP,
-                    PRIMARY KEY (user_id, achievement_id)
-                )
-            """)
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_points ON users(points DESC, wins DESC)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_active ON users(last_active DESC)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_streak ON users(streak DESC)")
+    def get_session(self, group_id: str) -> Optional[GameSession]:
+        return self.sessions.get(group_id)
     
-    def is_registered(self, user_id):
-        with self._lock:
-            if user_id in self._unregistered:
+    def delete_session(self, group_id: str):
+        with self.lock:
+            if group_id in self.sessions:
+                del self.sessions[group_id]
+    
+    def add_player(self, group_id: str, user_id: str, display_name: str) -> bool:
+        with self.lock:
+            session = self.get_session(group_id)
+            if not session:
                 return False
-        with self._get_conn() as conn:
-            row = conn.execute("SELECT 1 FROM users WHERE user_id=?", (user_id,)).fetchone()
-            return row is not None
-    
-    def register_user(self, user_id, name):
-        now = datetime.now().isoformat()
-        with self._get_conn() as conn:
-            conn.execute("""
-                INSERT INTO users (user_id, name, last_active, created_at, last_reward)
-                VALUES (?, ?, ?, ?, ?)
-            """, (user_id, name, now, now, now))
-        with self._lock:
-            self._unregistered.discard(user_id)
-    
-    def get_user(self, user_id):
-        with self._get_conn() as conn:
-            row = conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
-            return dict(row) if row else None
-    
-    def update_activity(self, user_id):
-        now = datetime.now().isoformat()
-        with self._get_conn() as conn:
-            conn.execute("UPDATE users SET last_active=? WHERE user_id=?", (now, user_id))
-    
-    def update_name(self, user_id, name):
-        with self._get_conn() as conn:
-            conn.execute("UPDATE users SET name=? WHERE user_id=?", (name, user_id))
-    
-    def change_theme(self, user_id, theme):
-        with self._get_conn() as conn:
-            conn.execute("UPDATE users SET theme=? WHERE user_id=?", (theme, user_id))
-    
-    def add_points(self, user_id, points):
-        with self._get_conn() as conn:
-            conn.execute("UPDATE users SET points=points+? WHERE user_id=?", (points, user_id))
-    
-    def increment_games(self, user_id):
-        with self._get_conn() as conn:
-            conn.execute("UPDATE users SET games=games+1 WHERE user_id=?", (user_id,))
-    
-    def increment_wins(self, user_id):
-        with self._get_conn() as conn:
-            conn.execute("UPDATE users SET wins=wins+1, streak=streak+1 WHERE user_id=?", (user_id,))
-            user = self.get_user(user_id)
-            if user and user['streak'] > user['best_streak']:
-                conn.execute("UPDATE users SET best_streak=streak WHERE user_id=?", (user_id,))
-    
-    def reset_streak(self, user_id):
-        with self._get_conn() as conn:
-            conn.execute("UPDATE users SET streak=0 WHERE user_id=?", (user_id,))
-    
-    def add_game_played(self, user_id, game_name):
-        user = self.get_user(user_id)
-        if user:
-            played = user.get('games_played', '').split(',')
-            if game_name not in played:
-                played.append(game_name)
-                played_str = ','.join(filter(None, played))
-                with self._get_conn() as conn:
-                    conn.execute("UPDATE users SET games_played=? WHERE user_id=?", (played_str, user_id))
-    
-    def get_leaderboard(self, limit=10):
-        with self._get_conn() as conn:
-            rows = conn.execute("""
-                SELECT name, points, wins, games, streak, best_streak
-                FROM users ORDER BY points DESC, wins DESC LIMIT ?
-            """, (limit,)).fetchall()
-            return [dict(row) for row in rows]
-    
-    def unregister(self, user_id):
-        with self._get_conn() as conn:
-            conn.execute("DELETE FROM users WHERE user_id=?", (user_id,))
-            conn.execute("DELETE FROM achievements WHERE user_id=?", (user_id,))
-        with self._lock:
-            self._unregistered.add(user_id)
-            self._waiting_names.pop(user_id, None)
-            self._changing_names.pop(user_id, None)
-            self._game_progress.pop(user_id, None)
-    
-    def can_claim_reward(self, user_id):
-        user = self.get_user(user_id)
-        if not user or not user.get('last_reward'):
+            
+            if user_id in session.players:
+                return False
+            
+            session.players[user_id] = Player(user_id=user_id, display_name=display_name)
+            session.updated_at = datetime.now()
             return True
-        last = datetime.fromisoformat(user['last_reward'])
-        return datetime.now() - last >= timedelta(hours=Config.DAILY_REWARD_HOURS)
     
-    def claim_reward(self, user_id):
-        if self.can_claim_reward(user_id):
-            now = datetime.now().isoformat()
-            with self._get_conn() as conn:
-                conn.execute("UPDATE users SET points=points+?, last_reward=? WHERE user_id=?",
-                           (Config.DAILY_REWARD_POINTS, now, user_id))
+    def remove_player(self, group_id: str, user_id: str) -> bool:
+        with self.lock:
+            session = self.get_session(group_id)
+            if not session or user_id not in session.players:
+                return False
+            
+            del session.players[user_id]
+            session.updated_at = datetime.now()
             return True
-        return False
     
-    def unlock_achievement(self, user_id, achievement_id):
-        with self._get_conn() as conn:
-            existing = conn.execute("SELECT 1 FROM achievements WHERE user_id=? AND achievement_id=?",
-                                   (user_id, achievement_id)).fetchone()
-            if not existing:
-                now = datetime.now().isoformat()
-                conn.execute("INSERT INTO achievements VALUES (?, ?, ?)",
-                           (user_id, achievement_id, now))
-                return True
-        return False
+    def is_player_registered(self, group_id: str, user_id: str) -> bool:
+        session = self.get_session(group_id)
+        return session and user_id in session.players
     
-    def get_user_achievements(self, user_id):
-        with self._get_conn() as conn:
-            rows = conn.execute("SELECT achievement_id FROM achievements WHERE user_id=?",
-                              (user_id,)).fetchall()
-            return [row[0] for row in rows]
+    def get_player(self, group_id: str, user_id: str) -> Optional[Player]:
+        session = self.get_session(group_id)
+        if session:
+            return session.players.get(user_id)
+        return None
     
-    def check_achievements(self, user_id):
-        user = self.get_user(user_id)
-        if not user:
+    def update_player_score(self, group_id: str, user_id: str, points: int):
+        with self.lock:
+            session = self.get_session(group_id)
+            if session and user_id in session.players:
+                session.players[user_id].score += points
+                session.updated_at = datetime.now()
+    
+    def update_game_state(self, group_id: str, key: str, value: Any):
+        with self.lock:
+            session = self.get_session(group_id)
+            if session:
+                session.game_state[key] = value
+                session.updated_at = datetime.now()
+    
+    def get_game_state(self, group_id: str, key: str, default: Any = None) -> Any:
+        session = self.get_session(group_id)
+        if session:
+            return session.game_state.get(key, default)
+        return default
+    
+    def get_leaderboard(self, group_id: str) -> List[Player]:
+        session = self.get_session(group_id)
+        if not session:
             return []
+        return sorted(session.players.values(), key=lambda p: p.score, reverse=True)
+    
+    def record_message(self, user_id: str) -> int:
+        with self.lock:
+            now = datetime.now()
+            
+            if user_id not in self.user_activities:
+                self.user_activities[user_id] = UserActivity(user_id=user_id)
+            
+            activity = self.user_activities[user_id]
+            
+            if (now - activity.last_reset).total_seconds() > 60:
+                activity.message_count = 0
+                activity.last_reset = now
+            
+            activity.message_count += 1
+            return activity.message_count
+    
+    def add_warning(self, user_id: str) -> int:
+        with self.lock:
+            if user_id not in self.user_activities:
+                self.user_activities[user_id] = UserActivity(user_id=user_id)
+            
+            self.user_activities[user_id].warnings += 1
+            return self.user_activities[user_id].warnings
+    
+    def ban_user(self, user_id: str, duration: timedelta):
+        with self.lock:
+            self.banned_users[user_id] = datetime.now() + duration
+            if user_id in self.user_activities:
+                self.user_activities[user_id].ban_until = self.banned_users[user_id]
+    
+    def unban_user(self, user_id: str):
+        with self.lock:
+            if user_id in self.banned_users:
+                del self.banned_users[user_id]
+            if user_id in self.user_activities:
+                self.user_activities[user_id].ban_until = None
+                self.user_activities[user_id].warnings = 0
+    
+    def is_banned(self, user_id: str) -> bool:
+        if user_id not in self.banned_users:
+            return False
         
-        unlocked = self.get_user_achievements(user_id)
-        new_achievements = []
+        if datetime.now() > self.banned_users[user_id]:
+            self.unban_user(user_id)
+            return False
         
-        checks = [
-            ("first_game", user['games'] >= 1),
-            ("ten_games", user['games'] >= 10),
-            ("fifty_games", user['games'] >= 50),
-            ("hundred_games", user['games'] >= 100),
-            ("first_win", user['wins'] >= 1),
-            ("ten_wins", user['wins'] >= 10),
-            ("hundred_points", user['points'] >= 100),
-            ("streak_3", user['streak'] >= 3),
-            ("streak_5", user['streak'] >= 5),
-            ("all_games", len(user.get('games_played', '').split(',')) >= 12)
-        ]
-        
-        for achievement_id, condition in checks:
-            if condition and achievement_id not in unlocked:
-                if self.unlock_achievement(user_id, achievement_id):
-                    achievement = Config.ACHIEVEMENTS[achievement_id]
-                    self.add_points(user_id, achievement['points'])
-                    new_achievements.append(achievement)
-        
-        return new_achievements
+        return True
     
-    def set_waiting_name(self, user_id):
-        with self._lock:
-            self._waiting_names[user_id] = time.time()
+    def add_admin(self, user_id: str):
+        with self.lock:
+            self.admins.add(user_id)
     
-    def is_waiting_name(self, user_id):
-        with self._lock:
-            return user_id in self._waiting_names
+    def remove_admin(self, user_id: str):
+        with self.lock:
+            self.admins.discard(user_id)
     
-    def clear_waiting_name(self, user_id):
-        with self._lock:
-            self._waiting_names.pop(user_id, None)
+    def is_admin(self, user_id: str) -> bool:
+        return user_id in self.admins
     
-    def set_changing_name(self, user_id):
-        with self._lock:
-            self._changing_names[user_id] = time.time()
-    
-    def is_changing_name(self, user_id):
-        with self._lock:
-            return user_id in self._changing_names
-    
-    def clear_changing_name(self, user_id):
-        with self._lock:
-            self._changing_names.pop(user_id, None)
-    
-    def set_game_progress(self, user_id, game_obj):
-        with self._lock:
-            self._game_progress[user_id] = game_obj
-    
-    def get_game_progress(self, user_id):
-        with self._lock:
-            return self._game_progress.get(user_id)
-    
-    def clear_game_progress(self, user_id):
-        with self._lock:
-            self._game_progress.pop(user_id, None)
-    
-    def has_active_game(self, user_id):
-        with self._lock:
-            return user_id in self._game_progress
-    
-    def cleanup_memory(self, timeout=1800):
-        now = time.time()
-        with self._lock:
-            self._waiting_names = {k: v for k, v in self._waiting_names.items() if now - v < timeout}
-            self._changing_names = {k: v for k, v in self._changing_names.items() if now - v < timeout}
+    def cleanup_old_sessions(self, hours: int = 24):
+        with self.lock:
+            now = datetime.now()
+            to_delete = []
+            
+            for group_id, session in self.sessions.items():
+                if (now - session.updated_at).total_seconds() > hours * 3600:
+                    to_delete.append(group_id)
+            
+            for group_id in to_delete:
+                del self.sessions[group_id]
+            
+            return len(to_delete)
+
+db = Database()
