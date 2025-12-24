@@ -1,6 +1,6 @@
 import random
 from games.base import BaseGame
-from config import Config
+from config import normalize_arabic
 
 class IQGame(BaseGame):
     def __init__(self, db, theme="light"):
@@ -47,5 +47,5 @@ class IQGame(BaseGame):
         return self.build_question_flex(q_data["q"], q_data["h"])
     
     def check_answer(self, answer: str) -> bool:
-        normalized = Config.normalize(answer)
-        return any(normalized == Config.normalize(ans) for ans in self.current_answer)
+        normalized = normalize_arabic(answer)
+        return any(normalized == normalize_arabic(ans) for ans in self.current_answer)
