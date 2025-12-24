@@ -1,13 +1,15 @@
 """
-Bot 65 - بوت ألعاب LINE
-تطبيق رئيسي شامل
+Bot 65 - LINE Games Bot
+Main Application
 """
 from flask import Flask, request, abort, jsonify
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import Configuration, ApiClient, MessagingApi, ReplyMessageRequest, TextMessage, FlexMessage, FlexContainer
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
-import os, sys, logging
+import os
+import sys
+import logging
 from datetime import datetime
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -26,7 +28,6 @@ configuration = Configuration(access_token=LINE_TOKEN)
 handler = WebhookHandler(LINE_SECRET)
 
 from database import DB
-from games import GameEngine
 from ui import UI
 from text_commands import TextCommands
 
@@ -63,7 +64,7 @@ def handle_message(event):
                 msgs = response if isinstance(response, list) else [response]
                 line_api.reply_message(ReplyMessageRequest(reply_token=event.reply_token, messages=msgs))
         except Exception as e:
-            logger.error(f"Error: {e}")
+            logger.error(f"Error: {e}", exc_info=True)
 
 def process(text, user_id, group_id):
     t = text.lower().strip()
@@ -78,7 +79,7 @@ def process(text, user_id, group_id):
         waiting_for_name.discard(user_id)
         return None
     
-    if t in ['سؤال','سوال']:
+    if t in ['سؤال', 'سوال']:
         return TextMessage(text=TextCommands.get_random('questions'))
     if t == 'تحدي':
         return TextMessage(text=TextCommands.get_random('challenges'))
@@ -86,72 +87,88 @@ def process(text, user_id, group_id):
         return TextMessage(text=TextCommands.get_random('confessions'))
     if t == 'منشن':
         return TextMessage(text=TextCommands.get_random('mentions'))
-    if t in ['حكمة','حكمه']:
+    if t in ['حكمة', 'حكمه']:
         return TextMessage(text=TextCommands.get_random('quotes'))
     if t == 'موقف':
         return TextMessage(text=TextCommands.get_random('situations'))
     
-    if t in ['بداية','start','بدايه']:
+    if t in ['بداية', 'start', 'بدايه']:
         if user:
             DB.update_activity(user_id)
         return FlexMessage(alt_text="Bot 65", contents=FlexContainer.from_dict(
             UI.welcome(user['name'] if user else 'مستخدم', bool(user), theme)))
     
-    if t in ['مساعدة','help','مساعده']:
+    if t in ['مساعدة', 'help', 'مساعده']:
         return FlexMessage(alt_text="المساعدة", contents=FlexContainer.from_dict(UI.help_card(theme)))
     
-    if t in ['العاب','ألعاب']:
+    if t in ['العاب', 'ألعاب']:
         return FlexMessage(alt_text="الألعاب", contents=FlexContainer.from_dict(UI.games_menu(theme)))
     
-    if t in ['تسجيل','تغيير']:
+    if t in ['تسجيل', 'تغيير']:
         waiting_for_name.add(user_id)
         return TextMessage(text="اكتب اسمك (2-50 حرف)")
     
-    if t in ['نقاطي','احصائياتي']:
+    if t in ['نقاطي', 'احصائياتي']:
         if not user:
-            return None
+            return TextMessage(text="يجب التسجيل اولا")
         DB.update_activity(user_id)
         return FlexMessage(alt_text="احصائياتك", contents=FlexContainer.from_dict(UI.stats(user, theme)))
     
-    if t in ['الصدارة','المتصدرين','الصداره']:
+    if t in ['الصدارة', 'المتصدرين', 'الصداره']:
         leaders = DB.get_leaderboard()
         return FlexMessage(alt_text="الصدارة", contents=FlexContainer.from_dict(UI.leaderboard(leaders, theme)))
     
     if t == 'ثيم':
         if not user:
-            return None
+            return TextMessage(text="يجب التسجيل اولا")
         new_theme = 'dark' if theme == 'light' else 'light'
         DB.set_theme(user_id, new_theme)
         return TextMessage(text=f"تم للثيم {'الداكن' if new_theme == 'dark' else 'الفاتح'}")
     
-    if t in ['ايقاف','stop','إيقاف','انسحب']:
+    if t in ['ايقاف', 'stop', 'إيقاف', 'انسحب']:
         if group_id in game_sessions:
-            game = game_sessions[group_id]
-            if not hasattr(game, 'withdrawn'):
-                game.withdrawn = set()
-            game.withdrawn.add(user_id)
+            del game_sessions[group_id]
+            return TextMessage(text="تم ايقاف اللعبة")
         return None
     
     if not user:
         return None
     
-    if t in GameEngine.GAMES:
+    game_commands = {
+        'اغنيه': 'اغنيه', 'ضد': 'ضد', 'سلسله': 'سلسله',
+        'اسرع': 'اسرع', 'تكوين': 'تكوين', 'فئه': 'فئه',
+        'لعبه': 'لعبه', 'توافق': 'توافق', 'ذكاء': 'ذكاء',
+        'خمن': 'خمن', 'ترتيب': 'ترتيب', 'لون': 'لون',
+        'روليت': 'روليت', 'سين': 'سين', 'حروف': 'حروف',
+        'مافيا': 'مافيا'
+    }
+    
+    if t in game_commands:
+        from games import GameEngine
         game = GameEngine.create(t, theme)
-        game.withdrawn = set()
-        game_sessions[group_id] = game
-        return game.start()
+        if game:
+            game_sessions[group_id] = game
+            return game.start_game()
     
     if group_id in game_sessions:
         game = game_sessions[group_id]
-        if hasattr(game, 'withdrawn') and user_id in game.withdrawn:
-            return None
+        result = game.check_answer(text, user_id, user['name'])
         
-        result = game.play(text, user_id, user['name'])
-        if result.get('game_over'):
-            del game_sessions[group_id]
-            if result.get('points', 0) > 0:
-                DB.add_points(user_id, result['points'], result.get('won', True), game.name)
-        return result.get('response')
+        if result:
+            if result.get('game_over'):
+                del game_sessions[group_id]
+                if result.get('points', 0) > 0:
+                    DB.add_points(user_id, result['points'], result.get('won', True), game.game_name)
+            
+            responses = []
+            if result.get('response'):
+                responses.append(result['response'])
+            if result.get('next_question') and not result.get('game_over'):
+                next_q = game.get_question()
+                if next_q:
+                    responses.append(next_q)
+            
+            return responses if len(responses) > 1 else (responses[0] if responses else None)
     
     return None
 
