@@ -38,3 +38,5 @@ class TextManager:
         if content_list:
             return random.choice(content_list)
         return None
+
+text_manager = TextManager()
