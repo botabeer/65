@@ -1,57 +1,43 @@
 """
 Bot 65 - بوت ألعاب LINE
-تطبيق رئيسي شامل ومختصر
+تطبيق رئيسي شامل
 """
 from flask import Flask, request, abort
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
-from linebot.v3.messaging import (
-    Configuration, ApiClient, MessagingApi,
-    ReplyMessageRequest, TextMessage, FlexMessage, FlexContainer
-)
+from linebot.v3.messaging import Configuration, ApiClient, MessagingApi, ReplyMessageRequest, TextMessage, FlexMessage, FlexContainer
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
 from apscheduler.schedulers.background import BackgroundScheduler
-import os
-import sys
-import logging
+import os, sys, logging
 from datetime import datetime
 
-# الإعدادات
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[logging.FileHandler('bot.log'), logging.StreamHandler(sys.stdout)]
-)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
+                   handlers=[logging.FileHandler('bot.log'), logging.StreamHandler(sys.stdout)])
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# بيانات LINE
 LINE_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN')
 LINE_SECRET = os.getenv('LINE_CHANNEL_SECRET')
-
 if not LINE_TOKEN or not LINE_SECRET:
     raise ValueError("Missing LINE credentials")
 
 configuration = Configuration(access_token=LINE_TOKEN)
 handler = WebhookHandler(LINE_SECRET)
 
-# استيراد المكونات
 from database import DB
 from games import GameEngine
 from ui import UI
 from text_commands import TextCommands
 
-# تهيئة
 DB.init()
+TextCommands.load_all()
 scheduler = BackgroundScheduler()
 scheduler.add_job(func=DB.cleanup_inactive, trigger="interval", hours=24)
 scheduler.start()
 
-# حالات اللعب
 game_sessions = {}
 waiting_for_name = set()
-
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -65,7 +51,6 @@ def callback():
         logger.error(f"Webhook error: {e}")
     return 'OK', 200
 
-
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
     with ApiClient(configuration) as api_client:
@@ -78,135 +63,108 @@ def handle_message(event):
             response = process(text, user_id, group_id)
             if response:
                 msgs = response if isinstance(response, list) else [response]
-                line_api.reply_message(
-                    ReplyMessageRequest(reply_token=event.reply_token, messages=msgs)
-                )
+                line_api.reply_message(ReplyMessageRequest(reply_token=event.reply_token, messages=msgs))
         except Exception as e:
             logger.error(f"Error: {e}")
 
-
 def process(text, user_id, group_id):
-    """معالجة الرسائل"""
     t = text.lower().strip()
     user = DB.get_user(user_id)
     theme = user['theme'] if user else 'light'
     
-    # التسجيل
     if user_id in waiting_for_name:
         if 2 <= len(text) <= 50:
             DB.register_user(user_id, text.strip())
             waiting_for_name.discard(user_id)
             return TextMessage(text=f"تم التسجيل: {text}")
         waiting_for_name.discard(user_id)
-        return None  # تجاهل الأخطاء
+        return None
     
-    # الأوامر النصية (بدون تسجيل)
-    if t in ['سؤال', 'سوال']:
+    if t in ['سؤال','سوال']:
         return TextMessage(text=TextCommands.get_random('questions'))
-    if t in ['تحدي']:
+    if t == 'تحدي':
         return TextMessage(text=TextCommands.get_random('challenges'))
-    if t in ['اعتراف']:
+    if t == 'اعتراف':
         return TextMessage(text=TextCommands.get_random('confessions'))
-    if t in ['منشن']:
+    if t == 'منشن':
         return TextMessage(text=TextCommands.get_random('mentions'))
-    if t in ['حكمة', 'حكمه']:
+    if t in ['حكمة','حكمه']:
         return TextMessage(text=TextCommands.get_random('quotes'))
-    if t in ['موقف']:
+    if t == 'موقف':
         return TextMessage(text=TextCommands.get_random('situations'))
     
-    # الأوامر الأساسية
-    if t in ['بداية', 'start', 'بدايه']:
+    if t in ['بداية','start','بدايه']:
         if user:
             DB.update_activity(user_id)
         return FlexMessage(alt_text="Bot 65", contents=FlexContainer.from_dict(
-            UI.welcome(user['name'] if user else 'مستخدم', bool(user), theme)
-        ))
+            UI.welcome(user['name'] if user else 'مستخدم', bool(user), theme)))
     
-    if t in ['مساعدة', 'help', 'مساعده']:
-        return FlexMessage(alt_text="المساعدة", contents=FlexContainer.from_dict(
-            UI.help_card(theme)
-        ))
+    if t in ['مساعدة','help','مساعده']:
+        return FlexMessage(alt_text="المساعدة", contents=FlexContainer.from_dict(UI.help_card(theme)))
     
-    if t in ['العاب', 'ألعاب']:
-        return FlexMessage(alt_text="الألعاب", contents=FlexContainer.from_dict(
-            UI.games_menu(theme)
-        ))
+    if t in ['العاب','ألعاب']:
+        return FlexMessage(alt_text="الألعاب", contents=FlexContainer.from_dict(UI.games_menu(theme)))
     
-    if t in ['تسجيل', 'تغيير']:
+    if t in ['تسجيل','تغيير']:
         waiting_for_name.add(user_id)
         return TextMessage(text="اكتب اسمك (2-50 حرف)")
     
-    if t in ['نقاطي', 'احصائياتي']:
+    if t in ['نقاطي','احصائياتي']:
         if not user:
-            return None  # تجاهل
+            return None
         DB.update_activity(user_id)
-        return FlexMessage(alt_text="احصائياتك", contents=FlexContainer.from_dict(
-            UI.stats(user, theme)
-        ))
+        return FlexMessage(alt_text="احصائياتك", contents=FlexContainer.from_dict(UI.stats(user, theme)))
     
-    if t in ['الصدارة', 'المتصدرين', 'الصداره']:
+    if t in ['الصدارة','المتصدرين','الصداره']:
         leaders = DB.get_leaderboard()
-        return FlexMessage(alt_text="الصدارة", contents=FlexContainer.from_dict(
-            UI.leaderboard(leaders, theme)
-        ))
+        return FlexMessage(alt_text="الصدارة", contents=FlexContainer.from_dict(UI.leaderboard(leaders, theme)))
     
     if t == 'ثيم':
         if not user:
-            return None  # تجاهل
+            return None
         new_theme = 'dark' if theme == 'light' else 'light'
         DB.set_theme(user_id, new_theme)
         return TextMessage(text=f"تم للثيم {'الداكن' if new_theme == 'dark' else 'الفاتح'}")
     
-    if t in ['ايقاف', 'stop', 'إيقاف', 'انسحب']:
+    if t in ['ايقاف','stop','إيقاف','انسحب']:
         if group_id in game_sessions:
             game = game_sessions[group_id]
-            # إضافة المستخدم للمنسحبين
             if not hasattr(game, 'withdrawn'):
                 game.withdrawn = set()
             game.withdrawn.add(user_id)
-        return None  # تجاهل الرد
+        return None
     
-    # الألعاب (تحتاج تسجيل)
     if not user:
-        return None  # تجاهل غير المسجلين
+        return None
     
-    # بدء لعبة جديدة
     if t in GameEngine.GAMES:
         game = GameEngine.create(t, theme)
-        game.withdrawn = set()  # قائمة المنسحبين
+        game.withdrawn = set()
         game_sessions[group_id] = game
         return game.start()
     
-    # استمرار اللعبة
     if group_id in game_sessions:
         game = game_sessions[group_id]
-        
-        # تجاهل المنسحبين
         if hasattr(game, 'withdrawn') and user_id in game.withdrawn:
             return None
         
         result = game.play(text, user_id, user['name'])
-        
         if result.get('game_over'):
             del game_sessions[group_id]
             if result.get('points', 0) > 0:
                 DB.add_points(user_id, result['points'], result.get('won', True), game.name)
-        
         return result.get('response')
     
-    return None  # تجاهل الرسائل غير المفهومة
-
+    return None
 
 @app.route('/health')
 def health():
     from flask import jsonify
     return jsonify({'status': 'ok', 'time': datetime.now().isoformat()}), 200
 
-
 @app.route('/')
 def index():
     return "Bot 65 Running", 200
-
 
 if __name__ == "__main__":
     port = int(os.getenv('PORT', 5000))
