@@ -1,104 +1,99 @@
 import importlib
 import logging
+from config import Config
+from database import db
 
 logger = logging.getLogger(__name__)
 
 class GameManager:
-    def __init__(self, db):
-        self.db = db
+    def __init__(self):
         self.game_mappings = {
             "ذكاء": ("games.iq", "IQGame"),
             "خمن": ("games.guess", "GuessGame"),
             "رياضيات": ("games.math", "MathGame"),
             "ترتيب": ("games.scramble", "ScrambleGame"),
             "ضد": ("games.opposite", "OppositeGame"),
-            "اضداد": ("games.opposite", "OppositeGame"),
-            "كتابه": ("games.fast_typing", "FastTypingGame"),
             "كتابة": ("games.fast_typing", "FastTypingGame"),
-            "سلسله": ("games.chain_words", "ChainWordsGame"),
             "سلسلة": ("games.chain_words", "ChainWordsGame"),
-            "انسان": ("games.human_animal", "HumanAnimalGame"),
             "إنسان": ("games.human_animal", "HumanAnimalGame"),
-            "حيوان": ("games.human_animal", "HumanAnimalGame"),
             "كلمات": ("games.letters_words", "LettersWordsGame"),
-            "اغنيه": ("games.song", "SongGame"),
             "أغنية": ("games.song", "SongGame"),
-            "الوان": ("games.word_color", "WordColorGame"),
             "ألوان": ("games.word_color", "WordColorGame"),
             "توافق": ("games.compatibility", "CompatibilityGame"),
             "مافيا": ("games.mafia", "MafiaGame")
         }
-    
-    def start_game(self, user_id, game_cmd, theme="light"):
-        if game_cmd not in self.game_mappings:
-            return None
-        
-        module_name, class_name = self.game_mappings[game_cmd]
+
+    def normalize_game_cmd(self, cmd: str) -> str:
+        """حوّل النص إلى شكل موحد."""
+        return Config.normalize(cmd)
+
+    def start_game(self, user_id: str, game_cmd: str, theme="light", group_id: str = None):
+        """ابدأ اللعبة إذا كان المستخدم مسجّل."""
+        if group_id and not db.is_player_registered(group_id, user_id):
+            return None, "يجب أن تكون مسجلاً للمشاركة"
+
+        cmd = self.normalize_game_cmd(game_cmd)
+        if cmd not in self.game_mappings:
+            return None, "اللعبة غير موجودة"
+
+        module_name, class_name = self.game_mappings[cmd]
         try:
             module = importlib.import_module(module_name)
             game_class = getattr(module, class_name)
-            game = game_class(self.db, theme)
-            self.db.set_game_progress(user_id, game)
-            return game.start()
+            game = game_class(db, theme, user_id=user_id, group_id=group_id)
+            db.set_game_progress(user_id, game)
+            question = game.start()
+            return game, question
         except Exception as e:
             logger.error(f"Error starting game {game_cmd}: {e}")
-            return None
-    
-    def process_answer(self, user_id, answer):
-        game = self.db.get_game_progress(user_id)
+            return None, "حدث خطأ أثناء بدء اللعبة"
+
+    def process_answer(self, user_id: str, answer: str):
+        game = db.get_game_progress(user_id)
         if not game:
-            return None, None
-        
+            return None, "لا توجد لعبة نشطة"
+
         result = game.check(answer)
-        
         if result is None:
-            score = game.score
-            total = game.total_q
-            game_name = game.game_name
-            self.db.add_points(user_id, score)
-            self.db.increment_games(user_id)
-            
+            # اللعبة انتهت
+            score, total, name = game.score, game.total_q, game.game_name
+            db.add_points(user_id, score)
+            db.increment_games(user_id)
             if score == total:
-                self.db.increment_wins(user_id)
+                db.increment_wins(user_id)
             else:
-                self.db.reset_streak(user_id)
-            
-            self.db.add_game_played(user_id, game_name)
-            achievements = self.db.check_achievements(user_id)
-            self.db.clear_game_progress(user_id)
-            
+                db.reset_streak(user_id)
+            db.add_game_played(user_id, name)
+            achievements = db.check_achievements(user_id)
+            db.clear_game_progress(user_id)
             return {
                 "finished": True,
                 "score": score,
                 "total": total,
-                "game_name": game_name,
+                "game_name": name,
                 "achievements": achievements
             }, None
-        
+
         question, correct = result
         return question, correct
-    
-    def get_hint(self, user_id):
-        game = self.db.get_game_progress(user_id)
-        if game:
-            return game.get_hint()
-        return None
-    
-    def reveal_answer(self, user_id):
-        game = self.db.get_game_progress(user_id)
-        if game:
-            return game.reveal_answer()
-        return None
-    
-    def stop_game(self, user_id):
-        game = self.db.get_game_progress(user_id)
-        if game:
-            score = game.score
-            self.db.add_points(user_id, score)
-            self.db.reset_streak(user_id)
-            self.db.clear_game_progress(user_id)
-            return score
-        return 0
-    
+
+    def get_hint(self, user_id: str):
+        game = db.get_game_progress(user_id)
+        return game.get_hint() if game else None
+
+    def reveal_answer(self, user_id: str):
+        game = db.get_game_progress(user_id)
+        return game.reveal_answer() if game else None
+
+    def stop_game(self, user_id: str):
+        game = db.get_game_progress(user_id)
+        if not game:
+            return 0
+        score = game.score
+        db.add_points(user_id, score)
+        db.reset_streak(user_id)
+        db.clear_game_progress(user_id)
+        return score
+
     def count_active(self):
-        return len(self.db._game_progress)
+        return len(db._game_progress)
