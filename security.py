@@ -1,4 +1,5 @@
 from functools import wraps
+from typing import Optional
 from database import db
 from config import OWNER_USER_ID, SECURITY_SETTINGS, MESSAGES
 import logging
