@@ -1,170 +1,78 @@
-# games/seen_jeem_game.py
 from linebot.v3.messaging import TextMessage, FlexMessage, FlexContainer
 import random
-from constants import THEMES
-from games.game_helpers import normalize_text, create_game_header, create_progress_box, create_separator, create_action_buttons, create_winner_card
-from database import Database
+from .base_game import BaseGame
 
-class SeenJeemGame:
-    def __init__(self, line_bot_api, total_questions=5):
-        self.line_bot_api = line_bot_api
-        self.questions_data = [
-            {"q": "س: ما هو الشيء الذي يمشي بلا رجلين ويبكي بلا عينين", "a": "السحاب"},
-            {"q": "س: ما هو الشيء الذي له اسنان ولا يعض", "a": "المشط"},
-            {"q": "س: ما هو الشيء الذي كلما زاد نقص", "a": "العمر"},
-            {"q": "س: ما هو الشيء الذي يكتب ولا يقرا", "a": "القلم"},
-            {"q": "س: ما هو الشيء الذي له عين ولا يرى", "a": "الابرة"},
-            {"q": "س: ما هو الشيء الذي يوجد في القرن مرة وفي الدقيقة مرتين ولا يوجد في الساعة", "a": "حرف القاف"},
-            {"q": "س: ما هو الشيء الذي ترميه كلما احتجت اليه", "a": "شبكة الصيد"},
-            {"q": "س: ما هو الشيء الذي يقرصك ولا تراه", "a": "الجوع"},
-            {"q": "س: ما هو الشيء الذي لا يدخل الا اذا ضربته على راسه", "a": "المسمار"},
-            {"q": "س: ما هو الشيء الذي لونه اخضر في الارض واسود في السوق واحمر في البيت", "a": "الشاي"},
-            {"q": "س: من هو الذي مات ولم يولد", "a": "ادم"},
-            {"q": "س: ما هو اطول نهر في العالم", "a": "النيل"},
-            {"q": "س: ما هي عاصمة السعودية", "a": "الرياض"},
-            {"q": "س: كم عدد ايام السنة", "a": "365"},
-            {"q": "س: ما هو الحيوان الملقب بسفينة الصحراء", "a": "الجمل"},
-            {"q": "س: كم عدد الوان قوس قزح", "a": "7"},
-            {"q": "س: ما هو اكبر كوكب في المجموعة الشمسية", "a": "المشتري"},
-            {"q": "س: كم عدد قارات العالم", "a": "7"},
-            {"q": "س: ما هي اصغر دولة في العالم", "a": "الفاتيكان"},
-            {"q": "س: ما هو الحيوان الذي ينام واحدى عينيه مفتوحة", "a": "الدلفين"},
-            {"q": "س: كم عدد اسنان الانسان البالغ", "a": "32"},
-            {"q": "س: ما هو اسرع حيوان بري", "a": "الفهد"},
-            {"q": "س: كم عدد عظام جسم الانسان", "a": "206"},
-            {"q": "س: ما هي عاصمة فرنسا", "a": "باريس"},
-            {"q": "س: ما هو اكبر محيط في العالم", "a": "الهادي"},
-            {"q": "س: كم عدد ايام الاسبوع", "a": "7"},
-            {"q": "س: ما هو الحيوان الذي لا يشرب الماء", "a": "الكنغر البري"},
-            {"q": "س: كم عدد اشهر السنة", "a": "12"},
-            {"q": "س: ما هي عاصمة مصر", "a": "القاهرة"},
-            {"q": "س: ما هو اذكى حيوان", "a": "الدلفين"}
-        ]
-        self.total_questions = total_questions
-        self.questions = []
-        self.current_question = 0
-        self.player_scores = {}
-        self.answered_users = set()
-        self.registered = set()
-
-    def register_player(self, uid, name):
-        self.registered.add(uid)
-        return True
-
-    def start_game(self):
-        self.questions = random.sample(self.questions_data, min(self.total_questions, len(self.questions_data)))
-        self.current_question = 0
-        self.player_scores = {}
-        self.answered_users = set()
-        return self._show_question()
-
-    def _show_question(self, theme="light"):
-        colors = THEMES.get(theme, THEMES["light"])
-        q_data = self.questions[self.current_question]
+class SeenJeemGame(BaseGame):
+    def __init__(self, line_bot_api):
+        super().__init__(line_bot_api, questions_count=5)
+        self.game_name = "سين جيم"
         
-        contents = [
-            create_game_header("سين جيم", theme=theme),
-            create_progress_box(self.current_question + 1, self.total_questions, theme=theme),
-            create_separator(theme=theme),
-            {
-                "type": "text",
-                "text": q_data["q"],
-                "size": "md",
-                "color": colors["text_dark"],
-                "wrap": True,
-                "margin": "lg",
-                "weight": "bold"
-            },
-            create_separator(theme=theme),
-            *create_action_buttons(theme=theme)
+        self.questions_data = [
+            {"q": "ما هو الشيء الذي يمشي بلا رجلين ويبكي بلا عينين", "a": "السحاب"},
+            {"q": "ما هو الشيء الذي له اسنان ولا يعض", "a": "المشط"},
+            {"q": "ما هو الشيء الذي كلما زاد نقص", "a": "العمر"},
+            {"q": "ما هو الشيء الذي يكتب ولا يقرا", "a": "القلم"},
+            {"q": "ما هو الشيء الذي له عين ولا يرى", "a": "الابرة"},
+            {"q": "ما هو اطول نهر في العالم", "a": "النيل"},
+            {"q": "ما هي عاصمة السعودية", "a": "الرياض"},
+            {"q": "كم عدد ايام السنة", "a": "365"},
+            {"q": "ما هو الحيوان الملقب بسفينة الصحراء", "a": "الجمل"},
+            {"q": "كم عدد الوان قوس قزح", "a": "7"},
+            {"q": "ما هو اكبر كوكب في المجموعة الشمسية", "a": "المشتري"},
+            {"q": "كم عدد قارات العالم", "a": "7"},
+            {"q": "ما هي اصغر دولة في العالم", "a": "الفاتيكان"},
+            {"q": "كم عدد اسنان الانسان البالغ", "a": "32"},
+            {"q": "ما هو اسرع حيوان بري", "a": "الفهد"},
+            {"q": "كم عدد عظام جسم الانسان", "a": "206"},
+            {"q": "ما هي عاصمة فرنسا", "a": "باريس"},
+            {"q": "كم عدد ايام الاسبوع", "a": "7"},
+            {"q": "كم عدد اشهر السنة", "a": "12"},
+            {"q": "ما هي عاصمة مصر", "a": "القاهرة"}
         ]
+        
+        random.shuffle(self.questions_data)
 
-        return FlexMessage(
-            alt_text="سين جيم",
-            contents=FlexContainer.from_dict({
-                "type": "bubble",
-                "body": {
-                    "type": "box",
-                    "layout": "vertical",
-                    "spacing": "md",
-                    "contents": contents,
-                    "backgroundColor": colors["card_bg"],
-                    "paddingAll": "18px"
-                }
-            })
-        )
+    def get_question(self):
+        q_data = self.questions_data[self.current_question % len(self.questions_data)]
+        self.current_answer = [q_data["a"]]
+        
+        return self.build_question_message(q_data["q"])
 
-    def next_question(self):
-        self.current_question += 1
-        if self.current_question < self.total_questions:
-            self.answered_users = set()
-            return self._show_question()
-        return None
-
-    def check_answer(self, text, user_id, display_name):
-        if user_id not in self.registered:
-            return None
-        if user_id in self.answered_users:
+    def check_answer(self, user_answer, user_id, display_name):
+        if not self.game_active or user_id in self.answered_users:
             return None
 
-        q_data = self.questions[self.current_question]
-        txt = text.strip().lower()
-        theme = Database.get_user_theme(user_id)
-
-        if txt in ['لمح', 'تلميح']:
-            answer = q_data["a"]
+        normalized = self.normalize_text(user_answer)
+        
+        if self.supports_hint and normalized == "لمح":
+            answer = self.current_answer[0]
             hint = f"يبدا بحرف: {answer[0]}\nعدد الحروف: {len(answer)}"
-            return {'response': TextMessage(text=hint), 'points': 0, 'correct': False}
+            return {'response': self.build_text_message(hint), 'points': 0}
 
-        if txt in ['جاوب', 'الجواب', 'الحل']:
-            self.answered_users.add(user_id)
-            if self.current_question + 1 < self.total_questions:
-                return {
-                    'response': TextMessage(text=f"الاجابة: {q_data['a']}"),
-                    'points': 0,
-                    'correct': False,
-                    'next_question': True
-                }
-            return self._end_game(user_id)
+        if self.supports_reveal and normalized == "جاوب":
+            reveal = f"الاجابة: {self.current_answer[0]}"
+            self.current_question += 1
+            self.answered_users.clear()
+            
+            if self.current_question >= self.questions_count:
+                result = self.end_game()
+                result["message"] = f"{reveal}\n\n{result.get('message', '')}"
+                return result
+            
+            return {'response': self.build_text_message(reveal), 'points': 0, 'next_question': True}
 
-        normalized = normalize_text(text)
-        correct_answer = normalize_text(q_data["a"])
+        correct_answer = self.normalize_text(self.current_answer[0])
 
         if normalized == correct_answer or normalized in correct_answer or correct_answer in normalized:
-            self.player_scores.setdefault(user_id, {'name': display_name, 'score': 0})
-            self.player_scores[user_id]['score'] += 1
-            self.answered_users.add(user_id)
+            points = self.add_score(user_id, display_name, 1)
+            self.current_question += 1
+            self.answered_users.clear()
 
-            if self.current_question + 1 < self.total_questions:
-                return {
-                    'response': TextMessage(text=f"اجابة صحيحة {display_name}\n+1 نقطة"),
-                    'points': 1,
-                    'correct': True,
-                    'next_question': True
-                }
-            return self._end_game(user_id)
+            if self.current_question >= self.questions_count:
+                result = self.end_game()
+                result["points"] = points
+                return result
+
+            return {'response': self.build_text_message(f"اجابة صحيحة {display_name}\n+{points}"), 'points': points, 'next_question': True}
 
         return None
-
-    def _end_game(self, user_id):
-        theme = Database.get_user_theme(user_id)
-        if not self.player_scores:
-            return {
-                'response': TextMessage(text="انتهت اللعبة بدون فائز"),
-                'points': 0,
-                'correct': False,
-                'game_over': True
-            }
-
-        sorted_players = sorted(self.player_scores.items(), key=lambda x: x[1]['score'], reverse=True)
-        winner = sorted_players[0][1]
-
-        return {
-            'response': FlexMessage(
-                alt_text="نتائج اللعبة",
-                contents=FlexContainer.from_dict(create_winner_card(winner, sorted_players, "سين جيم", theme=theme))
-            ),
-            'points': winner['score'],
-            'correct': True,
-            'game_over': True
-        }
