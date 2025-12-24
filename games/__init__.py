@@ -15,29 +15,10 @@ from .seen_jeem_game import SeenJeemGame
 from .letter_game import LetterGame
 from .mafia_game import MafiaGame
 
-GAMES = {
-    'اغنيه': SongGame,
-    'ضد': OppositeGame,
-    'سلسله': ChainGame,
-    'اسرع': FastGame,
-    'تكوين': LettersGame,
-    'فئه': CategoryGame,
-    'لعبه': HumanAnimalGame,
-    'توافق': CompatibilityGame,
-    'ذكاء': IqGame,
-    'خمن': GuessGame,
-    'ترتيب': ScrambleGame,
-    'لون': WordColorGame,
-    'روليت': RouletteGame,
-    'سين': SeenJeemGame,
-    'حروف': LetterGame,
-    'مافيا': MafiaGame
-}
-
 __all__ = [
     'SongGame', 'OppositeGame', 'ChainGame', 'FastGame',
     'LettersGame', 'CategoryGame', 'HumanAnimalGame',
     'CompatibilityGame', 'IqGame', 'GuessGame', 'ScrambleGame',
     'WordColorGame', 'RouletteGame', 'SeenJeemGame', 'LetterGame',
-    'MafiaGame', 'GAMES'
+    'MafiaGame'
 ]
