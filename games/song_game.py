@@ -1,10 +1,9 @@
 from games.base_game import BaseGame
 import random
-from typing import Dict, Any, Optional
 
 class SongGame(BaseGame):
     def __init__(self, line_bot_api, difficulty=3, theme='light'):
-        super().__init__(line_bot_api, game_type="competitive", difficulty=difficulty, theme=theme)
+        super().__init__(line_bot_api, difficulty=difficulty, theme=theme)
         self.game_name = "اغنيه"
         
         self.songs = [
@@ -94,6 +93,7 @@ class SongGame(BaseGame):
             {"lyrics":"استكثرك وقتي علي","artist":"عبدالمجيد عبدالله"},
             {"lyrics":"ياما حاولت الفراق وما قويت","artist":"عبدالمجيد عبدالله"}
         ]
+
         
         random.shuffle(self.songs)
         self.used_songs = []
@@ -114,7 +114,7 @@ class SongGame(BaseGame):
             "من المغني؟"
         )
     
-    def check_answer(self, user_answer: str, user_id: str, display_name: str) -> Optional[Dict[str, Any]]:
+    def check_answer(self, user_answer, user_id, display_name):
         if not self.game_active or user_id in self.answered_users:
             return None
         
