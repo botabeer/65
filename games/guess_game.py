@@ -45,6 +45,7 @@ class GuessGame(BaseGame):
         
         self.items = self.items_by_difficulty.get(difficulty, self.items_by_difficulty[3])
         self.questions_list = []
+        self.used_questions = []
         self.hints_used = 0
         
         for category, letters in self.items.items():
@@ -59,7 +60,16 @@ class GuessGame(BaseGame):
     
     def get_question(self):
         self.round_start_time = time.time()
-        q = self.questions_list[self.current_question % len(self.questions_list)]
+        
+        available = [q for q in self.questions_list if q not in self.used_questions]
+        if not available:
+            self.used_questions = []
+            available = self.questions_list.copy()
+            random.shuffle(available)
+        
+        q = random.choice(available)
+        self.used_questions.append(q)
+        
         self.current_answer = q["answers"]
         
         return self.build_question_message(
@@ -76,7 +86,7 @@ class GuessGame(BaseGame):
         
         normalized = self.normalize_text(user_answer)
         
-        if normalized in ["انسحب", "انسحاب"]:
+        if normalized in ["ايقاف", "ايقاف"]:
             return self.handle_withdrawal(user_id, display_name)
         
         if user_id in self.answered_users:
@@ -85,9 +95,9 @@ class GuessGame(BaseGame):
         if self.supports_hint and normalized == "لمح":
             self.hints_used += 1
             sample = self.current_answer[0] if self.current_answer else "كلمة"
-            hint_text = f"يبدا بـ: {sample[0]}\nعدد الحروف: {len(sample)}"
+            hint_text = f"يبدا ب: {sample[0]}\nعدد الحروف: {len(sample)}"
             if self.hint_penalty > 0:
-                hint_text += f"\n(سيتم خصم {self.hint_penalty} نقطة)"
+                hint_text += f"\nسيتم خصم {self.hint_penalty} نقطة"
             return {
                 "response": self.build_text_message(hint_text),
                 "points": 0
@@ -95,7 +105,6 @@ class GuessGame(BaseGame):
         
         if self.supports_reveal and normalized == "جاوب":
             answers = " او ".join(self.current_answer)
-            self.previous_question = f"الفئة: {self.questions_list[self.current_question]['category']}"
             self.previous_answer = answers
             self.current_question += 1
             self.answered_users.clear()
@@ -118,7 +127,6 @@ class GuessGame(BaseGame):
                 
                 earned = self.add_score(user_id, display_name, points)
                 
-                self.previous_question = f"الفئة: {self.questions_list[self.current_question]['category']}"
                 self.previous_answer = user_answer.strip()
                 self.current_question += 1
                 self.answered_users.clear()
