@@ -1,10 +1,10 @@
-from linebot.v3.messaging import TextMessage, FlexMessage, FlexContainer
+from linebot.v3.messaging import TextMessage
 import random
 from .base_game import BaseGame
 
 class LetterGame(BaseGame):
-    def __init__(self, line_bot_api):
-        super().__init__(line_bot_api, questions_count=5)
+    def __init__(self, line_bot_api, difficulty=3, theme='light'):
+        super().__init__(line_bot_api, game_type="competitive", difficulty=difficulty, theme=theme)
         self.game_name = "حروف"
         
         self.all_letters = {
@@ -53,6 +53,7 @@ class LetterGame(BaseGame):
     def get_question(self):
         question = self.questions[self.current_question]
         letter = question['letter']
+        self.previous_question = f"الحرف: {letter}"
         
         return self.build_question_message(
             f"الحرف: {letter}\n\nاكتب اي كلمة تبدا بهذا الحرف"
@@ -67,26 +68,32 @@ class LetterGame(BaseGame):
         
         normalized = self.normalize_text(user_answer)
         
+        if normalized in ["انسحب", "انسحاب"]:
+            return self.handle_withdrawal(user_id, display_name)
+        
         if self.supports_hint and normalized == "لمح":
             sample = question['answers'][0] if question['answers'] else "كلمة"
             return {'response': self.build_text_message(f"تلميح: {sample}"), 'points': 0}
 
         if self.supports_reveal and normalized == "جاوب":
-            self.answered_users.add(user_id)
             examples = ' - '.join(question['answers'][:3])
+            self.previous_answer = examples
             self.current_question += 1
             self.answered_users.clear()
             
             if self.current_question >= self.questions_count:
-                result = self.end_game()
-                result["message"] = f"بعض الاجابات:\n{examples}\n\n{result.get('message', '')}"
-                return result
+                return self.end_game()
             
-            return {'response': self.build_text_message(f"بعض الاجابات:\n{examples}"), 'points': 0, 'next_question': True}
+            return {
+                'response': self.get_question(),
+                'points': 0,
+                'next_question': True
+            }
 
         if normalized.startswith(self.normalize_text(letter)):
             self.answered_users.add(user_id)
             points = self.add_score(user_id, display_name, 1)
+            self.previous_answer = user_answer.strip()
             
             self.current_question += 1
             self.answered_users.clear()
@@ -96,6 +103,10 @@ class LetterGame(BaseGame):
                 result["points"] = points
                 return result
             
-            return {'response': self.build_text_message(f"اجابة صحيحة {display_name}\n+{points}"), 'points': points, 'next_question': True}
+            return {
+                'response': self.get_question(),
+                'points': points,
+                'next_question': True
+            }
 
         return None
