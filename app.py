@@ -1,6 +1,3 @@
-"""
-Bot 65 - LINE Games Bot (Enhanced Version)
-"""
 from flask import Flask, request, abort, jsonify
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
@@ -172,7 +169,7 @@ def process(text, user_id, group_id, line_api):
         'روليت': ('RouletteGame', 'competitive'),
         'سين': ('SeenJeemGame', 'competitive'),
         'حروف': ('LetterGame', 'competitive'),
-        'مافيا': ('MafiaGame', 'competitive')
+        'مافيا': ('MafiaGame', 'entertainment')
     }
     
     if t in game_map:
@@ -200,12 +197,7 @@ def process(text, user_id, group_id, line_api):
             
             if game_class:
                 difficulty = game_difficulties.get(group_id, 3)
-                
-                if game_type == 'entertainment':
-                    game = game_class(line_api, theme=theme)
-                else:
-                    game = game_class(line_api, difficulty=difficulty, theme=theme)
-                
+                game = game_class(line_api, difficulty=difficulty, theme=theme)
                 game_sessions[group_id] = game
                 return game.start_game()
         except Exception as e:
