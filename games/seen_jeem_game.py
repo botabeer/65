@@ -4,7 +4,9 @@ from games.base_game import BaseGame
 class SeenJeemGame(BaseGame):
     def __init__(self, line_bot_api, difficulty=3, theme='light'):
         super().__init__(line_bot_api, difficulty=difficulty, theme=theme)
-        self.game_name = "لعبة سين جيم"
+        self.game_name = "سين"
+        self.supports_hint = True
+        self.supports_reveal = True
         
         self.questions_data = [
             {"q": "ما هو الشيء الذي يمشي بلا رجلين ويبكي بلا عينين", "a": ["السحاب", "الغيم"]},
@@ -36,7 +38,17 @@ class SeenJeemGame(BaseGame):
             {"q": "ما هو اكبر محيط في العالم", "a": ["الهادي", "الهادئ"]},
             {"q": "من مؤلف رواية البؤساء", "a": ["فيكتور هيجو", "فكتور هوجو"]},
             {"q": "كم عدد اركان الاسلام", "a": ["5", "خمسة", "خمس"]},
-            {"q": "ما اسم اصغر دولة عربية", "a": ["البحرين"]}
+            {"q": "ما اسم اصغر دولة عربية", "a": ["البحرين"]},
+            {"q": "ما هي عملة اليابان", "a": ["ين"]},
+            {"q": "كم عدد لاعبي كرة القدم", "a": ["11", "احد عشر"]},
+            {"q": "ما هي اكبر دولة في العالم", "a": ["روسيا"]},
+            {"q": "من مخترع المصباح الكهربائي", "a": ["اديسون", "توماس اديسون"]},
+            {"q": "ما هي عاصمة تركيا", "a": ["انقرة"]},
+            {"q": "كم عدد حروف اللغة العربية", "a": ["28", "ثمانية وعشرون"]},
+            {"q": "ما هي اصغر قارة في العالم", "a": ["استراليا"]},
+            {"q": "من اول من صعد الى القمر", "a": ["نيل ارمسترونج", "ارمسترونج"]},
+            {"q": "كم عدد اجنحة النحلة", "a": ["4", "اربعة"]},
+            {"q": "ما هو لون دم الاخطبوط", "a": ["ازرق"]}
         ]
         
         random.shuffle(self.questions_data)
@@ -51,6 +63,7 @@ class SeenJeemGame(BaseGame):
         q_data = random.choice(available)
         self.used_questions.append(q_data)
         self.current_answer = q_data["a"]
+        self.previous_question = q_data["q"]
         
         return self.build_question_message(q_data["q"])
 
@@ -65,7 +78,7 @@ class SeenJeemGame(BaseGame):
         
         if self.supports_hint and normalized == "لمح":
             answer = self.current_answer[0]
-            hint = f"يبدا بحرف: {answer[0]}\nعدد الحروف: {len(answer)}"
+            hint = f"يبدأ بحرف: {answer[0]}\nعدد الحروف: {len(answer)}"
             return {'response': self.build_text_message(hint), 'points': 0}
 
         if self.supports_reveal and normalized == "جاوب":
