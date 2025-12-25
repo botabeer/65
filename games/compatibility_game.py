@@ -57,11 +57,11 @@ class CompatibilityGame(BaseGame):
         if percentage >= 75:
             return c["success"]
         elif percentage >= 60:
-            return c["info"]
+            return c["primary"]
         elif percentage >= 45:
-            return c["warning"]
+            return c["text2"]
         else:
-            return c["error"]
+            return c["text3"]
     
     def start_game(self):
         self.game_active = True
@@ -143,7 +143,7 @@ class CompatibilityGame(BaseGame):
                         "action": {"type": "message", "label": "ايقاف", "text": "ايقاف"},
                         "style": "secondary",
                         "height": "sm",
-                        "color": c["error"]
+                        "color": c["text2"]
                     }
                 ],
                 "paddingAll": "12px",
@@ -291,7 +291,7 @@ class CompatibilityGame(BaseGame):
                         "action": {"type": "message", "label": "ايقاف", "text": "ايقاف"},
                         "style": "secondary",
                         "height": "sm",
-                        "color": c["error"]
+                        "color": c["text2"]
                     }
                 ],
                 "spacing": "sm",
