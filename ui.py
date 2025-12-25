@@ -1,17 +1,14 @@
-"""
-Bot 65 - UI Module
-Fixed Dark Theme
-"""
+"""Bot 65 - UI Module"""
 
 class UI:
     THEMES = {
         'light': {
             'p':'#2563EB', 's':'#10B981', 'w':'#F59E0B', 'e':'#EF4444',
-            't':'#1F2937', 't2':'#6B7280', 'bg':'#FFFFFF', 'bg2':'#F3F4F6', 'b':'#E5E7EB'
+            't':'#1F2937', 't2':'#6B7280', 'bg':'#F9FAFB', 'card':'#FFFFFF', 'b':'#E5E7EB'
         },
         'dark': {
-            'p':'#60A5FA', 's':'#4ADE80', 'w':'#FBBF24', 'e':'#F87171',
-            't':'#F1F5F9', 't2':'#94A3B8', 'bg':'#0F172A', 'bg2':'#1E293B', 'b':'#334155'
+            'p':'#3B82F6', 's':'#4ADE80', 'w':'#FBBF24', 'e':'#F87171',
+            't':'#F9FAFB', 't2':'#94A3B8', 'bg':'#1F2937', 'card':'#374151', 'b':'#4B5563'
         }
     }
     
@@ -27,8 +24,7 @@ class UI:
         return {
             "type":"bubble",
             "body":{
-                "type":"box",
-                "layout":"vertical",
+                "type":"box","layout":"vertical",
                 "contents":[
                     {"type":"text","text":"Bot 65","weight":"bold","size":"xxl","color":c['p'],"align":"center"},
                     {"type":"separator","margin":"lg","color":c['b']},
@@ -46,7 +42,8 @@ class UI:
                     {"type":"separator","margin":"lg","color":c['b']},
                     {"type":"text","text":"للتسجيل: تسجيل","size":"xs","color":c['t2'],"align":"center","margin":"md"}
                 ],
-                "paddingAll":"20px"
+                "paddingAll":"20px",
+                "backgroundColor":c['bg']
             }
         }
     
@@ -56,10 +53,9 @@ class UI:
         return {
             "type":"bubble",
             "body":{
-                "type":"box",
-                "layout":"vertical",
+                "type":"box","layout":"vertical",
                 "contents":[
-                    {"type":"text","text":"قائمة الألعاب","weight":"bold","size":"xl","color":c['p'],"align":"center"},
+                    {"type":"text","text":"قائمة الالعاب","weight":"bold","size":"xl","color":c['p'],"align":"center"},
                     {"type":"separator","margin":"lg","color":c['b']},
                     {"type":"text","text":"العاب تنافسية","size":"md","color":c['t'],"weight":"bold","margin":"lg"},
                     {"type":"box","layout":"horizontal","contents":[
@@ -97,7 +93,8 @@ class UI:
                         {"type":"button","action":{"type":"message","label":"مافيا","text":"مافيا"},"style":"secondary","height":"sm","color":c['e']}
                     ],"spacing":"sm","margin":"sm"}
                 ],
-                "paddingAll":"20px"
+                "paddingAll":"20px",
+                "backgroundColor":c['bg']
             }
         }
     
@@ -107,22 +104,22 @@ class UI:
         return {
             "type":"bubble",
             "body":{
-                "type":"box",
-                "layout":"vertical",
+                "type":"box","layout":"vertical",
                 "contents":[
                     {"type":"text","text":"دليل الاستخدام","weight":"bold","size":"xl","color":c['p'],"align":"center"},
                     {"type":"separator","margin":"lg","color":c['b']},
-                    UI._section("الأوامر الأساسية", "بداية - العاب - نقاطي - الصدارة - تسجيل - ثيم", c),
+                    UI._section("الاوامر الاساسية", "بداية - العاب - نقاطي - الصدارة - تسجيل - ثيم", c),
                     {"type":"separator","margin":"md","color":c['b']},
-                    UI._section("أوامر نصية", "سؤال - تحدي - اعتراف - منشن - حكمة - موقف", c),
+                    UI._section("اوامر نصية", "سؤال - تحدي - اعتراف - منشن - حكمة - موقف", c),
                     {"type":"separator","margin":"md","color":c['b']},
-                    UI._section("الألعاب الفردية", "اغنيه - ضد - سلسله - اسرع - تكوين - فئه - ذكاء - خمن - ترتيب - لون - روليت - سين", c),
+                    UI._section("الالعاب الفردية", "اغنيه - ضد - سلسله - اسرع - تكوين - فئه - ذكاء - خمن - ترتيب - لون - روليت - سين", c),
                     {"type":"separator","margin":"md","color":c['b']},
-                    UI._section("الألعاب الجماعية", "لعبه - حروف - توافق - مافيا", c),
+                    UI._section("الالعاب الجماعية", "لعبه - حروف - توافق - مافيا", c),
                     {"type":"separator","margin":"md","color":c['b']},
-                    UI._section("أثناء اللعب", "لمح: تلميح | جاوب: عرض الاجابة | انسحب: الخروج من اللعبة", c)
+                    UI._section("اثناء اللعب", "لمح: تلميح | جاوب: عرض الاجابة | انسحب: الخروج من اللعبة", c)
                 ],
-                "paddingAll":"20px"
+                "paddingAll":"20px",
+                "backgroundColor":c['bg']
             }
         }
     
@@ -133,19 +130,19 @@ class UI:
         return {
             "type":"bubble",
             "body":{
-                "type":"box",
-                "layout":"vertical",
+                "type":"box","layout":"vertical",
                 "contents":[
                     {"type":"text","text":"احصائياتك","weight":"bold","size":"xl","color":c['p'],"align":"center"},
                     {"type":"separator","margin":"lg","color":c['b']},
                     {"type":"text","text":user['name'],"size":"xl","color":c['t'],"align":"center","weight":"bold","margin":"lg"},
                     {"type":"separator","margin":"lg","color":c['b']},
                     UI._stat("النقاط", str(user['points']), c),
-                    UI._stat("الألعاب", str(user['games']), c),
+                    UI._stat("الالعاب", str(user['games']), c),
                     UI._stat("الفوز", str(user['wins']), c),
                     UI._stat("نسبة الفوز", f"{rate}%", c)
                 ],
-                "paddingAll":"20px"
+                "paddingAll":"20px",
+                "backgroundColor":c['bg']
             }
         }
     
@@ -164,18 +161,17 @@ class UI:
         return {
             "type":"bubble",
             "body":{
-                "type":"box",
-                "layout":"vertical",
+                "type":"box","layout":"vertical",
                 "contents":contents,
-                "paddingAll":"20px"
+                "paddingAll":"20px",
+                "backgroundColor":c['bg']
             }
         }
     
     @staticmethod
     def _section(title, content, c):
         return {
-            "type":"box",
-            "layout":"vertical",
+            "type":"box","layout":"vertical",
             "contents":[
                 {"type":"text","text":title,"weight":"bold","size":"sm","color":c['p']},
                 {"type":"text","text":content,"size":"xs","color":c['t2'],"wrap":True,"margin":"xs"}
@@ -186,8 +182,7 @@ class UI:
     @staticmethod
     def _stat(label, value, c):
         return {
-            "type":"box",
-            "layout":"baseline",
+            "type":"box","layout":"baseline",
             "contents":[
                 {"type":"text","text":label,"size":"sm","color":c['t2'],"flex":3},
                 {"type":"text","text":value,"size":"lg","weight":"bold","color":c['p'],"align":"end","flex":2}
@@ -197,13 +192,12 @@ class UI:
     
     @staticmethod
     def _leader(rank, name, points, c):
-        medals = {"1":"🥇","2":"🥈","3":"🥉"}
-        rank_text = medals.get(rank, rank + ".")
+        rank_colors = {"1": "#FFD700", "2": "#C0C0C0", "3": "#CD7F32"}
+        rank_color = rank_colors.get(rank, c['t2'])
         return {
-            "type":"box",
-            "layout":"baseline",
+            "type":"box","layout":"baseline",
             "contents":[
-                {"type":"text","text":rank_text,"size":"sm","color":c['p'] if rank in medals else c['t2'],"flex":0,"weight":"bold"},
+                {"type":"text","text":rank,"size":"sm","color":rank_color,"flex":0,"weight":"bold"},
                 {"type":"text","text":name,"size":"sm","color":c['t'],"flex":4,"margin":"sm"},
                 {"type":"text","text":points,"size":"sm","weight":"bold","color":c['s'],"align":"end","flex":1}
             ],
