@@ -30,6 +30,12 @@ handler = WebhookHandler(LINE_SECRET)
 from database import DB
 from ui import UI
 from text_commands import TextCommands
+from games import (
+    GuessGame, FastGame, CompatibilityGame, SongGame,
+    OppositeGame, ChainGame, LettersGame, CategoryGame,
+    HumanAnimalGame, IqGame, ScrambleGame, LetterGame,
+    MafiaGame
+)
 
 DB.init()
 TextCommands.load_all()
@@ -197,50 +203,30 @@ def process(text, user_id, group_id, line_api):
     if not user:
         return None
     
-    # تشغيل الالعاب - توقيع موحد
+    # تشغيل الالعاب
     game_map = {
-        'خمن': 'GuessGame',
-        'اسرع': 'FastGame',
-        'توافق': 'CompatibilityGame',
-        'اغنيه': 'SongGame',
-        'ضد': 'OppositeGame',
-        'سلسله': 'ChainGame',
-        'تكوين': 'LettersGame',
-        'فئه': 'CategoryGame',
-        'لعبه': 'HumanAnimalGame',
-        'ذكاء': 'IqGame',
-        'ترتيب': 'ScrambleGame',
-        'حروف': 'LetterGame',
-        'مافيا': 'MafiaGame'
+        'خمن': GuessGame,
+        'اسرع': FastGame,
+        'توافق': CompatibilityGame,
+        'اغنيه': SongGame,
+        'ضد': OppositeGame,
+        'سلسله': ChainGame,
+        'تكوين': LettersGame,
+        'فئه': CategoryGame,
+        'لعبه': HumanAnimalGame,
+        'ذكاء': IqGame,
+        'ترتيب': ScrambleGame,
+        'حروف': LetterGame,
+        'مافيا': MafiaGame
     }
     
     if t in game_map:
         try:
-            from games.iq_scramble_letter import IqGame, ScrambleGame, LetterGame
-            from games import (
-                GuessGame, FastGame, CompatibilityGame, SongGame,
-                OppositeGame, ChainGame, LettersGame, CategoryGame,
-                HumanAnimalGame, MafiaGame
-            )
-            
-            game_classes = {
-                'GuessGame': GuessGame, 'FastGame': FastGame,
-                'CompatibilityGame': CompatibilityGame, 'SongGame': SongGame,
-                'OppositeGame': OppositeGame, 'ChainGame': ChainGame,
-                'LettersGame': LettersGame, 'CategoryGame': CategoryGame,
-                'HumanAnimalGame': HumanAnimalGame, 'IqGame': IqGame,
-                'ScrambleGame': ScrambleGame, 'LetterGame': LetterGame,
-                'MafiaGame': MafiaGame
-            }
-            
-            game_class_name = game_map[t]
-            game_class = game_classes.get(game_class_name)
-            
-            if game_class:
-                difficulty = game_difficulties.get(group_id, 3)
-                game = game_class(line_api, difficulty=difficulty, theme=theme)
-                game_sessions[group_id] = game
-                return game.start_game()
+            game_class = game_map[t]
+            difficulty = game_difficulties.get(group_id, 3)
+            game = game_class(line_api, difficulty=difficulty, theme=theme)
+            game_sessions[group_id] = game
+            return game.start_game()
         except Exception as e:
             logger.error(f"Game creation error: {e}", exc_info=True)
             msg = TextMessage(text="حدث خطأ في بدء اللعبة")
