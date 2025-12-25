@@ -1,40 +1,56 @@
-from linebot.v3.messaging import TextMessage, FlexMessage, FlexContainer
 import random
-from .base_game import BaseGame
+from games.base_game import BaseGame
 
 class SeenJeemGame(BaseGame):
-    def __init__(self, line_bot_api):
-        super().__init__(line_bot_api, questions_count=5)
-        self.game_name = "سين جيم"
+    def __init__(self, line_bot_api, difficulty=3, theme='light'):
+        super().__init__(line_bot_api, difficulty=difficulty, theme=theme)
+        self.game_name = "لعبة سين جيم"
         
         self.questions_data = [
-            {"q": "ما هو الشيء الذي يمشي بلا رجلين ويبكي بلا عينين", "a": "السحاب"},
-            {"q": "ما هو الشيء الذي له اسنان ولا يعض", "a": "المشط"},
-            {"q": "ما هو الشيء الذي كلما زاد نقص", "a": "العمر"},
-            {"q": "ما هو الشيء الذي يكتب ولا يقرا", "a": "القلم"},
-            {"q": "ما هو الشيء الذي له عين ولا يرى", "a": "الابرة"},
-            {"q": "ما هو اطول نهر في العالم", "a": "النيل"},
-            {"q": "ما هي عاصمة السعودية", "a": "الرياض"},
-            {"q": "كم عدد ايام السنة", "a": "365"},
-            {"q": "ما هو الحيوان الملقب بسفينة الصحراء", "a": "الجمل"},
-            {"q": "كم عدد الوان قوس قزح", "a": "7"},
-            {"q": "ما هو اكبر كوكب في المجموعة الشمسية", "a": "المشتري"},
-            {"q": "كم عدد قارات العالم", "a": "7"},
-            {"q": "ما هي اصغر دولة في العالم", "a": "الفاتيكان"},
-            {"q": "كم عدد اسنان الانسان البالغ", "a": "32"},
-            {"q": "ما هو اسرع حيوان بري", "a": "الفهد"},
-            {"q": "كم عدد عظام جسم الانسان", "a": "206"},
-            {"q": "ما هي عاصمة فرنسا", "a": "باريس"},
-            {"q": "كم عدد ايام الاسبوع", "a": "7"},
-            {"q": "كم عدد اشهر السنة", "a": "12"},
-            {"q": "ما هي عاصمة مصر", "a": "القاهرة"}
+            {"q": "ما هو الشيء الذي يمشي بلا رجلين ويبكي بلا عينين", "a": ["السحاب", "الغيم"]},
+            {"q": "ما هو الشيء الذي له اسنان ولا يعض", "a": ["المشط"]},
+            {"q": "ما هو الشيء الذي كلما زاد نقص", "a": ["العمر"]},
+            {"q": "ما هو الشيء الذي يكتب ولا يقرا", "a": ["القلم"]},
+            {"q": "ما هو الشيء الذي له عين ولا يرى", "a": ["الابرة", "الابره"]},
+            {"q": "ما هو اطول نهر في العالم", "a": ["النيل"]},
+            {"q": "ما هي عاصمة السعودية", "a": ["الرياض"]},
+            {"q": "كم عدد ايام السنة", "a": ["365", "ثلاثمائة وخمسة وستون"]},
+            {"q": "ما هو الحيوان الملقب بسفينة الصحراء", "a": ["الجمل"]},
+            {"q": "كم عدد الوان قوس قزح", "a": ["7", "سبعة"]},
+            {"q": "ما هو اكبر كوكب في المجموعة الشمسية", "a": ["المشتري"]},
+            {"q": "كم عدد قارات العالم", "a": ["7", "سبعة"]},
+            {"q": "ما هي اصغر دولة في العالم", "a": ["الفاتيكان"]},
+            {"q": "كم عدد اسنان الانسان البالغ", "a": ["32", "اثنان وثلاثون"]},
+            {"q": "ما هو اسرع حيوان بري", "a": ["الفهد"]},
+            {"q": "كم عدد عظام جسم الانسان", "a": ["206", "مائتان وستة"]},
+            {"q": "ما هي عاصمة فرنسا", "a": ["باريس"]},
+            {"q": "كم عدد ايام الاسبوع", "a": ["7", "سبعة"]},
+            {"q": "كم عدد اشهر السنة", "a": ["12", "اثنا عشر"]},
+            {"q": "ما هي عاصمة مصر", "a": ["القاهرة", "القاهره"]},
+            {"q": "من هو ابو الانبياء", "a": ["ابراهيم"]},
+            {"q": "كم عدد ايام شهر رمضان", "a": ["29", "30", "تسعة وعشرون", "ثلاثون"]},
+            {"q": "ما اسم اطول سورة في القران", "a": ["البقرة", "البقره"]},
+            {"q": "في اي قارة تقع مصر", "a": ["افريقيا", "افريقيه"]},
+            {"q": "كم عدد الصلوات المفروضة", "a": ["5", "خمسة", "خمس"]},
+            {"q": "ما عاصمة الامارات", "a": ["ابوظبي", "ابو ظبي"]},
+            {"q": "ما هو اكبر محيط في العالم", "a": ["الهادي", "الهادئ"]},
+            {"q": "من مؤلف رواية البؤساء", "a": ["فيكتور هيجو", "فكتور هوجو"]},
+            {"q": "كم عدد اركان الاسلام", "a": ["5", "خمسة", "خمس"]},
+            {"q": "ما اسم اصغر دولة عربية", "a": ["البحرين"]}
         ]
         
         random.shuffle(self.questions_data)
+        self.used_questions = []
 
     def get_question(self):
-        q_data = self.questions_data[self.current_question % len(self.questions_data)]
-        self.current_answer = [q_data["a"]]
+        available = [q for q in self.questions_data if q not in self.used_questions]
+        if not available:
+            self.used_questions.clear()
+            available = self.questions_data.copy()
+        
+        q_data = random.choice(available)
+        self.used_questions.append(q_data)
+        self.current_answer = q_data["a"]
         
         return self.build_question_message(q_data["q"])
 
@@ -44,35 +60,42 @@ class SeenJeemGame(BaseGame):
 
         normalized = self.normalize_text(user_answer)
         
+        if normalized in ["انسحب", "انسحاب"]:
+            return self.handle_withdrawal(user_id, display_name)
+        
         if self.supports_hint and normalized == "لمح":
             answer = self.current_answer[0]
             hint = f"يبدا بحرف: {answer[0]}\nعدد الحروف: {len(answer)}"
             return {'response': self.build_text_message(hint), 'points': 0}
 
         if self.supports_reveal and normalized == "جاوب":
-            reveal = f"الاجابة: {self.current_answer[0]}"
+            answers = " او ".join(self.current_answer)
+            self.previous_answer = answers
             self.current_question += 1
             self.answered_users.clear()
             
             if self.current_question >= self.questions_count:
-                result = self.end_game()
-                result["message"] = f"{reveal}\n\n{result.get('message', '')}"
-                return result
+                return self.end_game()
             
-            return {'response': self.build_text_message(reveal), 'points': 0, 'next_question': True}
+            return {'response': self.get_question(), 'points': 0, 'next_question': True}
 
-        correct_answer = self.normalize_text(self.current_answer[0])
+        for correct_answer in self.current_answer:
+            if self.normalize_text(correct_answer) == normalized:
+                self.answered_users.add(user_id)
+                points = self.add_score(user_id, display_name, 1)
+                self.previous_answer = user_answer.strip()
+                self.current_question += 1
+                self.answered_users.clear()
 
-        if normalized == correct_answer or normalized in correct_answer or correct_answer in normalized:
-            points = self.add_score(user_id, display_name, 1)
-            self.current_question += 1
-            self.answered_users.clear()
+                if self.current_question >= self.questions_count:
+                    result = self.end_game()
+                    result["points"] = points
+                    return result
 
-            if self.current_question >= self.questions_count:
-                result = self.end_game()
-                result["points"] = points
-                return result
-
-            return {'response': self.build_text_message(f"اجابة صحيحة {display_name}\n+{points}"), 'points': points, 'next_question': True}
+                return {
+                    'response': self.get_question(), 
+                    'points': points, 
+                    'next_question': True
+                }
 
         return None
