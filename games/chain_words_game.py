@@ -1,17 +1,24 @@
-# chain_words_game.py
 import random
 from games.base_game import BaseGame
 
-
 class ChainGame(BaseGame):
-    def __init__(self, line_bot_api):
-        super().__init__(line_bot_api, questions_count=5)
+    def __init__(self, line_bot_api, difficulty=3, theme='light'):
+        super().__init__(
+            line_bot_api,
+            game_type="competitive",
+            difficulty=difficulty,
+            theme=theme
+        )
+
         self.game_name = "سلسلة"
 
         self.supports_hint = False
         self.supports_reveal = False
 
-        self.starting_words = ["سيارة", "تفاح", "قلم", "نجم", "كتاب", "باب", "رمل"]
+        self.starting_words = [
+            "سيارة", "تفاح", "قلم", "نجم", "كتاب", "باب", "رمل"
+        ]
+
         self.last_word = None
         self.used_words = set()
 
@@ -27,9 +34,11 @@ class ChainGame(BaseGame):
 
     def get_question(self):
         required_letter = self.last_word[-1]
+        self.previous_question = f"الكلمة السابقة: {self.last_word}"
+
         return self.build_question_message(
             f"الكلمة السابقة: {self.last_word}",
-            f"ابدا بحرف: {required_letter}",
+            f"ابدأ بحرف: {required_letter}"
         )
 
     def check_answer(self, user_answer, user_id, display_name):
@@ -38,6 +47,9 @@ class ChainGame(BaseGame):
 
         normalized = self.normalize_text(user_answer)
 
+        if normalized in ["انسحب", "انسحاب"]:
+            return self.handle_withdrawal(user_id, display_name)
+
         if normalized in self.used_words:
             return None
 
@@ -45,9 +57,12 @@ class ChainGame(BaseGame):
 
         if normalized and normalized[0] == required_letter and len(normalized) >= 2:
             self.used_words.add(normalized)
+            self.answered_users.add(user_id)
+
             points = self.add_score(user_id, display_name, 1)
 
             self.last_word = user_answer.strip()
+            self.previous_answer = user_answer.strip()
             self.current_question += 1
             self.answered_users.clear()
 
@@ -56,6 +71,10 @@ class ChainGame(BaseGame):
                 result["points"] = points
                 return result
 
-            return {"response": self.get_question(), "points": points}
+            return {
+                "response": self.get_question(),
+                "points": points,
+                "next_question": True
+            }
 
         return None
