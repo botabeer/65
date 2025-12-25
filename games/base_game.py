@@ -1,7 +1,3 @@
-"""
-Base Game Engine - محرك ألعاب ذكي ومتطور
-يدعم: Progress Bar حقيقي، مستويات صعوبة، ثيمات، إدارة جلسات
-"""
 from linebot.v3.messaging import TextMessage, FlexMessage, FlexContainer
 import re
 import time
@@ -9,8 +5,6 @@ from typing import Dict, Any, Optional, List
 from abc import ABC, abstractmethod
 
 class BaseGame(ABC):
-    """الفئة الأساسية لجميع الألعاب"""
-    
     THEMES = {
         "light": {
             "primary": "#2563EB",
@@ -83,7 +77,6 @@ class BaseGame(ABC):
         self.show_progress = game_type == "competitive"
     
     def normalize_text(self, text):
-        """تطبيع النص العربي بشكل ذكي"""
         if not text:
             return ""
         text = str(text).strip().lower()
@@ -98,7 +91,6 @@ class BaseGame(ABC):
         return re.sub(r'\s+', ' ', text).strip()
     
     def add_score(self, user_id, display_name, points=1):
-        """إضافة نقاط للاعب مع التحقق"""
         if user_id in self.withdrawn_users:
             return 0
         if user_id not in self.scores:
@@ -110,14 +102,11 @@ class BaseGame(ABC):
         return points
     
     def get_theme_colors(self):
-        """الحصول على ألوان الثيم الحالي"""
         return self.THEMES.get(self.theme, self.THEMES['light'])
     
     def create_progress_bar(self, current, total, width=20):
-        """إنشاء Progress Bar حقيقي باستخدام Flex Message"""
         c = self.get_theme_colors()
         percentage = int((current / total) * 100) if total > 0 else 0
-        filled = int((current / total) * width) if total > 0 else 0
         
         return {
             "type": "box",
@@ -168,7 +157,6 @@ class BaseGame(ABC):
         }
     
     def build_question_message(self, question_text, subtitle=None, show_timer=False):
-        """بناء رسالة السؤال مع Progress Bar"""
         c = self.get_theme_colors()
         contents = [
             {
@@ -296,11 +284,9 @@ class BaseGame(ABC):
         return FlexMessage(alt_text=self.game_name, contents=FlexContainer.from_dict(bubble))
     
     def build_text_message(self, text):
-        """بناء رسالة نصية بسيطة"""
         return TextMessage(text=text)
     
     def handle_withdrawal(self, user_id, display_name):
-        """معالجة انسحاب اللاعب"""
         if user_id in self.withdrawn_users:
             return None
         
@@ -315,7 +301,6 @@ class BaseGame(ABC):
         }
     
     def start_game(self):
-        """بدء اللعبة"""
         self.game_active = True
         self.current_question = 0
         self.scores = {}
@@ -327,16 +312,13 @@ class BaseGame(ABC):
     
     @abstractmethod
     def get_question(self):
-        """الحصول على السؤال - يجب تنفيذها في الفئات الفرعية"""
         pass
     
     @abstractmethod
     def check_answer(self, user_answer, user_id, display_name):
-        """التحقق من الإجابة - يجب تنفيذها في الفئات الفرعية"""
         pass
     
     def end_game(self):
-        """إنهاء اللعبة بشكل احترافي"""
         self.game_active = False
         c = self.get_theme_colors()
         
