@@ -108,7 +108,7 @@ class HumanAnimalGame(BaseGame):
         
         normalized = self.normalize_text(user_answer)
         
-        if normalized in ["انسحب", "انسحاب"]:
+        if normalized in ["ايقاف", "ايقاف"]:
             return self.handle_withdrawal(user_id, display_name)
         
         if self.supports_hint and normalized == "لمح":
