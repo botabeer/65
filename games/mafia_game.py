@@ -1,11 +1,9 @@
 from games.base_game import BaseGame
 import random
-from typing import Dict, Any, Optional, List
-from linebot.v3.messaging import PushMessageRequest, FlexMessage, FlexContainer
 
 class MafiaGame(BaseGame):
     def __init__(self, line_bot_api, difficulty=3, theme='light'):
-        super().__init__(line_bot_api, game_type="entertainment", difficulty=difficulty, theme=theme)
+        super().__init__(line_bot_api, difficulty=difficulty, theme=theme)
         self.game_name = "مافيا"
         self.supports_hint = False
         self.supports_reveal = False
@@ -21,13 +19,6 @@ class MafiaGame(BaseGame):
         self.detective = None
         self.game_phase = "waiting"
         self.current_round = 0
-        self.night_votes = {}
-        self.day_votes = {}
-        self.protected_player = None
-        self.investigated_player = None
-        self.mafia_target = None
-        self.doctor_save = None
-        self.detective_check = None
 
     def start_game(self):
         self.game_active = True
@@ -47,10 +38,10 @@ class MafiaGame(BaseGame):
                 {"type": "separator", "margin": "md", "color": c["border"]},
                 {"type": "text", "text": "الادوار", "size": "sm", "weight": "bold", "color": c["text"], "margin": "md"},
                 {"type": "box", "layout": "vertical", "contents": [
-                    {"type": "text", "text": "مافيا: يحاولون قتل المدنيين ليلا", "size": "xs", "color": c["error"], "wrap": True},
-                    {"type": "text", "text": "مدنيين: يصوتون لطرد المشتبهين نهارا", "size": "xs", "color": c["info"], "wrap": True, "margin": "xs"},
-                    {"type": "text", "text": "دكتور: ينقذ لاعب واحد كل ليلة", "size": "xs", "color": c["success"], "wrap": True, "margin": "xs"},
-                    {"type": "text", "text": "محقق: يكشف دور لاعب كل ليلة", "size": "xs", "color": c["warning"], "wrap": True, "margin": "xs"}
+                    {"type": "text", "text": "مافيا: يحاولون قتل المدنيين", "size": "xs", "color": c["error"], "wrap": True},
+                    {"type": "text", "text": "مدنيين: يصوتون لطرد المشتبهين", "size": "xs", "color": c["info"], "wrap": True, "margin": "xs"},
+                    {"type": "text", "text": "دكتور: ينقذ لاعب واحد", "size": "xs", "color": c["success"], "wrap": True, "margin": "xs"},
+                    {"type": "text", "text": "محقق: يكشف دور لاعب", "size": "xs", "color": c["warning"], "wrap": True, "margin": "xs"}
                 ], "margin": "sm"}
             ], "backgroundColor": c["card"], "cornerRadius": "12px", "paddingAll": "16px", "borderWidth": "1px", "borderColor": c["border"], "margin": "md"},
             {"type": "box", "layout": "vertical", "contents": [
@@ -59,7 +50,7 @@ class MafiaGame(BaseGame):
                     {"type": "text", "text": f"{joined_count}/{self.max_players}", "size": "lg", "weight": "bold", "color": c["primary"], "flex": 0}
                 ]},
                 {"type": "text", "text": f"الحد الادنى: {self.min_players} لاعبين", "size": "xs", "color": c["text3"], "margin": "sm"}
-            ], "backgroundColor": c["info_bg"], "cornerRadius": "12px", "paddingAll": "12px", "margin": "lg"},
+            ], "backgroundColor": c["card"], "cornerRadius": "12px", "paddingAll": "12px", "margin": "lg"},
             {"type": "text", "text": "اكتب انضم للانضمام\nاكتب ابدأ لبدء اللعبة", "size": "sm", "color": c["text2"], "align": "center", "wrap": True, "margin": "lg"}
         ]
         
@@ -75,6 +66,7 @@ class MafiaGame(BaseGame):
             }
         }
         
+        from linebot.v3.messaging import FlexMessage, FlexContainer
         return FlexMessage(alt_text=self.game_name, contents=FlexContainer.from_dict(bubble))
 
     def assign_roles(self):
@@ -100,7 +92,7 @@ class MafiaGame(BaseGame):
             self.roles[player_id] = "مدني"
         self.alive_players = set(player_list)
 
-    def check_answer(self, user_answer: str, user_id: str, display_name: str) -> Optional[Dict[str, Any]]:
+    def check_answer(self, user_answer, user_id, display_name):
         if not self.game_active:
             return None
         normalized = self.normalize_text(user_answer)
@@ -131,7 +123,7 @@ class MafiaGame(BaseGame):
     def get_question(self):
         return self.get_joining_screen()
 
-    def end_game(self) -> Dict[str, Any]:
+    def end_game(self):
         self.game_active = False
         return {
             "game_over": True,
