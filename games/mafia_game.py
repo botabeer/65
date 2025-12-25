@@ -162,7 +162,7 @@ class MafiaGame(BaseGame):
                         "points": 0
                     }
         
-        if normalized in ["ايقاف", "انسحب"]:
+        if normalized in ["ايقاف", "ايقاف"]:
             return self.end_game()
         
         return None
