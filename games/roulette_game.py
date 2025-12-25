@@ -3,10 +3,8 @@ import random
 from typing import Dict, Any, Optional
 
 class RouletteGame(BaseGame):
-    """لعبة الروليت"""
-    
-    def __init__(self, line_bot_api):
-        super().__init__(line_bot_api, questions_count=5)
+    def __init__(self, line_bot_api, difficulty=3, theme='light'):
+        super().__init__(line_bot_api, game_type="competitive", difficulty=difficulty, theme=theme)
         self.game_name = "روليت"
         
         self.roulette_numbers = list(range(0, 37))
@@ -17,11 +15,9 @@ class RouletteGame(BaseGame):
         self.last_spin_result = None
     
     def spin_roulette(self):
-        """تدوير الروليت"""
         return random.choice(self.roulette_numbers)
     
     def get_color(self, number: int) -> str:
-        """الحصول على لون الرقم"""
         if number == 0:
             return "أخضر"
         elif number in self.red_numbers:
@@ -30,7 +26,6 @@ class RouletteGame(BaseGame):
             return "أسود"
     
     def get_question(self):
-        """الحصول على سؤال جديد"""
         self.current_spin_result = self.spin_roulette()
         result_color = self.get_color(self.current_spin_result)
         
@@ -50,14 +45,15 @@ class RouletteGame(BaseGame):
         
         normalized = self.normalize_text(user_answer)
         
-        # التلميح
+        if normalized in ["انسحب", "انسحاب"]:
+            return self.handle_withdrawal(user_id, display_name)
+        
         if self.supports_hint and normalized == "لمح":
             result_color = self.get_color(self.current_spin_result)
             is_even = self.current_spin_result % 2 == 0 and self.current_spin_result != 0
             hint = f"اللون: {result_color}\n{'زوجي' if is_even else 'فردي' if self.current_spin_result != 0 else 'صفر'}"
-            return {"message": hint, "response": self.build_text_message(hint), "points": 0}
+            return {"response": self.build_text_message(hint), "points": 0}
         
-        # عرض الإجابة
         if self.supports_reveal and normalized == "جاوب":
             reveal = f"الرقم: {self.current_spin_result}\nاللون: {self.get_color(self.current_spin_result)}"
             self.last_spin_result = self.current_spin_result
@@ -65,17 +61,13 @@ class RouletteGame(BaseGame):
             self.answered_users.clear()
             
             if self.current_question >= self.questions_count:
-                result = self.end_game()
-                result["message"] = f"{reveal}\n\n{result.get('message', '')}"
-                return result
+                return self.end_game()
             
-            return {"message": reveal, "response": self.get_question(), "points": 0}
+            return {"response": self.get_question(), "points": 0, "next_question": True}
         
-        # التحقق من الرهان
         won = False
         win_type = ""
         
-        # رقم مباشر
         try:
             guess_number = int(user_answer.strip())
             if 0 <= guess_number <= 36 and guess_number == self.current_spin_result:
@@ -84,21 +76,18 @@ class RouletteGame(BaseGame):
         except ValueError:
             pass
         
-        # لون
         if not won:
             result_color = self.get_color(self.current_spin_result)
             if (normalized == "احمر" and result_color == "أحمر") or (normalized == "اسود" and result_color == "أسود"):
                 won = True
                 win_type = "لون"
         
-        # زوجي/فردي
         if not won and self.current_spin_result != 0:
             is_even = self.current_spin_result % 2 == 0
             if (normalized == "زوجي" and is_even) or (normalized == "فردي" and not is_even):
                 won = True
                 win_type = "زوجي/فردي"
         
-        # نطاق
         if not won:
             if normalized in ["1-18", "منخفض"] and 1 <= self.current_spin_result <= 18:
                 won = True
@@ -108,6 +97,7 @@ class RouletteGame(BaseGame):
                 win_type = "نطاق مرتفع"
         
         if won:
+            self.answered_users.add(user_id)
             points = self.add_score(user_id, display_name, 1)
             
             self.last_spin_result = self.current_spin_result
@@ -119,6 +109,10 @@ class RouletteGame(BaseGame):
                 result["points"] = points
                 return result
             
-            return {"message": f"صحيح - {win_type} +{points}", "response": self.get_question(), "points": points}
+            return {
+                "response": self.get_question(),
+                "points": points,
+                "next_question": True
+            }
         
         return None
