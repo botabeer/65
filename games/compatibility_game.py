@@ -160,7 +160,7 @@ class CompatibilityGame(BaseGame):
         
         normalized = self.normalize_text(user_answer)
         
-        if normalized in ["ايقاف", "انسحب"]:
+        if normalized in ["ايقاف", "ايقاف"]:
             self.game_active = False
             return {
                 "response": self.build_text_message("تم ايقاف اللعبة"),
