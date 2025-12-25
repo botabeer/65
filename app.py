@@ -34,7 +34,7 @@ from games import (
     GuessGame, FastGame, CompatibilityGame, SongGame,
     OppositeGame, ChainGame, LettersGame, CategoryGame,
     HumanAnimalGame, IqGame, ScrambleGame, LetterGame,
-    MafiaGame
+    MafiaGame, WordColorGame, RouletteGame, SeenJeemGame
 )
 
 DB.init()
@@ -96,7 +96,7 @@ def process(text, user_id, group_id, line_api):
         if 2 <= len(text) <= 50:
             DB.register_user(user_id, text.strip())
             waiting_for_name.discard(user_id)
-            msg = TextMessage(text=f"تم التسجيل: {text}")
+            msg = TextMessage(text=f"تم التسجيل بنجاح: {text}")
             msg.quick_reply = get_quick_reply()
             return msg
         waiting_for_name.discard(user_id)
@@ -132,14 +132,22 @@ def process(text, user_id, group_id, line_api):
     if t in ['بداية', 'start', 'بدايه']:
         if user:
             DB.update_activity(user_id)
-        return FlexMessage(alt_text="Bot 65", contents=FlexContainer.from_dict(
-            UI.welcome(user['name'] if user else 'مستخدم', bool(user), theme)))
+        return FlexMessage(
+            alt_text="Bot 65",
+            contents=FlexContainer.from_dict(UI.welcome(user['name'] if user else 'مستخدم', bool(user), theme))
+        )
     
     if t in ['مساعدة', 'help', 'مساعده']:
-        return FlexMessage(alt_text="المساعدة", contents=FlexContainer.from_dict(UI.help_card(theme)))
+        return FlexMessage(
+            alt_text="المساعدة",
+            contents=FlexContainer.from_dict(UI.help_card(theme))
+        )
     
     if t in ['العاب', 'ألعاب', 'الالعاب', 'العب']:
-        return FlexMessage(alt_text="الالعاب", contents=FlexContainer.from_dict(UI.games_menu(theme)))
+        return FlexMessage(
+            alt_text="الالعاب",
+            contents=FlexContainer.from_dict(UI.games_menu(theme))
+        )
     
     # التسجيل
     if t in ['تسجيل', 'تغيير']:
@@ -151,15 +159,21 @@ def process(text, user_id, group_id, line_api):
     # الاحصائيات
     if t in ['نقاطي', 'احصائياتي']:
         if not user:
-            msg = TextMessage(text="يجب التسجيل اولا")
+            msg = TextMessage(text="يجب التسجيل اولا\nاكتب: تسجيل")
             msg.quick_reply = get_quick_reply()
             return msg
         DB.update_activity(user_id)
-        return FlexMessage(alt_text="احصائياتك", contents=FlexContainer.from_dict(UI.stats(user, theme)))
+        return FlexMessage(
+            alt_text="احصائياتك",
+            contents=FlexContainer.from_dict(UI.stats(user, theme))
+        )
     
     if t in ['الصدارة', 'المتصدرين', 'الصداره']:
         leaders = DB.get_leaderboard()
-        return FlexMessage(alt_text="الصدارة", contents=FlexContainer.from_dict(UI.leaderboard(leaders, theme)))
+        return FlexMessage(
+            alt_text="الصدارة",
+            contents=FlexContainer.from_dict(UI.leaderboard(leaders, theme))
+        )
     
     # تغيير الثيم
     if t == 'ثيم':
@@ -175,7 +189,7 @@ def process(text, user_id, group_id, line_api):
         return msg
     
     # ايقاف اللعبة
-    if t in ['ايقاف', 'stop', 'إيقاف']:
+    if t in ['ايقاف', 'stop', 'إيقاف', 'انسحب']:
         if group_id in game_sessions:
             del game_sessions[group_id]
             if group_id in game_difficulties:
@@ -183,6 +197,14 @@ def process(text, user_id, group_id, line_api):
             msg = TextMessage(text="تم ايقاف اللعبة")
             msg.quick_reply = get_quick_reply()
             return msg
+        # إذا لم تكن هناك لعبة نشطة، ارجع للقائمة الرئيسية
+        if t == 'انسحب':
+            if user:
+                DB.update_activity(user_id)
+            return FlexMessage(
+                alt_text="Bot 65",
+                contents=FlexContainer.from_dict(UI.welcome(user['name'] if user else 'مستخدم', bool(user), theme))
+            )
         return None
     
     # مستوى الصعوبة
@@ -217,7 +239,10 @@ def process(text, user_id, group_id, line_api):
         'ذكاء': IqGame,
         'ترتيب': ScrambleGame,
         'حروف': LetterGame,
-        'مافيا': MafiaGame
+        'مافيا': MafiaGame,
+        'لون': WordColorGame,
+        'روليت': RouletteGame,
+        'سين': SeenJeemGame
     }
     
     if t in game_map:
@@ -271,7 +296,7 @@ def health():
 
 @app.route('/')
 def index():
-    return "Bot 65 Enhanced - Running", 200
+    return "Bot 65 - Running", 200
 
 if __name__ == "__main__":
     port = int(os.getenv('PORT', 5000))
