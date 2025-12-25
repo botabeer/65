@@ -11,6 +11,9 @@ from games.iq_game import IqGame
 from games.scramble_word_game import ScrambleGame
 from games.letter_game import LetterGame
 from games.mafia_game import MafiaGame
+from games.word_color_game import WordColorGame
+from games.roulette_game import RouletteGame
+from games.seen_jeem_game import SeenJeemGame
 
 __all__ = [
     'GuessGame',
@@ -25,5 +28,8 @@ __all__ = [
     'IqGame',
     'ScrambleGame',
     'LetterGame',
-    'MafiaGame'
+    'MafiaGame',
+    'WordColorGame',
+    'RouletteGame',
+    'SeenJeemGame'
 ]
