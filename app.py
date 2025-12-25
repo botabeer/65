@@ -1,6 +1,5 @@
 """
 Bot 65 - LINE Games Bot
-Main Application
 """
 from flask import Flask, request, abort, jsonify
 from linebot.v3 import WebhookHandler
@@ -59,14 +58,14 @@ def handle_message(event):
         group_id = getattr(event.source, 'group_id', None) or user_id
         
         try:
-            response = process(text, user_id, group_id)
+            response = process(text, user_id, group_id, line_api)
             if response:
                 msgs = response if isinstance(response, list) else [response]
                 line_api.reply_message(ReplyMessageRequest(reply_token=event.reply_token, messages=msgs))
         except Exception as e:
             logger.error(f"Error: {e}", exc_info=True)
 
-def process(text, user_id, group_id):
+def process(text, user_id, group_id, line_api):
     t = text.lower().strip()
     user = DB.get_user(user_id)
     theme = user['theme'] if user else 'light'
@@ -101,7 +100,7 @@ def process(text, user_id, group_id):
     if t in ['مساعدة', 'help', 'مساعده']:
         return FlexMessage(alt_text="المساعدة", contents=FlexContainer.from_dict(UI.help_card(theme)))
     
-    if t in ['العاب', 'ألعاب']:
+    if t in ['العاب', 'ألعاب', 'الالعاب']:
         return FlexMessage(alt_text="الألعاب", contents=FlexContainer.from_dict(UI.games_menu(theme)))
     
     if t in ['تسجيل', 'تغيير']:
@@ -134,21 +133,44 @@ def process(text, user_id, group_id):
     if not user:
         return None
     
-    game_commands = {
-        'اغنيه': 'اغنيه', 'ضد': 'ضد', 'سلسله': 'سلسله',
-        'اسرع': 'اسرع', 'تكوين': 'تكوين', 'فئه': 'فئه',
-        'لعبه': 'لعبه', 'توافق': 'توافق', 'ذكاء': 'ذكاء',
-        'خمن': 'خمن', 'ترتيب': 'ترتيب', 'لون': 'لون',
-        'روليت': 'روليت', 'سين': 'سين', 'حروف': 'حروف',
-        'مافيا': 'مافيا'
+    game_map = {
+        'اغنيه': 'SongGame', 'ضد': 'OppositeGame', 'سلسله': 'ChainGame',
+        'اسرع': 'FastGame', 'تكوين': 'LettersGame', 'فئه': 'CategoryGame',
+        'لعبه': 'HumanAnimalGame', 'توافق': 'CompatibilityGame', 
+        'ذكاء': 'IqGame', 'خمن': 'GuessGame', 'ترتيب': 'ScrambleGame',
+        'لون': 'WordColorGame', 'روليت': 'RouletteGame', 
+        'سين': 'SeenJeemGame', 'حروف': 'LetterGame', 'مافيا': 'MafiaGame'
     }
     
-    if t in game_commands:
-        from games import GameEngine
-        game = GameEngine.create(t, theme)
-        if game:
-            game_sessions[group_id] = game
-            return game.start_game()
+    if t in game_map:
+        try:
+            from games import (
+                SongGame, OppositeGame, ChainGame, FastGame,
+                LettersGame, CategoryGame, HumanAnimalGame,
+                CompatibilityGame, IqGame, GuessGame, ScrambleGame,
+                WordColorGame, RouletteGame, SeenJeemGame, LetterGame,
+                MafiaGame
+            )
+            
+            game_classes = {
+                'SongGame': SongGame, 'OppositeGame': OppositeGame, 
+                'ChainGame': ChainGame, 'FastGame': FastGame,
+                'LettersGame': LettersGame, 'CategoryGame': CategoryGame,
+                'HumanAnimalGame': HumanAnimalGame, 'CompatibilityGame': CompatibilityGame,
+                'IqGame': IqGame, 'GuessGame': GuessGame, 'ScrambleGame': ScrambleGame,
+                'WordColorGame': WordColorGame, 'RouletteGame': RouletteGame,
+                'SeenJeemGame': SeenJeemGame, 'LetterGame': LetterGame,
+                'MafiaGame': MafiaGame
+            }
+            
+            game_class = game_classes.get(game_map[t])
+            if game_class:
+                game = game_class(line_api)
+                game_sessions[group_id] = game
+                return game.start_game()
+        except Exception as e:
+            logger.error(f"Game creation error: {e}")
+            return TextMessage(text="حدث خطأ في بدء اللعبة")
     
     if group_id in game_sessions:
         game = game_sessions[group_id]
