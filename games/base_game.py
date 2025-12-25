@@ -163,17 +163,17 @@ class BaseGame(ABC):
         footer_buttons = []
         if self.supports_hint:
             footer_buttons.append({
-                "type": "button", "action": {"type": "message", "label": "تلميح", "text": "لمح"},
+                "type": "button", "action": {"type": "message", "label": "لمح", "text": "لمح"},
                 "style": "secondary", "height": "sm", "color": c["info"]
             })
         if self.supports_reveal:
             footer_buttons.append({
-                "type": "button", "action": {"type": "message", "label": "اظهار الاجابة", "text": "جاوب"},
+                "type": "button", "action": {"type": "message", "label": "جاوب", "text": "جاوب"},
                 "style": "secondary", "height": "sm", "color": c["warning"]
             })
         
         footer_buttons.append({
-            "type": "button", "action": {"type": "message", "label": "انسحب", "text": "انسحب"},
+            "type": "button", "action": {"type": "message", "label": "ايقاف", "text": "ايقاف"},
             "style": "secondary", "height": "sm", "color": c["error"]
         })
         
