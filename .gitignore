@@ -43,6 +43,7 @@ env/
 *.db-wal
 *.sqlite
 *.sqlite3
+bot65.db
 
 # Logs
 *.log
@@ -54,3 +55,13 @@ Thumbs.db
 
 # Data
 data/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Backup files
+*~
+*.bak
+*.tmp
