@@ -5,25 +5,169 @@ class WordColorGame(BaseGame):
     def __init__(self, line_bot_api, difficulty=3, theme='light'):
         super().__init__(line_bot_api, game_type="competitive", difficulty=difficulty, theme=theme)
         self.game_name = "لون"
-        self.supports_hint = True
+        self.supports_hint = False
         self.supports_reveal = True
         
-        self.color_names = ["احمر", "ازرق", "اخضر", "اصفر", "برتقالي", "بنفسجي", "وردي", "اسود", "ابيض"]
-        self.current_word = None
-        self.current_color_name = None
+        self.colors = {
+            "احمر": "#DC2626",
+            "ازرق": "#2563EB",
+            "اخضر": "#16A34A",
+            "اصفر": "#CA8A04",
+            "برتقالي": "#EA580C",
+            "بنفسجي": "#7C3AED",
+            "وردي": "#DB2777",
+            "بني": "#92400E"
+        }
+        
+        self.color_names = list(self.colors.keys())
+        self.used_combinations = []
     
     def get_question(self):
-        word = random.choice(self.color_names)
-        color_name = random.choice([c for c in self.color_names if c != word]) if random.random() < 0.7 else word
+        available = []
+        for word in self.color_names:
+            for color in self.color_names:
+                combo = (word, color)
+                if combo not in self.used_combinations:
+                    available.append(combo)
         
-        self.current_word = word
-        self.current_color_name = color_name
+        if not available:
+            self.used_combinations = []
+            available = [(w, c) for w in self.color_names for c in self.color_names]
+        
+        if random.random() < 0.7:
+            different_combos = [(w, c) for w, c in available if w != c]
+            if different_combos:
+                word, color_name = random.choice(different_combos)
+            else:
+                word, color_name = random.choice(available)
+        else:
+            same_combos = [(w, c) for w, c in available if w == c]
+            if same_combos:
+                word, color_name = random.choice(same_combos)
+            else:
+                word, color_name = random.choice(available)
+        
+        self.used_combinations.append((word, color_name))
         self.current_answer = [color_name]
-        self.previous_question = f"كلمة {word} ملونة بلون {color_name}"
+        self.current_word = word
+        self.previous_question = f"كلمة {word} بلون {color_name}"
         
-        message = f"ما لون هذه الكلمة:\n\n{word}\n\n(تخيل انها مكتوبة بلون {color_name})"
+        c = self.get_theme_colors()
+        hex_color = self.colors[color_name]
         
-        return self.build_question_message(message, "اكتب اسم اللون الذي ترى به الكلمة")
+        contents = [
+            {
+                "type": "box",
+                "layout": "horizontal",
+                "contents": [
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "flex": 1,
+                        "contents": [
+                            {"type": "text", "text": self.game_name, "weight": "bold", "size": "lg", "color": c["text"]},
+                            {"type": "text", "text": f"السؤال {self.current_question + 1}/{self.questions_count}", "size": "xs", "color": c["text2"], "margin": "xs"}
+                        ]
+                    }
+                ]
+            },
+            {"type": "separator", "margin": "lg", "color": c["border"]},
+            {
+                "type": "text",
+                "text": "ما لون هذه الكلمة",
+                "size": "sm",
+                "color": c["text2"],
+                "align": "center",
+                "margin": "lg"
+            },
+            {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": word,
+                        "size": "xxl",
+                        "weight": "bold",
+                        "color": hex_color,
+                        "align": "center"
+                    }
+                ],
+                "cornerRadius": "12px",
+                "paddingAll": "20px",
+                "backgroundColor": c["card"],
+                "borderWidth": "2px",
+                "borderColor": hex_color,
+                "margin": "lg"
+            },
+            {
+                "type": "text",
+                "text": "اكتب اسم اللون الذي ترى به الكلمة",
+                "size": "xs",
+                "color": c["text3"],
+                "align": "center",
+                "wrap": True,
+                "margin": "md"
+            }
+        ]
+        
+        if self.supports_reveal:
+            contents.append({"type": "separator", "margin": "lg", "color": c["border"]})
+            contents.append({
+                "type": "box",
+                "layout": "horizontal",
+                "contents": [
+                    {
+                        "type": "button",
+                        "action": {"type": "message", "label": "جاوب", "text": "جاوب"},
+                        "style": "secondary",
+                        "color": c["text2"],
+                        "height": "sm",
+                        "flex": 1
+                    },
+                    {
+                        "type": "button",
+                        "action": {"type": "message", "label": "ايقاف", "text": "ايقاف"},
+                        "style": "secondary",
+                        "color": c["text2"],
+                        "height": "sm",
+                        "flex": 1
+                    }
+                ],
+                "spacing": "sm",
+                "margin": "md"
+            })
+        else:
+            contents.append({"type": "separator", "margin": "lg", "color": c["border"]})
+            contents.append({
+                "type": "box",
+                "layout": "horizontal",
+                "contents": [
+                    {
+                        "type": "button",
+                        "action": {"type": "message", "label": "ايقاف", "text": "ايقاف"},
+                        "style": "secondary",
+                        "color": c["text2"],
+                        "height": "sm"
+                    }
+                ],
+                "margin": "md"
+            })
+        
+        bubble = {
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": contents,
+                "paddingAll": "20px",
+                "backgroundColor": c["bg"]
+            }
+        }
+        
+        from linebot.v3.messaging import FlexMessage, FlexContainer
+        return FlexMessage(alt_text=self.game_name, contents=FlexContainer.from_dict(bubble))
     
     def check_answer(self, user_answer, user_id, display_name):
         if not self.game_active or user_id in self.answered_users:
@@ -33,11 +177,6 @@ class WordColorGame(BaseGame):
         
         if normalized in ["ايقاف", "ايقاف"]:
             return self.handle_withdrawal(user_id, display_name)
-        
-        if self.supports_hint and normalized == "لمح":
-            answer = self.current_answer[0]
-            hint = f"يبدأ بحرف: {answer[0]}\nعدد الحروف: {len(answer)}"
-            return {"response": self.build_text_message(hint), "points": 0}
         
         if self.supports_reveal and normalized == "جاوب":
             self.previous_answer = self.current_answer[0]
