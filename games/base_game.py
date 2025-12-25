@@ -28,13 +28,9 @@ class BaseGame:
     def get_theme_colors(self, theme="light"):
         themes = {
             "light": {"primary":"#2563EB","success":"#10B981","warning":"#F59E0B",
-                     "error":"#EF4444","info":"#3B82F6","text":"#1F2937","text2":"#6B7280",
-                     "text3":"#9CA3AF","bg":"#FFFFFF","card":"#F9FAFB","border":"#E5E7EB",
-                     "info_bg":"#DBEAFE"},
+                     "error":"#EF4444","text":"#1F2937","text2":"#6B7280","border":"#E5E7EB"},
             "dark": {"primary":"#3B82F6","success":"#34D399","warning":"#FBBF24",
-                    "error":"#F87171","info":"#60A5FA","text":"#F9FAFB","text2":"#D1D5DB",
-                    "text3":"#9CA3AF","bg":"#1F2937","card":"#374151","border":"#4B5563",
-                    "info_bg":"#1E3A8A"}
+                    "error":"#F87171","text":"#F9FAFB","text2":"#D1D5DB","border":"#4B5563"}
         }
         return themes.get(theme, themes["light"])
 
@@ -61,7 +57,7 @@ class BaseGame:
         ]
         
         if subtitle:
-            contents.append({"type":"text","text":subtitle,"size":"xs","color":c["text3"],"wrap":True,"margin":"sm","align":"center"})
+            contents.append({"type":"text","text":subtitle,"size":"xs","color":c["text2"],"wrap":True,"margin":"sm","align":"center"})
         
         contents.append({"type":"separator","margin":"lg","color":c["border"]})
         
@@ -75,16 +71,18 @@ class BaseGame:
         if buttons:
             contents.append({"type":"box","layout":"horizontal","contents":buttons,"spacing":"sm","margin":"md"})
         
-        return FlexMessage(alt_text=self.game_name, contents=FlexContainer.from_dict({
-            "type":"bubble","body":{"type":"box","layout":"vertical","contents":contents,
-            "backgroundColor":c["bg"],"paddingAll":"20px"}
-        }))
-
-    def _create_flex_with_buttons(self, alt_text, bubble):
-        return FlexMessage(alt_text=alt_text, contents=FlexContainer.from_dict(bubble))
-
-    def _create_text_message(self, text):
-        return TextMessage(text=text)
+        return FlexMessage(
+            alt_text=self.game_name,
+            contents=FlexContainer.from_dict({
+                "type":"bubble",
+                "body":{
+                    "type":"box",
+                    "layout":"vertical",
+                    "contents":contents,
+                    "paddingAll":"20px"
+                }
+            })
+        )
 
     def start_game(self):
         self.game_active = True
@@ -102,34 +100,22 @@ class BaseGame:
     def end_game(self):
         self.game_active = False
         if not self.scores:
-            return {"game_over":True,"points":0,"message":"انتهت اللعبة"}
+            return {"game_over":True,"points":0,"message":"انتهت اللعبة","response":self.build_text_message("انتهت اللعبة")}
         
         sorted_players = sorted(self.scores.items(), key=lambda x: x[1]['score'], reverse=True)
         winner = sorted_players[0][1]
         
-        c = self.get_theme_colors()
-        contents = [
-            {"type":"text","text":f"نتائج {self.game_name}","weight":"bold","size":"xl","color":c["primary"],"align":"center"},
-            {"type":"separator","margin":"lg","color":c["border"]},
-            {"type":"text","text":f"الفائز: {winner['name']}","size":"lg","weight":"bold","color":c["success"],"align":"center","margin":"lg"},
-            {"type":"text","text":f"النقاط: {winner['score']}","size":"md","color":c["text"],"align":"center","margin":"sm"},
-            {"type":"separator","margin":"lg","color":c["border"]}
-        ]
+        result_text = f"انتهت اللعبة\n\nالفائز: {winner['name']}\nالنقاط: {winner['score']}"
         
         if len(sorted_players) > 1:
-            contents.append({"type":"text","text":"الترتيب","size":"sm","weight":"bold","color":c["text2"],"align":"center","margin":"md"})
+            result_text += "\n\nالترتيب:\n"
             for i, (uid, p) in enumerate(sorted_players[:5], 1):
-                contents.append({"type":"text","text":f"{i}. {p['name']} - {p['score']}","size":"xs","color":c["text"],"margin":"xs"})
+                result_text += f"{i}. {p['name']} - {p['score']}\n"
         
-        contents.append({"type":"separator","margin":"lg","color":c["border"]})
-        contents.append({"type":"box","layout":"horizontal","contents":[
-            {"type":"button","action":{"type":"message","label":"اعادة","text":self.game_name},"style":"primary","color":c["primary"],"height":"sm"},
-            {"type":"button","action":{"type":"message","label":"البداية","text":"بداية"},"style":"secondary","height":"sm"}
-        ],"spacing":"sm","margin":"md"})
-        
-        flex_msg = FlexMessage(alt_text="نتائج اللعبة", contents=FlexContainer.from_dict({
-            "type":"bubble","body":{"type":"box","layout":"vertical","contents":contents,
-            "backgroundColor":c["bg"],"paddingAll":"20px"}
-        }))
-        
-        return {"game_over":True,"points":winner['score'],"won":True,"response":flex_msg,"message":f"فاز {winner['name']}"}
+        return {
+            "game_over":True,
+            "points":winner['score'],
+            "won":True,
+            "response":self.build_text_message(result_text),
+            "message":f"فاز {winner['name']}"
+        }
