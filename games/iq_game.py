@@ -53,9 +53,11 @@ class IqGame(BaseGame):
 
     def get_question(self):
         available = [r for r in self.riddles if r not in self.used_riddles]
+        
         if not available:
-            self.used_riddles.clear()
+            self.used_riddles = []
             available = self.riddles.copy()
+            random.shuffle(available)
 
         riddle = random.choice(available)
         self.used_riddles.append(riddle)
@@ -68,7 +70,7 @@ class IqGame(BaseGame):
 
         normalized = self.normalize_text(user_answer)
 
-        if normalized in ["انسحب", "انسحاب"]:
+        if normalized in ["ايقاف", "ايقاف"]:
             return self.handle_withdrawal(user_id, display_name)
 
         for correct in self.current_answer:
