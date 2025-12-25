@@ -1,27 +1,22 @@
 # fast_typing_game.py
 import random
 import time
-from games.base_game import BaseGame
+from smart_base_game import SmartBaseGame
 
-
-class FastGame(BaseGame):
-    def __init__(self, line_bot_api):
-        super().__init__(line_bot_api, questions_count=5)
+class FastGame(SmartBaseGame):
+    def __init__(self, line_bot_api=None, questions_count=5):
+        super().__init__(line_bot_api, questions_count=questions_count, game_type="fast")
         self.game_name = "اسرع"
-
         self.supports_hint = False
         self.supports_reveal = False
-
         self.round_time = 20
         self.round_start_time = None
-
         self.phrases = [
             "سبحان الله",
             "الحمد لله",
             "الله اكبر",
             "لا اله الا الله",
         ]
-
         random.shuffle(self.phrases)
         self.used_phrases = []
 
@@ -37,34 +32,28 @@ class FastGame(BaseGame):
         self.current_answer = phrase
         self.round_start_time = time.time()
 
-        return self.build_question_message(
-            phrase,
-            f"الوقت: {self.round_time} ثانية",
-        )
+        subtitle = f"الوقت: {self.round_time} ثانية"
+        return self.build_question(phrase + "\n" + subtitle)
 
     def check_answer(self, user_answer, user_id, display_name):
         if not self.game_active or user_id in self.answered_users:
             return None
 
-        if time.time() - self.round_start_time > self.round_time:
+        elapsed = time.time() - self.round_start_time
+        if elapsed > self.round_time:
             self.current_question += 1
             self.answered_users.clear()
-
             if self.current_question >= self.questions_count:
                 return self.end_game()
-
-            return {"response": self.get_question(), "points": 0}
+            return self.get_question()
 
         if user_answer.strip() == self.current_answer:
             points = self.add_score(user_id, display_name, 1)
             self.current_question += 1
             self.answered_users.clear()
-
             if self.current_question >= self.questions_count:
                 result = self.end_game()
                 result["points"] = points
                 return result
-
-            return {"response": self.get_question(), "points": points}
-
+            return self.get_question()
         return None
