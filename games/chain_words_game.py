@@ -3,20 +3,19 @@ from games.base_game import BaseGame
 
 class ChainGame(BaseGame):
     def __init__(self, line_bot_api, difficulty=3, theme='light'):
-        super().__init__(
-            line_bot_api,
-            game_type="competitive",
-            difficulty=difficulty,
-            theme=theme
-        )
-
-        self.game_name = "سلسلة"
-
+        super().__init__(line_bot_api, difficulty=difficulty, theme=theme)
+        self.game_name = "سلسله"
         self.supports_hint = False
         self.supports_reveal = False
 
         self.starting_words = [
-            "سيارة", "تفاح", "قلم", "نجم", "كتاب", "باب", "رمل"
+            "سيارة", "تفاح", "قلم", "نجم", "كتاب", "باب", "رمل",
+            "طائرة", "حديقة", "مدرسة", "كرسي", "شمس", "قمر", "بحر",
+            "جبل", "وردة", "شجرة", "كوب", "ساعة", "مفتاح", "باب",
+            "نافذة", "طاولة", "مكتب", "قلم", "دفتر", "كتاب", "حقيبة",
+            "سرير", "وسادة", "لحاف", "مراة", "خزانة", "ملعقة", "صحن",
+            "فنجان", "قدر", "سكين", "فرن", "ثلاجة", "مكنسة", "ممسحة",
+            "صابون", "منشفة", "فرشاة", "معجون", "شامبو", "صندل", "حذاء"
         ]
 
         self.last_word = None
@@ -25,17 +24,15 @@ class ChainGame(BaseGame):
     def start_game(self):
         self.current_question = 0
         self.game_active = True
-
         self.last_word = random.choice(self.starting_words)
         self.used_words = {self.normalize_text(self.last_word)}
         self.answered_users.clear()
-
         return self.get_question()
 
     def get_question(self):
         required_letter = self.last_word[-1]
         self.previous_question = f"الكلمة السابقة: {self.last_word}"
-
+        
         return self.build_question_message(
             f"الكلمة السابقة: {self.last_word}",
             f"ابدأ بحرف: {required_letter}"
