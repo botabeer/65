@@ -1,13 +1,36 @@
 from linebot.v3.messaging import TextMessage, FlexMessage, FlexContainer
-import time, re
+import re
+import time
 
-class SmartBaseGame:
+class BaseGame:
+    """الفئة الأساسية لجميع الألعاب"""
+    
     THEMES = {
-        "فاتح": {"primary":"#2563EB","success":"#10B981","warning":"#F59E0B","error":"#EF4444","text":"#1F2937","text2":"#6B7280","border":"#E5E7EB","bg":"#F9FAFB","card":"#FFFFFF"},
-        "داكن": {"primary":"#3B82F6","success":"#34D399","warning":"#FBBF24","error":"#F87171","text":"#F9FAFB","text2":"#D1D5DB","border":"#4B5563","bg":"#1F2937","card":"#374151"}
+        "light": {
+            "primary": "#2563EB",
+            "success": "#10B981",
+            "warning": "#F59E0B",
+            "error": "#EF4444",
+            "text": "#1F2937",
+            "text2": "#6B7280",
+            "bg": "#F9FAFB",
+            "card": "#FFFFFF",
+            "border": "#E5E7EB"
+        },
+        "dark": {
+            "primary": "#3B82F6",
+            "success": "#34D399",
+            "warning": "#FBBF24",
+            "error": "#F87171",
+            "text": "#F9FAFB",
+            "text2": "#D1D5DB",
+            "bg": "#1F2937",
+            "card": "#374151",
+            "border": "#4B5563"
+        }
     }
-
-    def __init__(self, line_bot_api=None, questions_count=5, game_type="competitive", theme="فاتح", level=1):
+    
+    def __init__(self, line_bot_api, questions_count=5):
         self.line_bot_api = line_bot_api
         self.questions_count = questions_count
         self.current_question = 0
@@ -16,111 +39,140 @@ class SmartBaseGame:
         self.scores = {}
         self.answered_users = set()
         self.current_answer = None
-        self.prev_answer = None
+        self.previous_question = None
+        self.previous_answer = None
         self.start_time = None
-        self.game_type = game_type
-        self.theme_name = theme
-        self.theme = self.THEMES.get(theme, self.THEMES["فاتح"])
-        self.level = level
-        self.supports_hint = game_type in ["competitive","fast"]
-        self.supports_reveal = game_type=="competitive"
-
+        self.supports_hint = True
+        self.supports_reveal = True
+    
     def normalize_text(self, text):
-        if not text: return ""
+        """تطبيع النص العربي"""
+        if not text:
+            return ""
         text = text.strip().lower()
-        trans = str.maketrans({'أ':'ا','إ':'ا','آ':'ا','ؤ':'و','ئ':'ي','ء':'','ة':'ه','ى':'ي'})
+        trans = str.maketrans({
+            'أ': 'ا', 'إ': 'ا', 'آ': 'ا',
+            'ؤ': 'و', 'ئ': 'ي', 'ء': '',
+            'ة': 'ه', 'ى': 'ي'
+        })
         text = text.translate(trans)
         text = re.sub(r'[\u064B-\u065F\u0670]', '', text)
         return re.sub(r'\s+', ' ', text).strip()
-
+    
     def add_score(self, user_id, display_name, points=1):
-        self.scores.setdefault(user_id, {'name': display_name, 'score':0})
-        self.scores[user_id]['score'] += points
-        self.answered_users.add(user_id)
-        return points
-
-    # ======== نافذة السؤال أثناء اللعب ========
-    def build_question(self, question_text):
-        c = self.theme
-        contents = []
-
-        # إجابة السؤال السابق
-        if self.prev_answer and self.game_type!="entertainment":
-            contents.append({"type":"text","text":f"إجابة السؤال السابق: {self.prev_answer}","size":"xs","color":c["text2"],"wrap":True,"align":"center","margin":"sm"})
-
-        # عنوان اللعبة والمستوى
-        contents.append({"type":"text","text":f"{self.game_name} (مستوى {self.level})","size":"lg","weight":"bold","align":"center","color":c["text"]})
-
-        # Progress Bar
-        if self.game_type!="entertainment":
-            progress=int(((self.current_question+1)/self.questions_count)*100)
-            contents.append({"type":"box","layout":"vertical","margin":"md","contents":[
-                {"type":"box","layout":"horizontal","height":"8px","backgroundColor":c["border"],
-                 "cornerRadius":"4px","contents":[{"type":"box","layout":"horizontal","width":f"{progress}%","backgroundColor":c["primary"],"cornerRadius":"4px","contents":[]}]},
-                {"type":"text","text":f"{self.current_question+1}/{self.questions_count}","size":"xs","align":"center","margin":"sm","color":c["text2"]}
-            ]})
-
-        contents.append({"type":"separator","margin":"lg"})
-        contents.append({"type":"text","text":question_text,"size":"md","wrap":True,"align":"center","margin":"lg","color":c["text"]})
-
-        # أزرار ذكية
-        buttons=[]
-        if self.supports_hint:
-            buttons.append({"type":"button","action":{"type":"message","label":"تلميح","text":"لمح"},"style":"secondary","height":"sm"})
-        if self.supports_reveal:
-            buttons.append({"type":"button","action":{"type":"message","label":"الاجابة","text":"جاوب"},"style":"primary","height":"sm","color":c["warning"]})
-        buttons.append({"type":"button","action":{"type":"message","label":"ايقاف","text":"ايقاف"},"style":"secondary","height":"sm","color":c["error"]})
-        if buttons:
-            contents.append({"type":"box","layout":"horizontal","spacing":"sm","margin":"md","contents":buttons})
-
-        self.start_time=time.time()
-        bubble={"type":"bubble","body":{"type":"box","layout":"vertical","paddingAll":"20px","backgroundColor":c["bg"],"contents":contents}}
-        return FlexMessage(alt_text=self.game_name, contents=FlexContainer.from_dict(bubble))
-
-    # ======== التحقق من الإجابة ========
-    def check_answer(self, user_answer, user_id, display_name):
-        if not self.game_active: return None
-        normalized = self.normalize_text(user_answer)
+        """إضافة نقاط للاعب"""
         if user_id not in self.scores:
-            self.scores[user_id] = {"name":display_name,"score":0,"answered":False,"time":None}
-        player = self.scores[user_id]
-        if player.get("answered"): return None
-
-        if normalized == self.normalize_text(self.current_answer):
-            player["score"]+=1
-            player["answered"]=True
-            player["time"]=time.time()-self.start_time
-            self.prev_answer=self.current_answer
-            self.current_question+=1
-            if self.current_question>=self.questions_count or self.game_type=="entertainment":
-                return self.end_game()
-            return self.build_question("السؤال التالي")
-        return None
-
-    # ======== نافذة إعلان الفائز ========
-    def end_game(self):
-        self.game_active=False
-        c=self.theme
-        sorted_players=sorted(self.scores.items(), key=lambda x:(-x[1]["score"], x[1].get("time",0)))
-        winner = sorted_players[0][1] if sorted_players else {"name":"لاعب","score":0}
-        result_text=f"انتهت اللعبة\nالفائز: {winner['name']}\nالنقاط: {winner['score']}"
-        if len(sorted_players)>1:
-            result_text+="\n\nالترتيب:\n"
-            for i,(uid,p) in enumerate(sorted_players,1):
-                result_text+=f"{i}. {p['name']} - {p['score']}\n"
-
-        bubble={"type":"bubble","body":{"type":"box","layout":"vertical","paddingAll":"20px","backgroundColor":c["bg"],"contents":[
-            {"type":"text","text":"نتيجة اللعبة","size":"xl","weight":"bold","align":"center","color":c["text"]},
-            {"type":"separator","margin":"lg"},
-            {"type":"text","text":result_text,"size":"md","wrap":True,"color":c["text2"],"margin":"md"},
-            {"type":"button","margin":"lg","height":"sm","style":"primary","color":c["primary"],"action":{"type":"message","label":"اعادة اللعب","text":"ابدأ"}},
-            {"type":"button","margin":"md","height":"sm","style":"secondary","action":{"type":"message","label":"ايقاف","text":"ايقاف"}}
-        ]}}
-        return FlexMessage(alt_text="نتيجة اللعبة", contents=FlexContainer.from_dict(bubble))
-
+            self.scores[user_id] = {'name': display_name, 'score': 0}
+        self.scores[user_id]['score'] += points
+        return points
+    
+    def get_theme_colors(self, theme='light'):
+        """الحصول على ألوان الثيم"""
+        return self.THEMES.get(theme, self.THEMES['light'])
+    
+    def build_question_message(self, question_text, subtitle=None):
+        """بناء رسالة السؤال"""
+        c = self.get_theme_colors()
+        contents = [
+            {"type": "text", "text": self.game_name, "size": "xl", "weight": "bold", 
+             "color": c["primary"], "align": "center"},
+            {"type": "separator", "margin": "lg", "color": c["border"]},
+        ]
+        
+        if self.previous_answer:
+            contents.append({
+                "type": "text",
+                "text": f"الإجابة السابقة: {self.previous_answer}",
+                "size": "xs",
+                "color": c["text2"],
+                "align": "center",
+                "margin": "md"
+            })
+        
+        contents.extend([
+            {"type": "text", "text": f"السؤال {self.current_question + 1}/{self.questions_count}",
+             "size": "sm", "color": c["text2"], "align": "center", "margin": "md"},
+            {"type": "separator", "margin": "md", "color": c["border"]},
+            {"type": "text", "text": question_text, "size": "md", "wrap": True,
+             "color": c["text"], "align": "center", "margin": "lg"}
+        ])
+        
+        if subtitle:
+            contents.append({
+                "type": "text", "text": subtitle, "size": "xs",
+                "color": c["text2"], "align": "center", "margin": "sm"
+            })
+        
+        bubble = {
+            "type": "bubble",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": contents,
+                "paddingAll": "20px",
+                "backgroundColor": c["bg"]
+            }
+        }
+        
+        return FlexMessage(alt_text=self.game_name, contents=FlexContainer.from_dict(bubble))
+    
+    def build_text_message(self, text):
+        """بناء رسالة نصية بسيطة"""
+        return TextMessage(text=text)
+    
     def start_game(self):
-        self.game_active=True
-        self.current_question=0
-        self.scores={}
-        self.answered_users=set()
-        return self.build_question("السؤال الأول")
+        """بدء اللعبة"""
+        self.game_active = True
+        self.current_question = 0
+        self.scores = {}
+        self.answered_users = set()
+        return self.get_question()
+    
+    def get_question(self):
+        """الحصول على السؤال - يجب تنفيذها في الفئات الفرعية"""
+        raise NotImplementedError("يجب تنفيذ get_question في الفئة الفرعية")
+    
+    def check_answer(self, user_answer, user_id, display_name):
+        """التحقق من الإجابة - يجب تنفيذها في الفئات الفرعية"""
+        raise NotImplementedError("يجب تنفيذ check_answer في الفئة الفرعية")
+    
+    def end_game(self):
+        """إنهاء اللعبة"""
+        self.game_active = False
+        if not self.scores:
+            return {
+                "game_over": True,
+                "points": 0,
+                "message": "انتهت اللعبة\nلم يسجل أحد نقاطاً",
+                "response": self.build_text_message("انتهت اللعبة")
+            }
+        
+        sorted_players = sorted(
+            self.scores.items(),
+            key=lambda x: x[1]['score'],
+            reverse=True
+        )
+        
+        winner = sorted_players[0][1]
+        result_text = f"🏆 انتهت اللعبة\n\nالفائز: {winner['name']}\nالنقاط: {winner['score']}"
+        
+        if len(sorted_players) > 1:
+            result_text += "\n\n📊 الترتيب:\n"
+            for i, (uid, player) in enumerate(sorted_players[:5], 1):
+                result_text += f"{i}. {player['name']} - {player['score']} نقطة\n"
+        
+        return {
+            "game_over": True,
+            "points": winner['score'],
+            "won": True,
+            "message": result_text,
+            "response": self.build_text_message(result_text)
+        }
+    
+    def _create_flex_with_buttons(self, alt_text, bubble):
+        """إنشاء Flex Message مع أزرار"""
+        return FlexMessage(alt_text=alt_text, contents=FlexContainer.from_dict(bubble))
+    
+    def _create_text_message(self, text):
+        """إنشاء رسالة نصية"""
+        return TextMessage(text=text)
