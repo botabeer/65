@@ -7,26 +7,34 @@ from abc import ABC, abstractmethod
 class BaseGame(ABC):
     THEMES = {
         "light": {
-            "primary": "#000000",      # أسود للنصوص الأساسية
-            "text": "#000000",         # أسود للنصوص العادية
-            "text2": "#4B5563",        # رمادي متوسط
-            "text3": "#9CA3AF",        # رمادي فاتح
-            "bg": "#FFFFFF",           # أبيض للخلفية
-            "card": "#F3F4F6",         # رمادي فاتح للبطاقات
-            "border": "#D1D5DB",       # رمادي متوسط للفواصل
-            "progress_bg": "#E5E7EB",  # رمادي فاتح لشريط التقدم الخلفي
-            "progress_fill": "#000000" # أسود لشريط التقدم المملوء
+            "primary": "#000000",
+            "text": "#000000",
+            "text2": "#4B5563",
+            "text3": "#9CA3AF",
+            "bg": "#FFFFFF",
+            "card": "#F3F4F6",
+            "border": "#D1D5DB",
+            "progress_bg": "#E5E7EB",
+            "progress_fill": "#000000",
+            "success": "#000000",
+            "warning": "#4B5563",
+            "error": "#6B7280",
+            "info": "#6B7280"
         },
         "dark": {
-            "primary": "#FFFFFF",      # أبيض للنصوص الأساسية
-            "text": "#FFFFFF",         # أبيض للنصوص العادية
-            "text2": "#D1D5DB",        # رمادي فاتح للنصوص الثانوية
-            "text3": "#9CA3AF",        # رمادي متوسط للنصوص الثالثة
-            "bg": "#000000",           # أسود للخلفية
-            "card": "#1F2937",         # رمادي داكن للبطاقات
-            "border": "#374151",       # رمادي غامق للفواصل
-            "progress_bg": "#374151",  # رمادي غامق لشريط التقدم الخلفي
-            "progress_fill": "#FFFFFF" # أبيض لشريط التقدم المملوء
+            "primary": "#FFFFFF",
+            "text": "#FFFFFF",
+            "text2": "#D1D5DB",
+            "text3": "#9CA3AF",
+            "bg": "#000000",
+            "card": "#1F2937",
+            "border": "#374151",
+            "progress_bg": "#374151",
+            "progress_fill": "#FFFFFF",
+            "success": "#FFFFFF",
+            "warning": "#9CA3AF",
+            "error": "#6B7280",
+            "info": "#6B7280"
         }
     }
     
@@ -157,24 +165,24 @@ class BaseGame(ABC):
         if show_timer and self.round_time:
             contents.append({
                 "type": "text", "text": f"الوقت المتاح: {self.round_time} ثانية",
-                "size": "xxs", "color": c["warning"], "align": "center", "margin": "sm"
+                "size": "xxs", "color": c["text2"], "align": "center", "margin": "sm"
             })
         
         footer_buttons = []
         if self.supports_hint:
             footer_buttons.append({
                 "type": "button", "action": {"type": "message", "label": "لمح", "text": "لمح"},
-                "style": "secondary", "height": "sm", "color": c["info"]
+                "style": "secondary", "height": "sm", "color": c["text2"]
             })
         if self.supports_reveal:
             footer_buttons.append({
                 "type": "button", "action": {"type": "message", "label": "جاوب", "text": "جاوب"},
-                "style": "secondary", "height": "sm", "color": c["warning"]
+                "style": "secondary", "height": "sm", "color": c["text2"]
             })
         
         footer_buttons.append({
             "type": "button", "action": {"type": "message", "label": "ايقاف", "text": "ايقاف"},
-            "style": "secondary", "height": "sm", "color": c["error"]
+            "style": "secondary", "height": "sm", "color": c["text2"]
         })
         
         bubble = {
