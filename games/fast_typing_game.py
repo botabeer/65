@@ -61,7 +61,7 @@ class FastGame(BaseGame):
             return None
         
         normalized = self.normalize_text(user_answer)
-        if normalized in ["انسحب", "انسحاب"]:
+        if normalized in ["ايقاف", "ايقاف"]:
             return self.handle_withdrawal(user_id, display_name)
 
         elapsed = time.time() - self.round_start_time
