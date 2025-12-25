@@ -70,7 +70,7 @@ class LetterGame(BaseGame):
         letter = self.normalize_text(q["letter"])
         answer = self.normalize_text(user_answer)
 
-        if answer in ["انسحب", "انسحاب"]:
+        if answer in ["ايقاف", "ايقاف"]:
             return self.handle_withdrawal(user_id, display_name)
 
         if self.supports_hint and answer == "لمح":
