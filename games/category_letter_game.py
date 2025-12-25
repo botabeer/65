@@ -1,11 +1,15 @@
-# category_letter_game.py
 import random
 from games.base_game import BaseGame
 
-
 class CategoryGame(BaseGame):
-    def __init__(self, line_bot_api):
-        super().__init__(line_bot_api, questions_count=5)
+    def __init__(self, line_bot_api, difficulty=3, theme='light'):
+        super().__init__(
+            line_bot_api,
+            game_type="competitive",
+            difficulty=difficulty,
+            theme=theme
+        )
+
         self.game_name = "فئة"
 
         self.challenges = [
@@ -34,6 +38,8 @@ class CategoryGame(BaseGame):
     def get_question(self):
         challenge = self.questions[self.current_question]
         self.first_correct_answer = False
+        self.previous_question = f"{challenge['category']} حرف {challenge['letter']}"
+
         return self.build_question_message(
             f"الفئة: {challenge['category']}\nالحرف: {challenge['letter']}"
         )
@@ -45,6 +51,9 @@ class CategoryGame(BaseGame):
         challenge = self.questions[self.current_question]
         normalized = self.normalize_text(user_answer)
 
+        if normalized in ["انسحب", "انسحاب"]:
+            return self.handle_withdrawal(user_id, display_name)
+
         if self.supports_hint and normalized == "لمح":
             sample = challenge["answers"][0]
             return {
@@ -55,46 +64,39 @@ class CategoryGame(BaseGame):
         if self.supports_reveal and normalized == "جاوب":
             answers = " - ".join(challenge["answers"])
             self.first_correct_answer = True
+            self.previous_answer = answers
             self.current_question += 1
             self.answered_users.clear()
 
             if self.current_question >= self.questions_count:
-                return self._end_game()
+                return self.end_game()
 
             return {
-                "response": self.build_text_message(f"بعض الاجابات:\n{answers}"),
+                "response": self.get_question(),
                 "points": 0,
+                "next_question": True
             }
 
-        valid = [self.normalize_text(a) for a in challenge["answers"]]
-        if normalized in valid:
+        valid_answers = [self.normalize_text(a) for a in challenge["answers"]]
+
+        if normalized in valid_answers:
+            self.answered_users.add(user_id)
             points = self.add_score(user_id, display_name, 1)
+
             self.first_correct_answer = True
+            self.previous_answer = user_answer.strip()
             self.current_question += 1
             self.answered_users.clear()
 
             if self.current_question >= self.questions_count:
-                return self._end_game()
+                result = self.end_game()
+                result["points"] = points
+                return result
 
             return {
-                "response": self.build_text_message(f"اجابة صحيحة {display_name}"),
+                "response": self.get_question(),
                 "points": points,
+                "next_question": True
             }
 
         return None
-
-    def _end_game(self):
-        if not self.scores:
-            return {
-                "response": self.build_text_message("انتهت اللعبة"),
-                "points": 0,
-                "game_over": True,
-            }
-
-        winner = max(self.scores.values(), key=lambda x: x["score"])
-        text = f"انتهت اللعبة\n\nالفائز: {winner['name']}\nالنقاط: {winner['score']}"
-        return {
-            "response": self.build_text_message(text),
-            "points": winner["score"],
-            "game_over": True,
-        }
