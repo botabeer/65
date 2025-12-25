@@ -85,7 +85,15 @@ def handle_message(event):
                     messages=msgs
                 ))
         except Exception as e:
-            logger.error(f"Error: {e}", exc_info=True)
+            logger.error(f"Error processing message: {e}", exc_info=True)
+            try:
+                error_msg = TextMessage(text="حدث خطأ، حاول مرة اخرى")
+                line_api.reply_message(ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[error_msg]
+                ))
+            except:
+                pass
 
 def process(text, user_id, group_id, line_api):
     t = text.lower().strip()
@@ -100,9 +108,8 @@ def process(text, user_id, group_id, line_api):
             msg.quick_reply = get_quick_reply()
             return msg
         waiting_for_name.discard(user_id)
-        return None
+        return TextMessage(text="الاسم يجب ان يكون بين 2 و 50 حرف")
     
-    # اوامر نصية
     if t in ['سؤال', 'سوال']:
         msg = TextMessage(text=TextCommands.get_random('questions'))
         msg.quick_reply = get_quick_reply()
@@ -128,7 +135,6 @@ def process(text, user_id, group_id, line_api):
         msg.quick_reply = get_quick_reply()
         return msg
     
-    # القوائم الرئيسية
     if t in ['بداية', 'start', 'بدايه']:
         if user:
             DB.update_activity(user_id)
@@ -149,14 +155,12 @@ def process(text, user_id, group_id, line_api):
             contents=FlexContainer.from_dict(UI.games_menu(theme))
         )
     
-    # التسجيل
     if t in ['تسجيل', 'تغيير']:
         waiting_for_name.add(user_id)
         msg = TextMessage(text="اكتب اسمك (2-50 حرف)")
         msg.quick_reply = get_quick_reply()
         return msg
     
-    # الاحصائيات
     if t in ['نقاطي', 'احصائياتي']:
         if not user:
             msg = TextMessage(text="يجب التسجيل اولا\nاكتب: تسجيل")
@@ -175,7 +179,6 @@ def process(text, user_id, group_id, line_api):
             contents=FlexContainer.from_dict(UI.leaderboard(leaders, theme))
         )
     
-    # تغيير الثيم
     if t == 'ثيم':
         if not user:
             msg = TextMessage(text="يجب التسجيل اولا")
@@ -188,7 +191,6 @@ def process(text, user_id, group_id, line_api):
         msg.quick_reply = get_quick_reply()
         return msg
     
-    # ايقاف اللعبة
     if t in ['ايقاف', 'stop', 'إيقاف', 'انسحب']:
         if group_id in game_sessions:
             del game_sessions[group_id]
@@ -197,7 +199,6 @@ def process(text, user_id, group_id, line_api):
             msg = TextMessage(text="تم ايقاف اللعبة")
             msg.quick_reply = get_quick_reply()
             return msg
-        # إذا لم تكن هناك لعبة نشطة، ارجع للقائمة الرئيسية
         if t == 'انسحب':
             if user:
                 DB.update_activity(user_id)
@@ -207,7 +208,6 @@ def process(text, user_id, group_id, line_api):
             )
         return None
     
-    # مستوى الصعوبة
     if t.startswith('صعوبة ') or t.startswith('مستوى '):
         try:
             level = int(t.split()[-1])
@@ -225,7 +225,6 @@ def process(text, user_id, group_id, line_api):
     if not user:
         return None
     
-    # تشغيل الالعاب
     game_map = {
         'خمن': GuessGame,
         'اسرع': FastGame,
@@ -258,7 +257,6 @@ def process(text, user_id, group_id, line_api):
             msg.quick_reply = get_quick_reply()
             return msg
     
-    # معالجة اجابات الالعاب
     if group_id in game_sessions:
         game = game_sessions[group_id]
         result = game.check_answer(text, user_id, user['name'])
