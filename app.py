@@ -40,7 +40,6 @@ user_themes = {}
 game_difficulties = {}
 
 def get_quick_reply():
-    """ازرار ثابتة للاوامر النصية"""
     return QuickReply(items=[
         QuickReplyItem(action=MessageAction(label="سؤال", text="سؤال")),
         QuickReplyItem(action=MessageAction(label="تحدي", text="تحدي")),
@@ -198,7 +197,7 @@ def process(text, user_id, group_id, line_api):
     if not user:
         return None
     
-    # تشغيل الالعاب
+    # تشغيل الالعاب - توقيع موحد
     game_map = {
         'خمن': 'GuessGame',
         'اسرع': 'FastGame',
@@ -217,10 +216,11 @@ def process(text, user_id, group_id, line_api):
     
     if t in game_map:
         try:
+            from games.iq_scramble_letter import IqGame, ScrambleGame, LetterGame
             from games import (
                 GuessGame, FastGame, CompatibilityGame, SongGame,
                 OppositeGame, ChainGame, LettersGame, CategoryGame,
-                HumanAnimalGame, IqGame, ScrambleGame, LetterGame, MafiaGame
+                HumanAnimalGame, MafiaGame
             )
             
             game_classes = {
