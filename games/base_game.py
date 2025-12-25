@@ -13,8 +13,6 @@ class BaseGame:
         self.supports_hint = True
         self.supports_reveal = True
         self.current_answer = None
-        self.previous_question = None
-        self.previous_answer = None
 
     def normalize_text(self, text):
         if not text:
@@ -28,9 +26,11 @@ class BaseGame:
     def get_theme_colors(self, theme="light"):
         themes = {
             "light": {"primary":"#2563EB","success":"#10B981","warning":"#F59E0B",
-                     "error":"#EF4444","text":"#1F2937","text2":"#6B7280","border":"#E5E7EB"},
+                     "error":"#EF4444","text":"#1F2937","text2":"#6B7280","border":"#E5E7EB",
+                     "bg":"#F9FAFB","card":"#FFFFFF"},
             "dark": {"primary":"#3B82F6","success":"#34D399","warning":"#FBBF24",
-                    "error":"#F87171","text":"#F9FAFB","text2":"#D1D5DB","border":"#4B5563"}
+                    "error":"#F87171","text":"#F9FAFB","text2":"#D1D5DB","border":"#4B5563",
+                    "bg":"#1F2937","card":"#374151"}
         }
         return themes.get(theme, themes["light"])
 
@@ -43,8 +43,8 @@ class BaseGame:
     def build_text_message(self, text):
         return TextMessage(text=text)
 
-    def build_question_message(self, question_text, subtitle=None):
-        c = self.get_theme_colors()
+    def build_question_message(self, question_text, subtitle=None, theme="light"):
+        c = self.get_theme_colors(theme)
         contents = [
             {"type":"text","text":self.game_name,"size":"xl","weight":"bold","color":c["primary"],"align":"center"},
             {"type":"separator","margin":"md","color":c["border"]},
@@ -76,13 +76,21 @@ class BaseGame:
             contents=FlexContainer.from_dict({
                 "type":"bubble",
                 "body":{
-                    "type":"box",
-                    "layout":"vertical",
+                    "type":"box","layout":"vertical",
                     "contents":contents,
-                    "paddingAll":"20px"
+                    "paddingAll":"20px",
+                    "backgroundColor":c["bg"]
                 }
             })
         )
+
+    def _create_flex_with_buttons(self, alt_text, bubble_dict):
+        """Create flex message with buttons"""
+        return FlexMessage(alt_text=alt_text, contents=FlexContainer.from_dict(bubble_dict))
+
+    def _create_text_message(self, text):
+        """Create text message"""
+        return TextMessage(text=text)
 
     def start_game(self):
         self.game_active = True
