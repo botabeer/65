@@ -1,25 +1,20 @@
-"""
-Compatibility Game - لعبة حساب التوافق (ترفيهية بدون نقاط)
-"""
 import re
 from games.base_game import BaseGame
 
 class CompatibilityGame(BaseGame):
-    def __init__(self, line_bot_api, theme="light"):
-        super().__init__(line_bot_api, questions_count=1, game_type="entertainment", theme=theme)
+    def __init__(self, line_bot_api, difficulty=3, theme="light"):
+        super().__init__(line_bot_api, difficulty=difficulty, theme=theme)
         self.game_name = "توافق"
         
         self.supports_hint = False
         self.supports_reveal = False
         self.supports_difficulty = False
-        self.show_progress = False
+        self.questions_count = 1
     
     def is_valid_text(self, text):
-        """التحقق من أن النص أسماء فقط"""
         return not re.search(r"[@#0-9A-Za-z!$%^&*()_+=\[\]{};:'\"\\|,.<>/?~`]", text)
     
     def parse_names(self, text):
-        """استخراج الاسمين من النص"""
         text = ' '.join(text.split())
         
         if ' و ' in text:
@@ -34,7 +29,6 @@ class CompatibilityGame(BaseGame):
         return (None, None)
     
     def calculate_compatibility(self, name1, name2):
-        """حساب نسبة التوافق بطريقة ترفيهية"""
         n1 = self.normalize_text(name1)
         n2 = self.normalize_text(name2)
         
@@ -45,7 +39,6 @@ class CompatibilityGame(BaseGame):
         return percentage
     
     def get_compatibility_message(self, percentage):
-        """الحصول على رسالة التوافق"""
         if percentage >= 90:
             return "توافق ممتاز جدا"
         elif percentage >= 75:
@@ -60,7 +53,6 @@ class CompatibilityGame(BaseGame):
             return "توافق منخفض جدا"
     
     def get_compatibility_color(self, percentage):
-        """الحصول على لون حسب النسبة"""
         c = self.get_theme_colors()
         if percentage >= 75:
             return c["success"]
@@ -72,12 +64,10 @@ class CompatibilityGame(BaseGame):
             return c["error"]
     
     def start_game(self):
-        """بدء اللعبة"""
         self.game_active = True
         return self.get_question()
     
     def get_question(self):
-        """الحصول على السؤال"""
         c = self.get_theme_colors()
         
         contents = [
@@ -161,10 +151,10 @@ class CompatibilityGame(BaseGame):
             }
         }
         
-        return self._create_flex_with_buttons("توافق", bubble)
+        from linebot.v3.messaging import FlexMessage, FlexContainer
+        return FlexMessage(alt_text="توافق", contents=FlexContainer.from_dict(bubble))
     
-    def check_answer(self, user_answer, user_id=None, display_name=None):
-        """التحقق من الإجابة"""
+    def check_answer(self, user_answer, user_id, display_name):
         if not self.game_active:
             return None
         
@@ -312,13 +302,9 @@ class CompatibilityGame(BaseGame):
         
         self.game_active = False
         
+        from linebot.v3.messaging import FlexMessage, FlexContainer
         return {
-            "response": self._create_flex_with_buttons("نتيجة التوافق", result_bubble),
+            "response": FlexMessage(alt_text="نتيجة التوافق", contents=FlexContainer.from_dict(result_bubble)),
             "points": 0,
             "game_over": True
         }
-    
-    def _create_flex_with_buttons(self, alt_text, bubble):
-        """إنشاء Flex Message"""
-        from linebot.v3.messaging import FlexMessage, FlexContainer
-        return FlexMessage(alt_text=alt_text, contents=FlexContainer.from_dict(bubble))
