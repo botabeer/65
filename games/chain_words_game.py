@@ -5,8 +5,8 @@ class ChainGame(BaseGame):
     def __init__(self, line_bot_api, difficulty=3, theme='light'):
         super().__init__(line_bot_api, difficulty=difficulty, theme=theme)
         self.game_name = "سلسله"
-        self.supports_hint = False
-        self.supports_reveal = False
+        self.supports_hint = True
+        self.supports_reveal = True
 
         self.starting_words = [
             "سيارة", "تفاح", "قلم", "نجم", "كتاب", "باب", "رمل",
@@ -32,6 +32,7 @@ class ChainGame(BaseGame):
     def get_question(self):
         required_letter = self.last_word[-1]
         self.previous_question = f"الكلمة السابقة: {self.last_word}"
+        self.current_answer = [f"كلمة تبدأ بحرف {required_letter}"]
         
         return self.build_question_message(
             f"الكلمة السابقة: {self.last_word}",
@@ -46,6 +47,35 @@ class ChainGame(BaseGame):
 
         if normalized in ["انسحب", "انسحاب"]:
             return self.handle_withdrawal(user_id, display_name)
+
+        if self.supports_hint and normalized == "لمح":
+            required_letter = self.normalize_text(self.last_word[-1])
+            hint = f"ابدأ بحرف: {required_letter}\nاي كلمة مناسبة"
+            return {"response": self.build_text_message(hint), "points": 0}
+
+        if self.supports_reveal and normalized == "جاوب":
+            required_letter = self.last_word[-1]
+            possible = [w for w in self.starting_words if w.startswith(required_letter) and self.normalize_text(w) not in self.used_words]
+            if possible:
+                example = random.choice(possible)
+            else:
+                example = f"كلمة تبدأ بـ {required_letter}"
+            
+            self.previous_answer = example
+            self.last_word = example if possible else self.last_word
+            if possible:
+                self.used_words.add(self.normalize_text(example))
+            self.current_question += 1
+            self.answered_users.clear()
+            
+            if self.current_question >= self.questions_count:
+                return self.end_game()
+            
+            return {
+                "response": self.get_question(),
+                "points": 0,
+                "next_question": True
+            }
 
         if normalized in self.used_words:
             return None
