@@ -1,6 +1,4 @@
-"""
-Bot 65 - Constants
-"""
+"""Bot 65 - Constants"""
 
 THEMES = {
     "light": {
@@ -10,16 +8,12 @@ THEMES = {
         "error": "#EF4444",
         "info": "#3B82F6",
         "text": "#1F2937",
-        "text_dark": "#1F2937",
-        "text_light": "#1F2937",
         "text2": "#6B7280",
         "text3": "#9CA3AF",
-        "bg": "#FFFFFF",
-        "card": "#F9FAFB",
-        "card_bg": "#F9FAFB",
+        "bg": "#F9FAFB",
+        "card": "#FFFFFF",
         "border": "#E5E7EB",
-        "info_bg": "#DBEAFE",
-        "white": "#FFFFFF"
+        "info_bg": "#DBEAFE"
     },
     "dark": {
         "primary": "#3B82F6",
@@ -28,15 +22,17 @@ THEMES = {
         "error": "#F87171",
         "info": "#60A5FA",
         "text": "#F9FAFB",
-        "text_dark": "#F9FAFB",
-        "text_light": "#D1D5DB",
         "text2": "#D1D5DB",
         "text3": "#9CA3AF",
         "bg": "#1F2937",
         "card": "#374151",
-        "card_bg": "#374151",
         "border": "#4B5563",
-        "info_bg": "#1E3A8A",
-        "white": "#F9FAFB"
+        "info_bg": "#1E3A8A"
     }
+}
+
+RANKS = {
+    "1": {"name": "المركز الاول", "color": "#FFD700"},
+    "2": {"name": "المركز الثاني", "color": "#C0C0C0"},
+    "3": {"name": "المركز الثالث", "color": "#CD7F32"}
 }
