@@ -3,11 +3,9 @@ import random
 from typing import Dict, Any, Optional
 
 class HumanAnimalGame(BaseGame):
-    """لعبة إنسان حيوان نبات جماد بلاد"""
-    
-    def __init__(self, line_bot_api):
-        super().__init__(line_bot_api, questions_count=5)
-        self.game_name = "لعبة"
+    def __init__(self, line_bot_api, difficulty=3, theme='light'):
+        super().__init__(line_bot_api, game_type="competitive", difficulty=difficulty, theme=theme)
+        self.game_name = "لعبه"
         
         self.letters = list("ابتجحدرزسشصطعفقكلمنهوي")
         random.shuffle(self.letters)
@@ -47,16 +45,15 @@ class HumanAnimalGame(BaseGame):
         self.current_letter = None
     
     def get_question(self):
-        """الحصول على سؤال جديد"""
         self.current_letter = self.letters[self.current_question % len(self.letters)]
         self.current_category = random.choice(self.categories)
+        self.previous_question = f"{self.current_category} حرف {self.current_letter}"
         
         return self.build_question_message(
             f"الفئة: {self.current_category}\nالحرف: {self.current_letter}"
         )
     
     def get_suggested_answer(self) -> Optional[str]:
-        """الحصول على إجابة مقترحة"""
         if self.current_category in self.database:
             if self.current_letter in self.database[self.current_category]:
                 answers = self.database[self.current_category][self.current_letter]
@@ -65,7 +62,6 @@ class HumanAnimalGame(BaseGame):
         return None
     
     def validate_answer(self, normalized_answer: str) -> bool:
-        """التحقق من صحة الإجابة"""
         if not normalized_answer or len(normalized_answer) < 2:
             return False
         
@@ -81,37 +77,37 @@ class HumanAnimalGame(BaseGame):
         
         normalized = self.normalize_text(user_answer)
         
-        # التلميح
+        if normalized in ["انسحب", "انسحاب"]:
+            return self.handle_withdrawal(user_id, display_name)
+        
         if self.supports_hint and normalized == "لمح":
             suggested = self.get_suggested_answer()
             hint = f"تبدأ بـ: {suggested[0]}\nعدد الحروف: {len(suggested)}" if suggested else "فكر جيدا"
-            return {"message": hint, "response": self.build_text_message(hint), "points": 0}
+            return {"response": self.build_text_message(hint), "points": 0}
         
-        # عرض الإجابة
         if self.supports_reveal and normalized == "جاوب":
             suggested = self.get_suggested_answer()
-            reveal = f"مثال: {suggested}" if suggested else "لا توجد إجابة ثابتة"
-            self.previous_question = f"{self.current_category} حرف {self.current_letter}"
             self.previous_answer = suggested or "متعددة"
             self.current_question += 1
             self.answered_users.clear()
             
             if self.current_question >= self.questions_count:
-                result = self.end_game()
-                result["message"] = f"{reveal}\n\n{result.get('message', '')}"
-                return result
+                return self.end_game()
             
-            return {"message": reveal, "response": self.get_question(), "points": 0}
+            return {
+                "response": self.get_question(),
+                "points": 0,
+                "next_question": True
+            }
         
-        # التحقق من الإجابة
         is_valid = self.validate_answer(normalized)
         
         if not is_valid:
             return None
         
+        self.answered_users.add(user_id)
         points = self.add_score(user_id, display_name, 1)
         
-        self.previous_question = f"{self.current_category} حرف {self.current_letter}"
         self.previous_answer = user_answer.strip()
         self.current_question += 1
         self.answered_users.clear()
@@ -121,4 +117,8 @@ class HumanAnimalGame(BaseGame):
             result["points"] = points
             return result
         
-        return {"message": f"صحيح +{points}", "response": self.get_question(), "points": points}
+        return {
+            "response": self.get_question(),
+            "points": points,
+            "next_question": True
+        }
