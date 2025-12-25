@@ -100,9 +100,11 @@ class SongGame(BaseGame):
     
     def get_question(self):
         available = [s for s in self.songs if s not in self.used_songs]
+        
         if not available:
             self.used_songs = []
             available = self.songs.copy()
+            random.shuffle(available)
         
         song = random.choice(available)
         self.used_songs.append(song)
@@ -111,7 +113,7 @@ class SongGame(BaseGame):
         
         return self.build_question_message(
             song['lyrics'],
-            "من المغني؟"
+            "من المغني"
         )
     
     def check_answer(self, user_answer, user_id, display_name):
