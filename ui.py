@@ -47,56 +47,60 @@ class UI:
             }
         }
     
-    @staticmethod
-    def games_menu(theme='light'):
-        c = UI._c(theme)
-        return {
-            "type":"bubble",
-            "body":{
-                "type":"box","layout":"vertical",
-                "contents":[
-                    {"type":"text","text":"قائمة الالعاب","weight":"bold","size":"xl","color":c['p'],"align":"center"},
-                    {"type":"separator","margin":"lg","color":c['b']},
-                    {"type":"text","text":"العاب تنافسية","size":"md","color":c['t'],"weight":"bold","margin":"lg"},
-                    {"type":"box","layout":"horizontal","contents":[
-                        {"type":"button","action":{"type":"message","label":"اغنية","text":"اغنيه"},"style":"primary","color":c['p'],"height":"sm"},
-                        {"type":"button","action":{"type":"message","label":"اضداد","text":"ضد"},"style":"primary","color":c['p'],"height":"sm"}
-                    ],"spacing":"sm","margin":"md"},
-                    {"type":"box","layout":"horizontal","contents":[
-                        {"type":"button","action":{"type":"message","label":"سلسلة","text":"سلسله"},"style":"primary","color":c['p'],"height":"sm"},
-                        {"type":"button","action":{"type":"message","label":"كتابة","text":"اسرع"},"style":"primary","color":c['p'],"height":"sm"}
-                    ],"spacing":"sm","margin":"sm"},
-                    {"type":"box","layout":"horizontal","contents":[
-                        {"type":"button","action":{"type":"message","label":"تكوين","text":"تكوين"},"style":"primary","color":c['p'],"height":"sm"},
-                        {"type":"button","action":{"type":"message","label":"فئة","text":"فئه"},"style":"primary","color":c['p'],"height":"sm"}
-                    ],"spacing":"sm","margin":"sm"},
-                    {"type":"box","layout":"horizontal","contents":[
-                        {"type":"button","action":{"type":"message","label":"ذكاء","text":"ذكاء"},"style":"primary","color":c['p'],"height":"sm"},
-                        {"type":"button","action":{"type":"message","label":"خمن","text":"خمن"},"style":"primary","color":c['p'],"height":"sm"}
-                    ],"spacing":"sm","margin":"sm"},
-                    {"type":"box","layout":"horizontal","contents":[
-                        {"type":"button","action":{"type":"message","label":"ترتيب","text":"ترتيب"},"style":"primary","color":c['p'],"height":"sm"},
-                        {"type":"button","action":{"type":"message","label":"لون","text":"لون"},"style":"primary","color":c['p'],"height":"sm"}
-                    ],"spacing":"sm","margin":"sm"},
-                    {"type":"box","layout":"horizontal","contents":[
-                        {"type":"button","action":{"type":"message","label":"روليت","text":"روليت"},"style":"primary","color":c['p'],"height":"sm"},
-                        {"type":"button","action":{"type":"message","label":"سين جيم","text":"سين"},"style":"primary","color":c['p'],"height":"sm"}
-                    ],"spacing":"sm","margin":"sm"},
-                    {"type":"separator","margin":"lg","color":c['b']},
-                    {"type":"text","text":"العاب جماعية","size":"md","color":c['t'],"weight":"bold","margin":"md"},
-                    {"type":"box","layout":"horizontal","contents":[
-                        {"type":"button","action":{"type":"message","label":"لعبة","text":"لعبه"},"style":"secondary","height":"sm"},
-                        {"type":"button","action":{"type":"message","label":"حروف","text":"حروف"},"style":"secondary","height":"sm"}
-                    ],"spacing":"sm","margin":"md"},
-                    {"type":"box","layout":"horizontal","contents":[
-                        {"type":"button","action":{"type":"message","label":"توافق","text":"توافق"},"style":"secondary","height":"sm","color":c['w']},
-                        {"type":"button","action":{"type":"message","label":"مافيا","text":"مافيا"},"style":"secondary","height":"sm","color":c['e']}
-                    ],"spacing":"sm","margin":"sm"}
-                ],
-                "paddingAll":"20px",
-                "backgroundColor":c['bg']
-            }
+    from constants import GAME_LABELS
+
+@staticmethod
+def games_menu(theme='light'):
+    c = UI._c(theme)
+    return {
+        "type":"bubble",
+        "body":{
+            "type":"box","layout":"vertical",
+            "contents":[
+                {"type":"text","text":"قائمة الالعاب","weight":"bold","size":"xl","color":c['primary'],"align":"center"},
+                {"type":"separator","margin":"lg","color":c['border']},
+                {"type":"text","text":"العاب فردية","size":"md","color":c['text'],"weight":"bold","margin":"lg"},
+                {"type":"box","layout":"horizontal","contents":[
+                    {"type":"button","action":{"type":"message","label":GAME_LABELS['خمن'],"text":"خمن"},"style":"primary","color":c['primary'],"height":"sm"},
+                    {"type":"button","action":{"type":"message","label":GAME_LABELS['اسرع'],"text":"اسرع"},"style":"primary","color":c['primary'],"height":"sm"}
+                ],"spacing":"sm","margin":"md"},
+                {"type":"box","layout":"horizontal","contents":[
+                    {"type":"button","action":{"type":"message","label":GAME_LABELS['اغنيه'],"text":"اغنيه"},"style":"primary","color":c['primary'],"height":"sm"},
+                    {"type":"button","action":{"type":"message","label":GAME_LABELS['ضد'],"text":"ضد"},"style":"primary","color":c['primary'],"height":"sm"}
+                ],"spacing":"sm","margin":"sm"},
+                {"type":"box","layout":"horizontal","contents":[
+                    {"type":"button","action":{"type":"message","label":GAME_LABELS['تكوين'],"text":"تكوين"},"style":"primary","color":c['primary'],"height":"sm"},
+                    {"type":"button","action":{"type":"message","label":GAME_LABELS['فئه'],"text":"فئه"},"style":"primary","color":c['primary'],"height":"sm"}
+                ],"spacing":"sm","margin":"sm"},
+                {"type":"box","layout":"horizontal","contents":[
+                    {"type":"button","action":{"type":"message","label":GAME_LABELS['ذكاء'],"text":"ذكاء"},"style":"primary","color":c['primary'],"height":"sm"},
+                    {"type":"button","action":{"type":"message","label":GAME_LABELS['ترتيب'],"text":"ترتيب"},"style":"primary","color":c['primary'],"height":"sm"}
+                ],"spacing":"sm","margin":"sm"},
+                {"type":"box","layout":"horizontal","contents":[
+                    {"type":"button","action":{"type":"message","label":GAME_LABELS['لون'],"text":"لون"},"style":"primary","color":c['primary'],"height":"sm"},
+                    {"type":"button","action":{"type":"message","label":GAME_LABELS['روليت'],"text":"روليت"},"style":"primary","color":c['primary'],"height":"sm"}
+                ],"spacing":"sm","margin":"sm"},
+                {"type":"box","layout":"horizontal","contents":[
+                    {"type":"button","action":{"type":"message","label":GAME_LABELS['سين'],"text":"سين"},"style":"primary","color":c['primary'],"height":"sm"}
+                ],"spacing":"sm","margin":"sm"},
+                {"type":"separator","margin":"lg","color":c['border']},
+                {"type":"text","text":"العاب جماعية","size":"md","color":c['text'],"weight":"bold","margin":"md"},
+                {"type":"box","layout":"horizontal","contents":[
+                    {"type":"button","action":{"type":"message","label":GAME_LABELS['سلسله'],"text":"سلسله"},"style":"secondary","height":"sm","color":c['secondary']},
+                    {"type":"button","action":{"type":"message","label":GAME_LABELS['لعبه'],"text":"لعبه"},"style":"secondary","height":"sm","color":c['secondary']}
+                ],"spacing":"sm","margin":"md"},
+                {"type":"box","layout":"horizontal","contents":[
+                    {"type":"button","action":{"type":"message","label":GAME_LABELS['حروف'],"text":"حروف"},"style":"secondary","height":"sm","color":c['secondary']},
+                    {"type":"button","action":{"type":"message","label":GAME_LABELS['توافق'],"text":"توافق"},"style":"secondary","height":"sm","color":c['warning']}
+                ],"spacing":"sm","margin":"sm"},
+                {"type":"box","layout":"horizontal","contents":[
+                    {"type":"button","action":{"type":"message","label":GAME_LABELS['مافيا'],"text":"مافيا"},"style":"secondary","height":"sm","color":c['error']}
+                ],"spacing":"sm","margin":"sm"}
+            ],
+            "paddingAll":"20px",
+            "backgroundColor":c['bg']
         }
+    }
     
     @staticmethod
     def help_card(theme='light'):
