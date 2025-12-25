@@ -1,39 +1,29 @@
 """Bot 65 - Constants"""
 
-THEMES = {
-    "light": {
-        "primary": "#000000",
-        "secondary": "#4A5568",
-        "success": "#48BB78",
-        "warning": "#ED8936",
-        "error": "#E53E3E",
-        "info": "#3182CE",
-        "text": "#1A202C",
-        "text2": "#4A5568",
-        "text3": "#718096",
-        "bg": "#FFFFFF",
-        "card": "#F7FAFC",
-        "border": "#E2E8F0",
-        "progress_bg": "#E2E8F0",
-        "progress_fill": "#000000"
-    },
-    "dark": {
-        "primary": "#FFFFFF",
-        "secondary": "#A0AEC0",
-        "success": "#68D391",
-        "warning": "#F6AD55",
-        "error": "#FC8181",
-        "info": "#63B3ED",
-        "text": "#F7FAFC",
-        "text2": "#CBD5E0",
-        "text3": "#A0AEC0",
-        "bg": "#1A202C",
-        "card": "#2D3748",
-        "border": "#4A5568",
-        "progress_bg": "#2D3748",
-        "progress_fill": "#FFFFFF"
+    THEMES = {
+        "light": {
+            "primary": "#000000",      # أسود للنصوص الأساسية
+            "text": "#000000",         # أسود للنصوص العادية
+            "text2": "#4B5563",        # رمادي متوسط
+            "text3": "#9CA3AF",        # رمادي فاتح
+            "bg": "#FFFFFF",           # أبيض للخلفية
+            "card": "#F3F4F6",         # رمادي فاتح للبطاقات
+            "border": "#D1D5DB",       # رمادي متوسط للفواصل
+            "progress_bg": "#E5E7EB",  # رمادي فاتح لشريط التقدم الخلفي
+            "progress_fill": "#000000" # أسود لشريط التقدم المملوء
+        },
+        "dark": {
+            "primary": "#FFFFFF",      # أبيض للنصوص الأساسية
+            "text": "#FFFFFF",         # أبيض للنصوص العادية
+            "text2": "#D1D5DB",        # رمادي فاتح للنصوص الثانوية
+            "text3": "#9CA3AF",        # رمادي متوسط للنصوص الثالثة
+            "bg": "#000000",           # أسود للخلفية
+            "card": "#1F2937",         # رمادي داكن للبطاقات
+            "border": "#374151",       # رمادي غامق للفواصل
+            "progress_bg": "#374151",  # رمادي غامق لشريط التقدم الخلفي
+            "progress_fill": "#FFFFFF" # أبيض لشريط التقدم المملوء
+        }
     }
-}
 
 RANKS = {
     "1": {"name": "المركز الاول", "color": "#FFD700"},
