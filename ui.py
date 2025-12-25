@@ -84,7 +84,7 @@ class UI:
             {"type": "text", "text": "اختر لعبتك المفضلة", "size": "sm", "align": "center", "color": c["text2"], "margin": "md"}
         ]
         
-        contents += UI._game_buttons([
+        game_rows = [
             ["خمن", "اسرع"],
             ["اغنيه", "ضد"],
             ["تكوين", "فئه"],
@@ -93,7 +93,25 @@ class UI:
             ["سين", "سلسله"],
             ["لعبه", "حروف"],
             ["توافق", "مافيا"]
-        ], c)
+        ]
+        
+        for row in game_rows:
+            contents.append({
+                "type": "box",
+                "layout": "horizontal",
+                "spacing": "md",
+                "margin": "sm",
+                "contents": [
+                    {
+                        "type": "button",
+                        "style": "primary",
+                        "color": c["button"],
+                        "height": "md",
+                        "action": {"type": "message", "label": GAME_LABELS[g], "text": g},
+                        "flex": 1
+                    } for g in row
+                ]
+            })
         
         contents.append({"type": "separator", "margin": "lg", "color": c["border"]})
         contents.append({
@@ -105,7 +123,21 @@ class UI:
             "margin": "md"
         })
         
-        contents += UI._row_buttons([("رجوع", "بداية")], c)
+        contents.append({
+            "type": "box",
+            "layout": "horizontal",
+            "spacing": "md",
+            "margin": "lg",
+            "contents": [
+                {
+                    "type": "button",
+                    "style": "primary",
+                    "color": c["button"],
+                    "height": "sm",
+                    "action": {"type": "message", "label": "رجوع", "text": "بداية"}
+                }
+            ]
+        })
         
         return {
             "type": "bubble",
