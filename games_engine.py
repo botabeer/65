@@ -1,42 +1,39 @@
-"""
-Game Engine - Unified game loader
-"""
+"""Game Engine - Unified game loader"""
+
 from games import (
-    SongGame, OppositeGame, ChainGame, FastGame,
-    LettersGame, CategoryGame, HumanAnimalGame,
-    CompatibilityGame, IqGame, GuessGame, ScrambleGame,
-    WordColorGame, RouletteGame, SeenJeemGame, LetterGame,
-    MafiaGame
+    GuessGame, FastGame, CompatibilityGame, SongGame,
+    OppositeGame, ChainGame, LettersGame, CategoryGame,
+    HumanAnimalGame, IqGame, ScrambleGame, LetterGame,
+    MafiaGame, WordColorGame, RouletteGame, SeenJeemGame
 )
 
 class GameEngine:
     GAMES = {
+        'خمن': GuessGame,
+        'اسرع': FastGame,
+        'توافق': CompatibilityGame,
         'اغنيه': SongGame,
         'ضد': OppositeGame,
         'سلسله': ChainGame,
-        'اسرع': FastGame,
         'تكوين': LettersGame,
         'فئه': CategoryGame,
         'لعبه': HumanAnimalGame,
-        'توافق': CompatibilityGame,
         'ذكاء': IqGame,
-        'خمن': GuessGame,
         'ترتيب': ScrambleGame,
+        'حروف': LetterGame,
+        'مافيا': MafiaGame,
         'لون': WordColorGame,
         'روليت': RouletteGame,
-        'سين': SeenJeemGame,
-        'حروف': LetterGame,
-        'مافيا': MafiaGame
+        'سين': SeenJeemGame
     }
     
     @staticmethod
-    def create(game_type, theme='light'):
+    def create(game_type, line_api, difficulty=3, theme='light'):
         game_class = GameEngine.GAMES.get(game_type)
         if game_class:
-            from linebot.v3.messaging import ApiClient, MessagingApi, Configuration
-            import os
-            config = Configuration(access_token=os.getenv('LINE_CHANNEL_ACCESS_TOKEN'))
-            with ApiClient(config) as api_client:
-                line_api = MessagingApi(api_client)
-                return game_class(line_api)
+            return game_class(line_api, difficulty=difficulty, theme=theme)
         return None
+    
+    @staticmethod
+    def get_available_games():
+        return list(GameEngine.GAMES.keys())
