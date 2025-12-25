@@ -1,7 +1,5 @@
-"""
-Guess Game - لعبة تخمين منافسة مع مستويات صعوبة
-"""
 import random
+import time
 from games.base_game import BaseGame
 
 class GuessGame(BaseGame):
@@ -41,7 +39,7 @@ class GuessGame(BaseGame):
                 "الفواكه": {"ت": ["تفاح", "توت"], "م": ["موز", "مشمش", "مانجو"], "ع": ["عنب"], "ب": ["برتقال"], "ر": ["رمان"]},
                 "الحيوانات": {"ق": ["قطة", "قرد"], "ف": ["فيل", "فار", "فهد"], "ا": ["اسد", "ارنب"], "ن": ["نمر", "نعامة"], "ز": ["زرافة"]},
                 "البلاد": {"س": ["سعودية", "سوريا", "سودان"], "م": ["مصر", "مغرب"], "ع": ["عمان", "عراق"], "ي": ["يمن"]},
-                "المهن": {"م": ["معلم", "مهندس"], "ط": ["طبيب"], "م": ["محامي"]}
+                "المهن": {"م": ["معلم", "مهندس"], "ط": ["طبيب"], "محامي": ["محامي"]}
             }
         }
         
@@ -60,7 +58,6 @@ class GuessGame(BaseGame):
         random.shuffle(self.questions_list)
     
     def get_question(self):
-        """الحصول على السؤال"""
         self.round_start_time = time.time()
         q = self.questions_list[self.current_question % len(self.questions_list)]
         self.current_answer = q["answers"]
@@ -71,7 +68,6 @@ class GuessGame(BaseGame):
         )
     
     def check_answer(self, user_answer, user_id, display_name):
-        """التحقق من الإجابة"""
         if not self.game_active:
             return None
         
