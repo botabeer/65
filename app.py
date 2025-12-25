@@ -1,7 +1,11 @@
 from flask import Flask, request, abort, jsonify
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
-from linebot.v3.messaging import Configuration, ApiClient, MessagingApi, ReplyMessageRequest, TextMessage, FlexMessage, FlexContainer
+from linebot.v3.messaging import (
+    Configuration, ApiClient, MessagingApi, 
+    ReplyMessageRequest, TextMessage, FlexMessage, 
+    FlexContainer, QuickReply, QuickReplyItem, MessageAction
+)
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
 import os
 import sys
@@ -35,6 +39,17 @@ waiting_for_name = set()
 user_themes = {}
 game_difficulties = {}
 
+def get_quick_reply():
+    """ازرار ثابتة للاوامر النصية"""
+    return QuickReply(items=[
+        QuickReplyItem(action=MessageAction(label="سؤال", text="سؤال")),
+        QuickReplyItem(action=MessageAction(label="تحدي", text="تحدي")),
+        QuickReplyItem(action=MessageAction(label="اعتراف", text="اعتراف")),
+        QuickReplyItem(action=MessageAction(label="منشن", text="منشن")),
+        QuickReplyItem(action=MessageAction(label="حكمة", text="حكمة")),
+        QuickReplyItem(action=MessageAction(label="موقف", text="موقف"))
+    ])
+
 @app.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers.get('X-Line-Signature', '')
@@ -60,7 +75,10 @@ def handle_message(event):
             response = process(text, user_id, group_id, line_api)
             if response:
                 msgs = response if isinstance(response, list) else [response]
-                line_api.reply_message(ReplyMessageRequest(reply_token=event.reply_token, messages=msgs))
+                line_api.reply_message(ReplyMessageRequest(
+                    reply_token=event.reply_token, 
+                    messages=msgs
+                ))
         except Exception as e:
             logger.error(f"Error: {e}", exc_info=True)
 
@@ -73,23 +91,37 @@ def process(text, user_id, group_id, line_api):
         if 2 <= len(text) <= 50:
             DB.register_user(user_id, text.strip())
             waiting_for_name.discard(user_id)
-            return TextMessage(text=f"تم التسجيل: {text}")
+            msg = TextMessage(text=f"تم التسجيل: {text}")
+            msg.quick_reply = get_quick_reply()
+            return msg
         waiting_for_name.discard(user_id)
         return None
     
-    # أوامر نصية
+    # اوامر نصية
     if t in ['سؤال', 'سوال']:
-        return TextMessage(text=TextCommands.get_random('questions'))
+        msg = TextMessage(text=TextCommands.get_random('questions'))
+        msg.quick_reply = get_quick_reply()
+        return msg
     if t == 'تحدي':
-        return TextMessage(text=TextCommands.get_random('challenges'))
+        msg = TextMessage(text=TextCommands.get_random('challenges'))
+        msg.quick_reply = get_quick_reply()
+        return msg
     if t == 'اعتراف':
-        return TextMessage(text=TextCommands.get_random('confessions'))
+        msg = TextMessage(text=TextCommands.get_random('confessions'))
+        msg.quick_reply = get_quick_reply()
+        return msg
     if t == 'منشن':
-        return TextMessage(text=TextCommands.get_random('mentions'))
+        msg = TextMessage(text=TextCommands.get_random('mentions'))
+        msg.quick_reply = get_quick_reply()
+        return msg
     if t in ['حكمة', 'حكمه']:
-        return TextMessage(text=TextCommands.get_random('quotes'))
+        msg = TextMessage(text=TextCommands.get_random('quotes'))
+        msg.quick_reply = get_quick_reply()
+        return msg
     if t == 'موقف':
-        return TextMessage(text=TextCommands.get_random('situations'))
+        msg = TextMessage(text=TextCommands.get_random('situations'))
+        msg.quick_reply = get_quick_reply()
+        return msg
     
     # القوائم الرئيسية
     if t in ['بداية', 'start', 'بدايه']:
@@ -101,18 +133,22 @@ def process(text, user_id, group_id, line_api):
     if t in ['مساعدة', 'help', 'مساعده']:
         return FlexMessage(alt_text="المساعدة", contents=FlexContainer.from_dict(UI.help_card(theme)))
     
-    if t in ['العاب', 'ألعاب', 'الالعاب']:
+    if t in ['العاب', 'ألعاب', 'الالعاب', 'العب']:
         return FlexMessage(alt_text="الالعاب", contents=FlexContainer.from_dict(UI.games_menu(theme)))
     
     # التسجيل
     if t in ['تسجيل', 'تغيير']:
         waiting_for_name.add(user_id)
-        return TextMessage(text="اكتب اسمك (2-50 حرف)")
+        msg = TextMessage(text="اكتب اسمك (2-50 حرف)")
+        msg.quick_reply = get_quick_reply()
+        return msg
     
-    # الإحصائيات
+    # الاحصائيات
     if t in ['نقاطي', 'احصائياتي']:
         if not user:
-            return TextMessage(text="يجب التسجيل اولا")
+            msg = TextMessage(text="يجب التسجيل اولا")
+            msg.quick_reply = get_quick_reply()
+            return msg
         DB.update_activity(user_id)
         return FlexMessage(alt_text="احصائياتك", contents=FlexContainer.from_dict(UI.stats(user, theme)))
     
@@ -123,19 +159,25 @@ def process(text, user_id, group_id, line_api):
     # تغيير الثيم
     if t == 'ثيم':
         if not user:
-            return TextMessage(text="يجب التسجيل اولا")
+            msg = TextMessage(text="يجب التسجيل اولا")
+            msg.quick_reply = get_quick_reply()
+            return msg
         new_theme = 'dark' if theme == 'light' else 'light'
         DB.set_theme(user_id, new_theme)
         user_themes[user_id] = new_theme
-        return TextMessage(text=f"تم التغيير للثيم {'الداكن' if new_theme == 'dark' else 'الفاتح'}")
+        msg = TextMessage(text=f"تم التغيير للثيم {'الداكن' if new_theme == 'dark' else 'الفاتح'}")
+        msg.quick_reply = get_quick_reply()
+        return msg
     
-    # إيقاف اللعبة
+    # ايقاف اللعبة
     if t in ['ايقاف', 'stop', 'إيقاف']:
         if group_id in game_sessions:
             del game_sessions[group_id]
             if group_id in game_difficulties:
                 del game_difficulties[group_id]
-            return TextMessage(text="تم ايقاف اللعبة")
+            msg = TextMessage(text="تم ايقاف اللعبة")
+            msg.quick_reply = get_quick_reply()
+            return msg
         return None
     
     # مستوى الصعوبة
@@ -144,32 +186,33 @@ def process(text, user_id, group_id, line_api):
             level = int(t.split()[-1])
             if 1 <= level <= 5:
                 game_difficulties[group_id] = level
-                return TextMessage(text=f"تم تعيين الصعوبة: مستوى {level}")
+                msg = TextMessage(text=f"تم تعيين الصعوبة: مستوى {level}")
+                msg.quick_reply = get_quick_reply()
+                return msg
         except:
             pass
-        return TextMessage(text="استخدم: صعوبة 1 (الى 5)")
+        msg = TextMessage(text="استخدم: صعوبة 1 (الى 5)")
+        msg.quick_reply = get_quick_reply()
+        return msg
     
     if not user:
         return None
     
-    # تشغيل الألعاب
+    # تشغيل الالعاب
     game_map = {
-        'خمن': ('GuessGame', 'competitive'),
-        'اسرع': ('FastGame', 'competitive'),
-        'توافق': ('CompatibilityGame', 'entertainment'),
-        'اغنيه': ('SongGame', 'competitive'),
-        'ضد': ('OppositeGame', 'competitive'),
-        'سلسله': ('ChainGame', 'competitive'),
-        'تكوين': ('LettersGame', 'competitive'),
-        'فئه': ('CategoryGame', 'competitive'),
-        'لعبه': ('HumanAnimalGame', 'competitive'),
-        'ذكاء': ('IqGame', 'competitive'),
-        'ترتيب': ('ScrambleGame', 'competitive'),
-        'لون': ('WordColorGame', 'competitive'),
-        'روليت': ('RouletteGame', 'competitive'),
-        'سين': ('SeenJeemGame', 'competitive'),
-        'حروف': ('LetterGame', 'competitive'),
-        'مافيا': ('MafiaGame', 'entertainment')
+        'خمن': 'GuessGame',
+        'اسرع': 'FastGame',
+        'توافق': 'CompatibilityGame',
+        'اغنيه': 'SongGame',
+        'ضد': 'OppositeGame',
+        'سلسله': 'ChainGame',
+        'تكوين': 'LettersGame',
+        'فئه': 'CategoryGame',
+        'لعبه': 'HumanAnimalGame',
+        'ذكاء': 'IqGame',
+        'ترتيب': 'ScrambleGame',
+        'حروف': 'LetterGame',
+        'مافيا': 'MafiaGame'
     }
     
     if t in game_map:
@@ -177,8 +220,7 @@ def process(text, user_id, group_id, line_api):
             from games import (
                 GuessGame, FastGame, CompatibilityGame, SongGame,
                 OppositeGame, ChainGame, LettersGame, CategoryGame,
-                HumanAnimalGame, IqGame, ScrambleGame, WordColorGame,
-                RouletteGame, SeenJeemGame, LetterGame, MafiaGame
+                HumanAnimalGame, IqGame, ScrambleGame, LetterGame, MafiaGame
             )
             
             game_classes = {
@@ -187,12 +229,11 @@ def process(text, user_id, group_id, line_api):
                 'OppositeGame': OppositeGame, 'ChainGame': ChainGame,
                 'LettersGame': LettersGame, 'CategoryGame': CategoryGame,
                 'HumanAnimalGame': HumanAnimalGame, 'IqGame': IqGame,
-                'ScrambleGame': ScrambleGame, 'WordColorGame': WordColorGame,
-                'RouletteGame': RouletteGame, 'SeenJeemGame': SeenJeemGame,
-                'LetterGame': LetterGame, 'MafiaGame': MafiaGame
+                'ScrambleGame': ScrambleGame, 'LetterGame': LetterGame,
+                'MafiaGame': MafiaGame
             }
             
-            game_class_name, game_type = game_map[t]
+            game_class_name = game_map[t]
             game_class = game_classes.get(game_class_name)
             
             if game_class:
@@ -202,9 +243,11 @@ def process(text, user_id, group_id, line_api):
                 return game.start_game()
         except Exception as e:
             logger.error(f"Game creation error: {e}", exc_info=True)
-            return TextMessage(text="حدث خطأ في بدء اللعبة")
+            msg = TextMessage(text="حدث خطأ في بدء اللعبة")
+            msg.quick_reply = get_quick_reply()
+            return msg
     
-    # معالجة إجابات الألعاب
+    # معالجة اجابات الالعاب
     if group_id in game_sessions:
         game = game_sessions[group_id]
         result = game.check_answer(text, user_id, user['name'])
