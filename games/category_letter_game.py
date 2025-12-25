@@ -3,14 +3,8 @@ from games.base_game import BaseGame
 
 class CategoryGame(BaseGame):
     def __init__(self, line_bot_api, difficulty=3, theme='light'):
-        super().__init__(
-            line_bot_api,
-            game_type="competitive",
-            difficulty=difficulty,
-            theme=theme
-        )
-
-        self.game_name = "فئة"
+        super().__init__(line_bot_api, difficulty=difficulty, theme=theme)
+        self.game_name = "فئه"
 
         self.challenges = [
             {"category": "المطبخ", "letter": "ق", "answers": ["قدر", "قلاية"]},
@@ -18,6 +12,50 @@ class CategoryGame(BaseGame):
             {"category": "فاكهة", "letter": "ت", "answers": ["تفاح", "توت"]},
             {"category": "بلاد", "letter": "س", "answers": ["سعودية", "سوريا"]},
             {"category": "اسم ولد", "letter": "م", "answers": ["محمد", "مصطفى"]},
+            {"category": "اسم بنت", "letter": "ف", "answers": ["فاطمة", "فرح"]},
+            {"category": "نبات", "letter": "ز", "answers": ["زيتون", "زهرة"]},
+            {"category": "جماد", "letter": "ك", "answers": ["كرسي", "كتاب"]},
+            {"category": "مهنة", "letter": "ط", "answers": ["طبيب", "طباخ"]},
+            {"category": "لون", "letter": "ا", "answers": ["احمر", "ازرق"]},
+            {"category": "رياضة", "letter": "ك", "answers": ["كرة", "كاراتيه"]},
+            {"category": "مدينة", "letter": "ج", "answers": ["جدة", "جازان"]},
+            {"category": "طعام", "letter": "ر", "answers": ["رز", "رمان"]},
+            {"category": "شراب", "letter": "ق", "answers": ["قهوة", "قمر الدين"]},
+            {"category": "اثاث", "letter": "س", "answers": ["سرير", "سجادة"]},
+            {"category": "ملابس", "letter": "ث", "answers": ["ثوب", "ثياب"]},
+            {"category": "حشرة", "letter": "ن", "answers": ["نملة", "نحلة"]},
+            {"category": "طائر", "letter": "ح", "answers": ["حمامة", "حسون"]},
+            {"category": "زهرة", "letter": "و", "answers": ["ورد", "ورقة"]},
+            {"category": "معدن", "letter": "ذ", "answers": ["ذهب", "ذرة"]},
+            {"category": "الة موسيقية", "letter": "ع", "answers": ["عود", "عصا"]},
+            {"category": "سيارة", "letter": "م", "answers": ["مرسيدس", "مازدا"]},
+            {"category": "عضو جسم", "letter": "ي", "answers": ["يد", "ياقة"]},
+            {"category": "دولة", "letter": "ل", "answers": ["لبنان", "ليبيا"]},
+            {"category": "حلوى", "letter": "ب", "answers": ["بسبوسة", "بقلاوة"]},
+            {"category": "ادوات مدرسية", "letter": "د", "answers": ["دفتر", "دبوس"]},
+            {"category": "وسيلة مواصلات", "letter": "ح", "answers": ["حافلة", "حمار"]},
+            {"category": "فصل", "letter": "ش", "answers": ["شتاء", "شروق"]},
+            {"category": "شهر", "letter": "ر", "answers": ["رمضان", "رجب"]},
+            {"category": "يوم", "letter": "ج", "answers": ["جمعة", "جمعتين"]},
+            {"category": "كوكب", "letter": "ز", "answers": ["زهرة", "زحل"]},
+            {"category": "بحر", "letter": "ا", "answers": ["احمر", "اسود"]},
+            {"category": "جبل", "letter": "ط", "answers": ["طويق", "طور"]},
+            {"category": "نهر", "letter": "ن", "answers": ["نيل", "نهر"]},
+            {"category": "عاصمة", "letter": "ب", "answers": ["بغداد", "بيروت"]},
+            {"category": "قارة", "letter": "ا", "answers": ["اسيا", "افريقيا"]},
+            {"category": "محيط", "letter": "ه", "answers": ["هادي", "هندي"]},
+            {"category": "صحراء", "letter": "ك", "answers": ["كبرى", "كويت"]},
+            {"category": "جزيرة", "letter": "ق", "answers": ["قبرص", "قطر"]},
+            {"category": "واد", "letter": "و", "answers": ["وادي", "وادج"]},
+            {"category": "دواء", "letter": "ا", "answers": ["اسبرين", "انسولين"]},
+            {"category": "مرض", "letter": "س", "answers": ["سكري", "سعال"]},
+            {"category": "جهاز طبي", "letter": "م", "answers": ["منظار", "مشرط"]},
+            {"category": "جهاز منزلي", "letter": "غ", "answers": ["غسالة", "غلاية"]},
+            {"category": "عطر", "letter": "ع", "answers": ["عود", "عنبر"]},
+            {"category": "حجر كريم", "letter": "ي", "answers": ["ياقوت", "يشب"]},
+            {"category": "معجنات", "letter": "ف", "answers": ["فطيرة", "فتة"]},
+            {"category": "مشروب ساخن", "letter": "ش", "answers": ["شاي", "شوكولاتة"]},
+            {"category": "حلوى شعبية", "letter": "ك", "answers": ["كنافة", "كعك"]}
         ]
 
         self.questions = []
