@@ -4,7 +4,9 @@ from games.base_game import BaseGame
 class RouletteGame(BaseGame):
     def __init__(self, line_bot_api, difficulty=3, theme='light'):
         super().__init__(line_bot_api, game_type="competitive", difficulty=difficulty, theme=theme)
-        self.game_name = "لعبة الروليت"
+        self.game_name = "روليت"
+        self.supports_hint = True
+        self.supports_reveal = True
         
         self.roulette_numbers = list(range(0, 37))
         self.red_numbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
@@ -12,9 +14,6 @@ class RouletteGame(BaseGame):
         
         self.current_spin_result = None
         self.last_spin_result = None
-        
-        self.supports_hint = True
-        self.supports_reveal = True
     
     def spin_roulette(self):
         return random.choice(self.roulette_numbers)
@@ -30,14 +29,16 @@ class RouletteGame(BaseGame):
     def get_question(self):
         self.current_spin_result = self.spin_roulette()
         result_color = self.get_color(self.current_spin_result)
+        self.current_answer = [str(self.current_spin_result), result_color]
         
-        message = f"تدور الروليت\n\nالرقم: {self.current_spin_result}\nاللون: {result_color}"
+        message = "تدور الروليت\n\nخمن الرقم او اللون"
         
         if self.last_spin_result is not None:
             last_color = self.get_color(self.last_spin_result)
             message += f"\n\nالدورة السابقة:\nالرقم: {self.last_spin_result}\nاللون: {last_color}"
         
         subtitle = "خمن الرقم او اللون او زوجي او فردي"
+        self.previous_question = "دورة الروليت"
         
         return self.build_question_message(message, subtitle)
     
@@ -58,6 +59,7 @@ class RouletteGame(BaseGame):
         
         if self.supports_reveal and normalized == "جاوب":
             reveal = f"الرقم: {self.current_spin_result}\nاللون: {self.get_color(self.current_spin_result)}"
+            self.previous_answer = reveal
             self.last_spin_result = self.current_spin_result
             self.current_question += 1
             self.answered_users.clear()
@@ -78,7 +80,9 @@ class RouletteGame(BaseGame):
         
         if not won:
             result_color = self.get_color(self.current_spin_result)
-            if (normalized == "احمر" and result_color == "احمر") or (normalized == "اسود" and result_color == "اسود") or (normalized == "اخضر" and result_color == "اخضر"):
+            if (normalized == "احمر" and result_color == "احمر") or \
+               (normalized == "اسود" and result_color == "اسود") or \
+               (normalized == "اخضر" and result_color == "اخضر"):
                 won = True
         
         if not won and self.current_spin_result != 0:
@@ -90,6 +94,7 @@ class RouletteGame(BaseGame):
             self.answered_users.add(user_id)
             points = self.add_score(user_id, display_name, 1)
             
+            self.previous_answer = f"{self.current_spin_result} - {self.get_color(self.current_spin_result)}"
             self.last_spin_result = self.current_spin_result
             self.current_question += 1
             self.answered_users.clear()
