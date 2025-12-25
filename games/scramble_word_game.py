@@ -26,9 +26,11 @@ class ScrambleGame(BaseGame):
 
     def get_question(self):
         available = [w for w in self.words if w not in self.used_words]
+        
         if not available:
-            self.used_words.clear()
+            self.used_words = []
             available = self.words.copy()
+            random.shuffle(available)
 
         word = random.choice(available)
         self.used_words.append(word)
@@ -44,7 +46,7 @@ class ScrambleGame(BaseGame):
 
         answer = self.normalize_text(user_answer)
 
-        if answer in ["انسحب", "انسحاب"]:
+        if answer in ["ايقاف", "ايقاف"]:
             return self.handle_withdrawal(user_id, display_name)
 
         if answer == self.normalize_text(self.current_answer):
