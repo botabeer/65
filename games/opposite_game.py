@@ -28,9 +28,19 @@ class OppositeGame(BaseGame):
 
         self.questions_list = list(self.opposites.items())
         random.shuffle(self.questions_list)
+        self.used_questions = []
 
     def get_question(self):
-        word, answers = self.questions_list[self.current_question % len(self.questions_list)]
+        available = [q for q in self.questions_list if q not in self.used_questions]
+        
+        if not available:
+            self.used_questions = []
+            available = self.questions_list.copy()
+            random.shuffle(available)
+        
+        word, answers = random.choice(available)
+        self.used_questions.append((word, answers))
+        
         self.current_answer = answers
         self.previous_question = f"ما عكس: {word}"
         return self.build_question_message(f"ما عكس كلمة:\n{word}")
@@ -41,7 +51,7 @@ class OppositeGame(BaseGame):
 
         normalized = self.normalize_text(user_answer)
 
-        if normalized in ["انسحب", "انسحاب"]:
+        if normalized in ["ايقاف", "ايقاف"]:
             return self.handle_withdrawal(user_id, display_name)
 
         if self.supports_hint and normalized == "لمح":
