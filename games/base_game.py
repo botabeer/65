@@ -7,18 +7,26 @@ from abc import ABC, abstractmethod
 class BaseGame(ABC):
     THEMES = {
         "light": {
-            "primary": "#2563EB", "success": "#10B981", "warning": "#F59E0B",
-            "error": "#EF4444", "info": "#3B82F6", "text": "#1F2937",
-            "text2": "#6B7280", "text3": "#9CA3AF", "bg": "#F9FAFB",
-            "card": "#FFFFFF", "border": "#E5E7EB", 
-            "progress_bg": "#E5E7EB", "progress_fill": "#2563EB"
+            "primary": "#000000",      # أسود للنصوص الأساسية
+            "text": "#000000",         # أسود للنصوص العادية
+            "text2": "#4B5563",        # رمادي متوسط
+            "text3": "#9CA3AF",        # رمادي فاتح
+            "bg": "#FFFFFF",           # أبيض للخلفية
+            "card": "#F3F4F6",         # رمادي فاتح للبطاقات
+            "border": "#D1D5DB",       # رمادي متوسط للفواصل
+            "progress_bg": "#E5E7EB",  # رمادي فاتح لشريط التقدم الخلفي
+            "progress_fill": "#000000" # أسود لشريط التقدم المملوء
         },
         "dark": {
-            "primary": "#3B82F6", "success": "#34D399", "warning": "#FBBF24",
-            "error": "#F87171", "info": "#60A5FA", "text": "#F9FAFB",
-            "text2": "#D1D5DB", "text3": "#9CA3AF", "bg": "#1F2937",
-            "card": "#374151", "border": "#4B5563",
-            "progress_bg": "#374151", "progress_fill": "#3B82F6"
+            "primary": "#FFFFFF",      # أبيض للنصوص الأساسية
+            "text": "#FFFFFF",         # أبيض للنصوص العادية
+            "text2": "#D1D5DB",        # رمادي فاتح للنصوص الثانوية
+            "text3": "#9CA3AF",        # رمادي متوسط للنصوص الثالثة
+            "bg": "#000000",           # أسود للخلفية
+            "card": "#1F2937",         # رمادي داكن للبطاقات
+            "border": "#374151",       # رمادي غامق للفواصل
+            "progress_bg": "#374151",  # رمادي غامق لشريط التقدم الخلفي
+            "progress_fill": "#FFFFFF" # أبيض لشريط التقدم المملوء
         }
     }
     
