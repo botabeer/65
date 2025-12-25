@@ -79,31 +79,34 @@ class UI:
     def games_menu(theme="light"):
         c = UI._c(theme)
         contents = [
-            {"type": "text", "text": "قائمة الالعاب", "size": "xl", "weight": "bold", "align": "center", "color": c["primary"]},
-            {"type": "separator", "margin": "md", "color": c["border"]}
+            {"type": "text", "text": "قائمة الالعاب", "size": "xxl", "weight": "bold", "align": "center", "color": c["primary"]},
+            {"type": "separator", "margin": "lg", "color": c["border"]},
+            {"type": "text", "text": "اختر لعبتك المفضلة", "size": "sm", "align": "center", "color": c["text2"], "margin": "md"}
         ]
+        
         contents += UI._game_buttons([
             ["خمن", "اسرع"],
             ["اغنيه", "ضد"],
             ["تكوين", "فئه"],
             ["ذكاء", "ترتيب"],
             ["لون", "روليت"],
-            ["سين"]
+            ["سين", "سلسله"],
+            ["لعبه", "حروف"],
+            ["توافق", "مافيا"]
         ], c)
-        contents.append({"type": "separator", "margin": "md", "color": c["border"]})
-        contents += UI._game_buttons([
-            ["سلسله", "لعبه"],
-            ["حروف", "توافق"],
-            ["مافيا"]
-        ], c)
+        
+        contents.append({"type": "separator", "margin": "lg", "color": c["border"]})
         contents.append({
             "type": "text",
             "text": "للخروج: انسحب او ايقاف",
-            "size": "xxs",
+            "size": "xs",
             "align": "center",
             "color": c["text3"],
             "margin": "md"
         })
+        
+        contents += UI._row_buttons([("رجوع", "بداية")], c)
+        
         return {
             "type": "bubble",
             "size": "mega",
@@ -111,7 +114,7 @@ class UI:
                 "type": "box",
                 "layout": "vertical",
                 "backgroundColor": c["bg"],
-                "paddingAll": "20px",
+                "paddingAll": "24px",
                 "contents": contents
             }
         }
@@ -256,8 +259,8 @@ class UI:
         return {
             "type": "box",
             "layout": "horizontal",
-            "spacing": "sm",
-            "margin": "md",
+            "spacing": "md",
+            "margin": "lg",
             "contents": [
                 {
                     "type": "button",
@@ -276,15 +279,16 @@ class UI:
             boxes.append({
                 "type": "box",
                 "layout": "horizontal",
-                "spacing": "sm",
-                "margin": "md",
+                "spacing": "md",
+                "margin": "sm",
                 "contents": [
                     {
                         "type": "button",
                         "style": "primary",
                         "color": c["button"],
-                        "height": "sm",
-                        "action": {"type": "message", "label": GAME_LABELS[g], "text": g}
+                        "height": "md",
+                        "action": {"type": "message", "label": GAME_LABELS[g], "text": g},
+                        "flex": 1
                     } for g in row
                 ]
             })
