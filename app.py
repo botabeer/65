@@ -1,5 +1,5 @@
 """
-Bot 65 - LINE Games Bot
+Bot 65 - LINE Games Bot (Enhanced Version)
 """
 from flask import Flask, request, abort, jsonify
 from linebot.v3 import WebhookHandler
@@ -35,6 +35,8 @@ TextCommands.load_all()
 
 game_sessions = {}
 waiting_for_name = set()
+user_themes = {}
+game_difficulties = {}
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -68,7 +70,7 @@ def handle_message(event):
 def process(text, user_id, group_id, line_api):
     t = text.lower().strip()
     user = DB.get_user(user_id)
-    theme = user['theme'] if user else 'light'
+    theme = user_themes.get(user_id, user['theme'] if user else 'light')
     
     if user_id in waiting_for_name:
         if 2 <= len(text) <= 50:
@@ -78,6 +80,7 @@ def process(text, user_id, group_id, line_api):
         waiting_for_name.discard(user_id)
         return None
     
+    # أوامر نصية
     if t in ['سؤال', 'سوال']:
         return TextMessage(text=TextCommands.get_random('questions'))
     if t == 'تحدي':
@@ -91,6 +94,7 @@ def process(text, user_id, group_id, line_api):
     if t == 'موقف':
         return TextMessage(text=TextCommands.get_random('situations'))
     
+    # القوائم الرئيسية
     if t in ['بداية', 'start', 'بدايه']:
         if user:
             DB.update_activity(user_id)
@@ -101,12 +105,14 @@ def process(text, user_id, group_id, line_api):
         return FlexMessage(alt_text="المساعدة", contents=FlexContainer.from_dict(UI.help_card(theme)))
     
     if t in ['العاب', 'ألعاب', 'الالعاب']:
-        return FlexMessage(alt_text="الألعاب", contents=FlexContainer.from_dict(UI.games_menu(theme)))
+        return FlexMessage(alt_text="الالعاب", contents=FlexContainer.from_dict(UI.games_menu(theme)))
     
+    # التسجيل
     if t in ['تسجيل', 'تغيير']:
         waiting_for_name.add(user_id)
         return TextMessage(text="اكتب اسمك (2-50 حرف)")
     
+    # الإحصائيات
     if t in ['نقاطي', 'احصائياتي']:
         if not user:
             return TextMessage(text="يجب التسجيل اولا")
@@ -117,74 +123,118 @@ def process(text, user_id, group_id, line_api):
         leaders = DB.get_leaderboard()
         return FlexMessage(alt_text="الصدارة", contents=FlexContainer.from_dict(UI.leaderboard(leaders, theme)))
     
+    # تغيير الثيم
     if t == 'ثيم':
         if not user:
             return TextMessage(text="يجب التسجيل اولا")
         new_theme = 'dark' if theme == 'light' else 'light'
         DB.set_theme(user_id, new_theme)
-        return TextMessage(text=f"تم للثيم {'الداكن' if new_theme == 'dark' else 'الفاتح'}")
+        user_themes[user_id] = new_theme
+        return TextMessage(text=f"تم التغيير للثيم {'الداكن' if new_theme == 'dark' else 'الفاتح'}")
     
-    if t in ['ايقاف', 'stop', 'إيقاف', 'انسحب']:
+    # إيقاف اللعبة
+    if t in ['ايقاف', 'stop', 'إيقاف']:
         if group_id in game_sessions:
             del game_sessions[group_id]
+            if group_id in game_difficulties:
+                del game_difficulties[group_id]
             return TextMessage(text="تم ايقاف اللعبة")
         return None
+    
+    # مستوى الصعوبة
+    if t.startswith('صعوبة ') or t.startswith('مستوى '):
+        try:
+            level = int(t.split()[-1])
+            if 1 <= level <= 5:
+                game_difficulties[group_id] = level
+                return TextMessage(text=f"تم تعيين الصعوبة: مستوى {level}")
+        except:
+            pass
+        return TextMessage(text="استخدم: صعوبة 1 (الى 5)")
     
     if not user:
         return None
     
+    # تشغيل الألعاب
     game_map = {
-        'اغنيه': 'SongGame', 'ضد': 'OppositeGame', 'سلسله': 'ChainGame',
-        'اسرع': 'FastGame', 'تكوين': 'LettersGame', 'فئه': 'CategoryGame',
-        'لعبه': 'HumanAnimalGame', 'توافق': 'CompatibilityGame', 
-        'ذكاء': 'IqGame', 'خمن': 'GuessGame', 'ترتيب': 'ScrambleGame',
-        'لون': 'WordColorGame', 'روليت': 'RouletteGame', 
-        'سين': 'SeenJeemGame', 'حروف': 'LetterGame', 'مافيا': 'MafiaGame'
+        'خمن': ('GuessGame', 'competitive'),
+        'اسرع': ('FastGame', 'competitive'),
+        'توافق': ('CompatibilityGame', 'entertainment'),
+        'اغنيه': ('SongGame', 'competitive'),
+        'ضد': ('OppositeGame', 'competitive'),
+        'سلسله': ('ChainGame', 'competitive'),
+        'تكوين': ('LettersGame', 'competitive'),
+        'فئه': ('CategoryGame', 'competitive'),
+        'لعبه': ('HumanAnimalGame', 'competitive'),
+        'ذكاء': ('IqGame', 'competitive'),
+        'ترتيب': ('ScrambleGame', 'competitive'),
+        'لون': ('WordColorGame', 'competitive'),
+        'روليت': ('RouletteGame', 'competitive'),
+        'سين': ('SeenJeemGame', 'competitive'),
+        'حروف': ('LetterGame', 'competitive'),
+        'مافيا': ('MafiaGame', 'competitive')
     }
     
     if t in game_map:
         try:
             from games import (
-                SongGame, OppositeGame, ChainGame, FastGame,
-                LettersGame, CategoryGame, HumanAnimalGame,
-                CompatibilityGame, IqGame, GuessGame, ScrambleGame,
-                WordColorGame, RouletteGame, SeenJeemGame, LetterGame,
-                MafiaGame
+                GuessGame, FastGame, CompatibilityGame, SongGame,
+                OppositeGame, ChainGame, LettersGame, CategoryGame,
+                HumanAnimalGame, IqGame, ScrambleGame, WordColorGame,
+                RouletteGame, SeenJeemGame, LetterGame, MafiaGame
             )
             
             game_classes = {
-                'SongGame': SongGame, 'OppositeGame': OppositeGame, 
-                'ChainGame': ChainGame, 'FastGame': FastGame,
+                'GuessGame': GuessGame, 'FastGame': FastGame,
+                'CompatibilityGame': CompatibilityGame, 'SongGame': SongGame,
+                'OppositeGame': OppositeGame, 'ChainGame': ChainGame,
                 'LettersGame': LettersGame, 'CategoryGame': CategoryGame,
-                'HumanAnimalGame': HumanAnimalGame, 'CompatibilityGame': CompatibilityGame,
-                'IqGame': IqGame, 'GuessGame': GuessGame, 'ScrambleGame': ScrambleGame,
-                'WordColorGame': WordColorGame, 'RouletteGame': RouletteGame,
-                'SeenJeemGame': SeenJeemGame, 'LetterGame': LetterGame,
-                'MafiaGame': MafiaGame
+                'HumanAnimalGame': HumanAnimalGame, 'IqGame': IqGame,
+                'ScrambleGame': ScrambleGame, 'WordColorGame': WordColorGame,
+                'RouletteGame': RouletteGame, 'SeenJeemGame': SeenJeemGame,
+                'LetterGame': LetterGame, 'MafiaGame': MafiaGame
             }
             
-            game_class = game_classes.get(game_map[t])
+            game_class_name, game_type = game_map[t]
+            game_class = game_classes.get(game_class_name)
+            
             if game_class:
-                game = game_class(line_api)
+                difficulty = game_difficulties.get(group_id, 3)
+                
+                if game_type == 'entertainment':
+                    game = game_class(line_api, theme=theme)
+                else:
+                    game = game_class(line_api, difficulty=difficulty, theme=theme)
+                
                 game_sessions[group_id] = game
                 return game.start_game()
         except Exception as e:
-            logger.error(f"Game creation error: {e}")
+            logger.error(f"Game creation error: {e}", exc_info=True)
             return TextMessage(text="حدث خطأ في بدء اللعبة")
     
+    # معالجة إجابات الألعاب
     if group_id in game_sessions:
         game = game_sessions[group_id]
         result = game.check_answer(text, user_id, user['name'])
         
         if result:
+            responses = []
+            
+            if result.get('withdrawn'):
+                return result.get('response')
+            
             if result.get('game_over'):
-                del game_sessions[group_id]
-                if result.get('points', 0) > 0:
+                if group_id in game_sessions:
+                    del game_sessions[group_id]
+                if group_id in game_difficulties:
+                    del game_difficulties[group_id]
+                
+                if result.get('points', 0) > 0 and user:
                     DB.add_points(user_id, result['points'], result.get('won', True), game.game_name)
             
-            responses = []
             if result.get('response'):
                 responses.append(result['response'])
+            
             if result.get('next_question') and not result.get('game_over'):
                 next_q = game.get_question()
                 if next_q:
@@ -200,7 +250,7 @@ def health():
 
 @app.route('/')
 def index():
-    return "Bot 65 Running", 200
+    return "Bot 65 Enhanced - Running", 200
 
 if __name__ == "__main__":
     port = int(os.getenv('PORT', 5000))
