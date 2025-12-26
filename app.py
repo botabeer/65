@@ -114,15 +114,19 @@ def process(text, user_id, group_id, line_api):
     user = DB.get_user(user_id)
     theme = user_themes.get(user_id, user['theme'] if user else 'light')
     
+    # نظام التسجيل المحسّن
     if user_id in waiting_for_name:
-        if 2 <= len(text) <= 50:
-            DB.register_user(user_id, text.strip())
+        name = text.strip()
+        # قبول أي اسم بين 1 و 20 حرف (حروف، أرقام، رموز)
+        if 1 <= len(name) <= 20:
+            DB.register_user(user_id, name)
             waiting_for_name.discard(user_id)
-            msg = TextMessage(text=f"تم التسجيل بنجاح {text}")
-            msg.quick_reply = UI.get_quick_reply()
-            return msg
+            return FlexMessage(
+                alt_text="تم التسجيل",
+                contents=FlexContainer.from_dict(UI.welcome(name, True, theme))
+            )
         waiting_for_name.discard(user_id)
-        msg = TextMessage(text="الاسم يجب ان يكون بين 2 و 50 حرف")
+        msg = TextMessage(text="الاسم يجب أن يكون بين 1 و 20 حرف")
         msg.quick_reply = UI.get_quick_reply()
         return msg
     
@@ -153,13 +157,13 @@ def process(text, user_id, group_id, line_api):
     
     if t in ['تسجيل', 'تغيير']:
         waiting_for_name.add(user_id)
-        msg = TextMessage(text="اكتب اسمك (2-50 حرف)")
+        msg = TextMessage(text="اكتب اسمك في الشات")
         msg.quick_reply = UI.get_quick_reply()
         return msg
     
     if t == 'نقاطي':
         if not user:
-            msg = TextMessage(text="يجب التسجيل اولا\nاكتب: تسجيل")
+            msg = TextMessage(text="يجب التسجيل أولاً\nاكتب: تسجيل")
             msg.quick_reply = UI.get_quick_reply()
             return msg
         DB.update_activity(user_id)
@@ -171,7 +175,7 @@ def process(text, user_id, group_id, line_api):
     
     if t == 'ثيم':
         if not user:
-            msg = TextMessage(text="يجب التسجيل اولا")
+            msg = TextMessage(text="يجب التسجيل أولاً")
             msg.quick_reply = UI.get_quick_reply()
             return msg
         new_theme = 'dark' if theme == 'light' else 'light'
