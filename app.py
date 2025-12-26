@@ -45,22 +45,53 @@ waiting_for_name = set()
 user_themes = {}
 game_difficulties = {}
 
+TEXT_COMMANDS = {
+    'سؤال': 'questions',
+    'منشن': 'mentions',
+    'تحدي': 'challenges',
+    'اعتراف': 'confessions',
+    'اقتباس': 'quotes',
+    'موقف': 'situations',
+    'شعر': 'poem',
+    'خاص': 'private',
+    'مجهول': 'anonymous',
+    'نصيحة': 'advice'
+}
+
+GAME_MAP = {
+    'خمن': GuessGame,
+    'اسرع': FastGame,
+    'توافق': CompatibilityGame,
+    'اغنيه': SongGame,
+    'ضد': OppositeGame,
+    'سلسله': ChainGame,
+    'تكوين': LettersGame,
+    'فئه': CategoryGame,
+    'لعبه': HumanAnimalGame,
+    'ذكاء': IqGame,
+    'ترتيب': ScrambleGame,
+    'حروف': LetterGame,
+    'مافيا': MafiaGame,
+    'لون': WordColorGame,
+    'روليت': RouletteGame,
+    'سين': SeenJeemGame
+}
+
 def get_quick_reply():
-    """ازرار سريعة مرتبة: بداية أول زر، مساعدة آخر زر، بدون نص ونقاطي والصدارة"""
     return QuickReply(items=[
-        QuickReplyItem(action=MessageAction(label="بداية", text="بداية")),    # أول زر
-        QuickReplyItem(action=MessageAction(label="سؤال", text="سؤال")),      # الأكثر شيوعًا
-        QuickReplyItem(action=MessageAction(label="تحدي", text="تحدي")),      # تفاعل ممتع
-        QuickReplyItem(action=MessageAction(label="منشن", text="منشن")),      # تفاعل جماعي
-        QuickReplyItem(action=MessageAction(label="اعتراف", text="اعتراف")),  # فضفضة واعترافات
-        QuickReplyItem(action=MessageAction(label="اقتباس", text="اقتباس")), # محتوى ملهم
-        QuickReplyItem(action=MessageAction(label="موقف", text="موقف")),      # مواقف للنقاش
-        QuickReplyItem(action=MessageAction(label="شعر", text="شعر")),        # محتوى إبداعي
-        QuickReplyItem(action=MessageAction(label="خاص", text="خاص")),        # محتوى خاص
-        QuickReplyItem(action=MessageAction(label="مجهول", text="مجهول")),    # رسائل مجهولة
-        QuickReplyItem(action=MessageAction(label="نصيحة", text="نصيحة")),    # نصائح خفيفة
-        QuickReplyItem(action=MessageAction(label="العاب", text="العاب")),     # قسم الألعاب
-        QuickReplyItem(action=MessageAction(label="مساعدة", text="مساعدة"))   # آخر زر
+        QuickReplyItem(action=MessageAction(label="بداية", text="بداية")),
+        QuickReplyItem(action=MessageAction(label="سؤال", text="سؤال")),
+        QuickReplyItem(action=MessageAction(label="تحدي", text="تحدي")),
+        QuickReplyItem(action=MessageAction(label="منشن", text="منشن")),
+        QuickReplyItem(action=MessageAction(label="اعتراف", text="اعتراف")),
+        QuickReplyItem(action=MessageAction(label="اقتباس", text="اقتباس")),
+        QuickReplyItem(action=MessageAction(label="موقف", text="موقف")),
+        QuickReplyItem(action=MessageAction(label="شعر", text="شعر")),
+        QuickReplyItem(action=MessageAction(label="خاص", text="خاص")),
+        QuickReplyItem(action=MessageAction(label="مجهول", text="مجهول")),
+        QuickReplyItem(action=MessageAction(label="نصيحة", text="نصيحة")),
+        QuickReplyItem(action=MessageAction(label="العاب", text="العاب")),
+        QuickReplyItem(action=MessageAction(label="مساعدة", text="مساعدة"))
     ])
 
 @app.route("/callback", methods=['POST'])
@@ -100,7 +131,6 @@ def process(text, user_id, group_id, line_api):
     user = DB.get_user(user_id)
     theme = user_themes.get(user_id, user['theme'] if user else 'light')
     
-    # التعامل مع ادخال الاسم
     if user_id in waiting_for_name:
         if 2 <= len(text) <= 50:
             DB.register_user(user_id, text.strip())
@@ -113,37 +143,16 @@ def process(text, user_id, group_id, line_api):
         msg.quick_reply = get_quick_reply()
         return msg
     
-    # اوامر النصوص
-text_commands = {
-    'سؤال': 'questions',      # سؤال تفاعلي بين الأصدقاء
-    'منشن': 'mentions',       # منشن للأصدقاء للتفاعل
-    'تحدي': 'challenges',     # تحدي خفيف بين الأصدقاء
-    'اعتراف': 'confessions',  # اعترافات بين الأصدقاء
-    'اقتباس': 'quotes',       # اقتباس ملهم أو معبّر
-    'موقف': 'situations',     # موقف يفتح باب النقاش
-    'شعر': 'poem',            # بيت شعر أو مقطع قصير
-    'خاص': 'private',         # أسئلة خاصة بين شخصين حبيبين
-    'مجهول': 'anonymous',     # رسالة أو اعتراف بدون اسم
-    'نصيحة': 'advice'         # نصيحة عامة وخفيفة
-}
-    
-    if t in text_commands:
-        msg = TextMessage(text=TextCommands.get_random(text_commands[t]))
+    if t in TEXT_COMMANDS:
+        msg = TextMessage(text=TextCommands.get_random(TEXT_COMMANDS[t]))
         msg.quick_reply = get_quick_reply()
         return msg
     
-    # قائمة النصوص
-if t == 'نص':
-    msg = TextMessage(
-        text=(
-            "اختر نوع النص:\n"
-            "سؤال | منشن | تحدي | اعتراف | اقتباس | موقف | شعر | خاص | مجهول | نصيحة"
-        )
-    )
-    msg.quick_reply = get_quick_reply()
-    return msg
+    if t == 'نص':
+        msg = TextMessage(text="اختر نوع النص:\nسؤال | منشن | تحدي | اعتراف | اقتباس | موقف | شعر | خاص | مجهول | نصيحة")
+        msg.quick_reply = get_quick_reply()
+        return msg
     
-    # البداية
     if t in ['بداية', 'start']:
         if user:
             DB.update_activity(user_id)
@@ -152,48 +161,30 @@ if t == 'نص':
             contents=FlexContainer.from_dict(UI.welcome(user['name'] if user else 'مستخدم', bool(user), theme))
         )
     
-    # المساعدة
     if t in ['مساعدة', 'help']:
-        return FlexMessage(
-            alt_text="المساعدة",
-            contents=FlexContainer.from_dict(UI.help_card(theme))
-        )
+        return FlexMessage(alt_text="المساعدة", contents=FlexContainer.from_dict(UI.help_card(theme)))
     
-    # الالعاب
     if t in ['العاب', 'ألعاب', 'الالعاب']:
-        return FlexMessage(
-            alt_text="الالعاب",
-            contents=FlexContainer.from_dict(UI.games_menu(theme))
-        )
+        return FlexMessage(alt_text="الالعاب", contents=FlexContainer.from_dict(UI.games_menu(theme)))
     
-    # التسجيل
     if t in ['تسجيل', 'تغيير']:
         waiting_for_name.add(user_id)
         msg = TextMessage(text="اكتب اسمك (2-50 حرف)")
         msg.quick_reply = get_quick_reply()
         return msg
     
-    # النقاط
     if t == 'نقاطي':
         if not user:
             msg = TextMessage(text="يجب التسجيل اولا\nاكتب: تسجيل")
             msg.quick_reply = get_quick_reply()
             return msg
         DB.update_activity(user_id)
-        return FlexMessage(
-            alt_text="احصائياتك",
-            contents=FlexContainer.from_dict(UI.stats(user, theme))
-        )
+        return FlexMessage(alt_text="احصائياتك", contents=FlexContainer.from_dict(UI.stats(user, theme)))
     
-    # الصدارة
     if t == 'الصدارة':
         leaders = DB.get_leaderboard()
-        return FlexMessage(
-            alt_text="الصدارة",
-            contents=FlexContainer.from_dict(UI.leaderboard(leaders, theme))
-        )
+        return FlexMessage(alt_text="الصدارة", contents=FlexContainer.from_dict(UI.leaderboard(leaders, theme)))
     
-    # الثيم
     if t == 'ثيم':
         if not user:
             msg = TextMessage(text="يجب التسجيل اولا")
@@ -206,16 +197,13 @@ if t == 'نص':
         msg.quick_reply = get_quick_reply()
         return msg
     
-    # ايقاف او انسحاب
     if t in ['ايقاف', 'انسحب']:
         if group_id in game_sessions:
             game = game_sessions[group_id]
-            # اذا انسحب اللاعب يتم اضافته لقائمة المنسحبين
             if t == 'انسحب' and user:
                 game.withdrawn_users.add(user_id)
-                return None  # لا يرد حتى لا يزعج القروب
+                return None
             
-            # ايقاف كامل للعبة
             del game_sessions[group_id]
             if group_id in game_difficulties:
                 del game_difficulties[group_id]
@@ -223,17 +211,11 @@ if t == 'نص':
             msg.quick_reply = get_quick_reply()
             return msg
         
-        # اذا لم تكن هناك لعبة نشطة
-        if t == 'انسحب':
-            if user:
-                DB.update_activity(user_id)
-            return FlexMessage(
-                alt_text="Bot 65",
-                contents=FlexContainer.from_dict(UI.welcome(user['name'] if user else 'مستخدم', bool(user), theme))
-            )
+        if t == 'انسحب' and user:
+            DB.update_activity(user_id)
+            return FlexMessage(alt_text="Bot 65", contents=FlexContainer.from_dict(UI.welcome(user['name'] if user else 'مستخدم', bool(user), theme)))
         return None
     
-    # تعيين الصعوبة
     if t.startswith('صعوبة ') or t.startswith('مستوى '):
         try:
             level = int(t.split()[-1])
@@ -248,33 +230,12 @@ if t == 'نص':
         msg.quick_reply = get_quick_reply()
         return msg
     
-    # يجب ان يكون مسجلا للعب
     if not user:
         return None
     
-    # بدء الالعاب
-    game_map = {
-        'خمن': GuessGame,
-        'اسرع': FastGame,
-        'توافق': CompatibilityGame,
-        'اغنيه': SongGame,
-        'ضد': OppositeGame,
-        'سلسله': ChainGame,
-        'تكوين': LettersGame,
-        'فئه': CategoryGame,
-        'لعبه': HumanAnimalGame,
-        'ذكاء': IqGame,
-        'ترتيب': ScrambleGame,
-        'حروف': LetterGame,
-        'مافيا': MafiaGame,
-        'لون': WordColorGame,
-        'روليت': RouletteGame,
-        'سين': SeenJeemGame
-    }
-    
-    if t in game_map:
+    if t in GAME_MAP:
         try:
-            game_class = game_map[t]
+            game_class = GAME_MAP[t]
             difficulty = game_difficulties.get(group_id, 3)
             game = game_class(line_api, difficulty=difficulty, theme=theme)
             game_sessions[group_id] = game
@@ -285,11 +246,9 @@ if t == 'نص':
             msg.quick_reply = get_quick_reply()
             return msg
     
-    # التعامل مع اجابات الالعاب
     if group_id in game_sessions:
         game = game_sessions[group_id]
         
-        # تجاهل اجابات المنسحبين
         if user_id in game.withdrawn_users:
             return None
         
@@ -297,7 +256,7 @@ if t == 'نص':
         
         if result:
             if result.get('withdrawn'):
-                return None  # لا يرد عند الانسحاب
+                return None
             
             if result.get('game_over'):
                 if group_id in game_sessions:
