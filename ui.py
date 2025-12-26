@@ -42,10 +42,6 @@ class UI:
             QuickReplyItem(action=MessageAction(label="منشن", text="منشن")),
             QuickReplyItem(action=MessageAction(label="اقتباس", text="اقتباس")),
             QuickReplyItem(action=MessageAction(label="موقف", text="موقف")),
-            QuickReplyItem(action=MessageAction(label="شعر", text="شعر")),
-            QuickReplyItem(action=MessageAction(label="خاص", text="خاص")),
-            QuickReplyItem(action=MessageAction(label="مجهول", text="مجهول")),
-            QuickReplyItem(action=MessageAction(label="نصيحة", text="نصيحة")),
             QuickReplyItem(action=MessageAction(label="مساعدة", text="مساعدة"))
         ])
 
@@ -76,6 +72,7 @@ class UI:
             {"type": "separator", "margin": "lg", "color": c["border"]}
         ]
         
+        # السطر الأول: تسجيل/تغيير - انسحب
         contents.append({
             "type": "box", "layout": "horizontal", "spacing": "sm", "margin": "sm",
             "contents": [
@@ -84,6 +81,7 @@ class UI:
             ]
         })
         
+        # السطر الثاني: نقاطي - الصدارة
         contents.append({
             "type": "box", "layout": "horizontal", "spacing": "sm", "margin": "sm",
             "contents": [
@@ -92,48 +90,20 @@ class UI:
             ]
         })
         
-        contents.append({
-            "type": "box", "layout": "vertical", "spacing": "xs", "margin": "sm",
-            "contents": [
-                {
-                    "type": "box", "layout": "horizontal", "spacing": "xs",
-                    "contents": [
-                        UI._button("العاب", "العاب", c),
-                        UI._button("سؤال", "سؤال", c),
-                        UI._button("منشن", "منشن", c)
-                    ]
-                },
-                {
-                    "type": "box", "layout": "horizontal", "spacing": "xs", "margin": "xs",
-                    "contents": [
-                        UI._button("تحدي", "تحدي", c),
-                        UI._button("اعتراف", "اعتراف", c),
-                        UI._button("اقتباس", "اقتباس", c)
-                    ]
-                },
-                {
-                    "type": "box", "layout": "horizontal", "spacing": "xs", "margin": "xs",
-                    "contents": [
-                        UI._button("موقف", "موقف", c),
-                        UI._button("شعر", "شعر", c),
-                        UI._button("خاص", "خاص", c)
-                    ]
-                },
-                {
-                    "type": "box", "layout": "horizontal", "spacing": "xs", "margin": "xs",
-                    "contents": [
-                        UI._button("مجهول", "مجهول", c),
-                        UI._button("نصيحة", "نصيحة", c)
-                    ]
-                }
-            ]
-        })
-        
+        # السطر الثالث: العاب - مساعدة
         contents.append({
             "type": "box", "layout": "horizontal", "spacing": "sm", "margin": "sm",
             "contents": [
-                UI._button("ثيم", "ثيم", c),
+                UI._button("العاب", "العاب", c),
                 UI._button("مساعدة", "مساعدة", c)
+            ]
+        })
+        
+        # السطر الرابع: ثيم
+        contents.append({
+            "type": "box", "layout": "horizontal", "margin": "sm",
+            "contents": [
+                UI._button("ثيم", "ثيم", c)
             ]
         })
         
@@ -216,7 +186,7 @@ class UI:
                 "title": "الاوامر الاساسية",
                 "items": ["بداية - الصفحة الرئيسية", "تسجيل - انشاء حساب",
                          "العاب - قائمة الالعاب", "نقاطي - احصائياتك",
-                         "الصدارة - المتصدرين", "نص - الاوامر النصية"]
+                         "الصدارة - المتصدرين"]
             },
             {
                 "title": "اوامر اللعب",
@@ -226,8 +196,7 @@ class UI:
             {
                 "title": "الاوامر النصية",
                 "items": [
-                    "سؤال", "تحدي", "اعتراف", "منشن", "اقتباس",
-                    "موقف", "شعر", "خاص", "مجهول", "نصيحة"
+                    "سؤال", "تحدي", "اعتراف", "منشن", "اقتباس", "موقف"
                 ]
             }
         ]
