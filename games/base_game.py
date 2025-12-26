@@ -1,34 +1,21 @@
 from linebot.v3.messaging import TextMessage, FlexMessage, FlexContainer
-import re
-import time
+import re, time
 from typing import Dict, Any, Optional
 from abc import ABC, abstractmethod
 
 class BaseGame(ABC):
     THEMES = {
         "light": {
-            "primary": "#000000",
-            "text": "#1A1A1A",
-            "text2": "#4B5563",
-            "text3": "#9CA3AF",
-            "bg": "#FFFFFF",
-            "card": "#F8F9FA",
-            "border": "#E5E7EB",
-            "success": "#059669",
-            "warning": "#D97706",
-            "error": "#DC2626"
+            "primary": "#1A1A1A", "text": "#2D2D2D", "text2": "#6B7280",
+            "text3": "#9CA3AF", "bg": "#FFFFFF", "card": "#F9FAFB",
+            "border": "#E5E7EB", "button": "#94A3B8", "success": "#374151",
+            "warning": "#6B7280", "error": "#4B5563"
         },
         "dark": {
-            "primary": "#FFFFFF",
-            "text": "#F9FAFB",
-            "text2": "#D1D5DB",
-            "text3": "#9CA3AF",
-            "bg": "#0F172A",
-            "card": "#1E293B",
-            "border": "#334155",
-            "success": "#10B981",
-            "warning": "#F59E0B",
-            "error": "#EF4444"
+            "primary": "#F9FAFB", "text": "#E5E7EB", "text2": "#9CA3AF",
+            "text3": "#6B7280", "bg": "#111827", "card": "#1F2937",
+            "border": "#374151", "button": "#64748B", "success": "#D1D5DB",
+            "warning": "#9CA3AF", "error": "#6B7280"
         }
     }
     
@@ -39,48 +26,32 @@ class BaseGame(ABC):
         self.theme = theme
         self.game_type = game_type
         self.game_name = "لعبة"
-        
-        self.total_rounds = 5
+        self.questions_count = 5
         self.current_question = 0
         self.game_active = False
-        
         self.scores = {}
         self.answered_users = set()
         self.withdrawn_users = set()
-        
+        self.used_questions = set()
+        self.all_questions_used = False
         self.current_answer = None
         self.previous_answer = None
+        self.previous_question = None
         self.start_time = None
         self.round_start_time = None
-        
         self.supports_hint = True
         self.supports_reveal = True
         self.show_difficulty_progression = True
-    
-    def get_current_difficulty_level(self):
-        """حساب مستوى الصعوبة الحالي بناء على الجولة"""
-        if self.current_question == 0:
-            return 1
-        elif self.current_question == 1:
-            return 2
-        elif self.current_question == 2:
-            return 3
-        elif self.current_question == 3:
-            return 4
-        else:
-            return 5
-    
-    def get_difficulty_config(self):
-        """الحصول على إعدادات الصعوبة الحالية"""
-        level = self.get_current_difficulty_level()
-        configs = {
+        self.hint_penalty = 0
+        self.hints_used = 0
+        
+        self.difficulty_config = {
             1: {"name": "سهل جداً", "time": 30, "hint_cost": 0},
             2: {"name": "سهل", "time": 25, "hint_cost": 0},
             3: {"name": "متوسط", "time": 20, "hint_cost": 1},
             4: {"name": "صعب", "time": 15, "hint_cost": 2},
             5: {"name": "صعب جداً", "time": 10, "hint_cost": 3}
-        }
-        return configs.get(level, configs[3])
+        }.get(difficulty, {"name": "متوسط", "time": 20, "hint_cost": 1})
     
     def normalize_text(self, text):
         if not text:
@@ -88,8 +59,7 @@ class BaseGame(ABC):
         text = str(text).strip().lower()
         trans = str.maketrans({
             'أ': 'ا', 'إ': 'ا', 'آ': 'ا', 'ٱ': 'ا',
-            'ؤ': 'و', 'ئ': 'ي', 'ء': '',
-            'ة': 'ه', 'ى': 'ي'
+            'ؤ': 'و', 'ئ': 'ي', 'ء': '', 'ة': 'ه', 'ى': 'ي'
         })
         text = text.translate(trans)
         text = re.sub(r'[\u064B-\u065F\u0670]', '', text)
@@ -108,118 +78,56 @@ class BaseGame(ABC):
     def get_theme_colors(self):
         return self.THEMES.get(self.theme, self.THEMES['light'])
     
-    def create_difficulty_indicator(self):
-        """مؤشر مستوى الصعوبة"""
-        c = self.get_theme_colors()
-        level = self.get_current_difficulty_level()
-        config = self.get_difficulty_config()
-        
-        circles = []
-        for i in range(1, 6):
-            circles.append({
-                "type": "box",
-                "layout": "vertical",
-                "contents": [],
-                "width": "12px",
-                "height": "12px",
-                "cornerRadius": "6px",
-                "backgroundColor": c["primary"] if i <= level else c["border"]
-            })
-        
-        return {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "box",
-                    "layout": "horizontal",
-                    "contents": circles,
-                    "spacing": "xs",
-                    "justifyContent": "center"
-                },
-                {
-                    "type": "text",
-                    "text": f"المستوى: {config['name']}",
-                    "size": "xxs",
-                    "color": c["text3"],
-                    "align": "center",
-                    "margin": "xs"
-                }
-            ],
-            "margin": "md"
-        }
-    
     def create_progress_bar(self):
-        """شريط التقدم"""
         c = self.get_theme_colors()
-        progress = int((self.current_question / self.total_rounds) * 100)
+        progress = int((self.current_question / self.questions_count) * 100)
         
         return {
-            "type": "box",
-            "layout": "vertical",
+            "type": "box", "layout": "vertical",
             "contents": [
                 {
-                    "type": "box",
-                    "layout": "horizontal",
+                    "type": "box", "layout": "horizontal",
                     "contents": [
-                        {"type": "text", "text": f"الجولة {self.current_question + 1}/{self.total_rounds}", 
+                        {"type": "text", "text": f"الجولة {self.current_question + 1}/{self.questions_count}", 
                          "size": "xs", "color": c["text2"], "flex": 1},
                         {"type": "text", "text": f"{progress}%", 
                          "size": "xs", "color": c["text2"], "align": "end", "flex": 0}
                     ]
                 },
                 {
-                    "type": "box",
-                    "layout": "horizontal",
-                    "contents": [
-                        {
-                            "type": "box",
-                            "layout": "vertical",
-                            "contents": [],
-                            "width": f"{progress}%",
-                            "height": "4px",
-                            "backgroundColor": c["primary"],
-                            "cornerRadius": "2px"
-                        }
-                    ],
-                    "height": "4px",
-                    "backgroundColor": c["border"],
-                    "cornerRadius": "2px",
-                    "margin": "sm"
+                    "type": "box", "layout": "horizontal",
+                    "contents": [{
+                        "type": "box", "layout": "vertical", "contents": [],
+                        "width": f"{progress}%", "height": "4px",
+                        "backgroundColor": c["primary"], "cornerRadius": "2px"
+                    }],
+                    "height": "4px", "backgroundColor": c["border"],
+                    "cornerRadius": "2px", "margin": "sm"
                 }
-            ],
-            "margin": "md"
+            ], "margin": "md"
         }
     
-    def build_question_message(self, question_text, subtitle=None):
+    def build_question_message(self, question_text, subtitle=None, show_timer=False):
         c = self.get_theme_colors()
         
         contents = [
             {"type": "text", "text": self.game_name, "size": "xl", "weight": "bold", 
-             "color": c["primary"], "align": "center"}
+             "color": c["primary"], "align": "center"},
+            self.create_progress_bar(),
+            {"type": "separator", "margin": "md", "color": c["border"]}
         ]
-        
-        contents.append(self.create_progress_bar())
-        
-        if self.show_difficulty_progression:
-            contents.append(self.create_difficulty_indicator())
-        
-        contents.append({"type": "separator", "margin": "md", "color": c["border"]})
         
         if self.previous_answer and self.current_question > 0:
             contents.append({
-                "type": "box",
-                "layout": "vertical",
+                "type": "box", "layout": "vertical",
                 "contents": [
                     {"type": "text", "text": "الإجابة السابقة:", 
                      "size": "xxs", "color": c["text3"]},
                     {"type": "text", "text": str(self.previous_answer), 
                      "size": "xs", "color": c["text2"], "wrap": True, "margin": "xs"}
                 ],
-                "backgroundColor": c["card"],
-                "paddingAll": "8px",
-                "cornerRadius": "8px",
-                "margin": "md"
+                "backgroundColor": c["card"], "paddingAll": "8px",
+                "cornerRadius": "8px", "margin": "md"
             })
         
         contents.append({
@@ -237,49 +145,37 @@ class BaseGame(ABC):
         if self.supports_hint:
             footer_buttons.append({
                 "type": "button",
-                "action": {"type": "message", "label": "تلميح", "text": "لمح"},
-                "style": "secondary",
-                "height": "sm",
-                "color": c["text2"],
-                "flex": 1
+                "action": {"type": "message", "label": "لمح", "text": "لمح"},
+                "style": "secondary", "height": "sm",
+                "color": c["button"], "flex": 1
             })
         
         if self.supports_reveal:
             footer_buttons.append({
                 "type": "button",
-                "action": {"type": "message", "label": "إظهار", "text": "جاوب"},
-                "style": "secondary",
-                "height": "sm",
-                "color": c["text2"],
-                "flex": 1
+                "action": {"type": "message", "label": "جاوب", "text": "جاوب"},
+                "style": "secondary", "height": "sm",
+                "color": c["button"], "flex": 1
             })
         
         footer_buttons.append({
             "type": "button",
             "action": {"type": "message", "label": "إيقاف", "text": "ايقاف"},
-            "style": "secondary",
-            "height": "sm",
-            "color": c["error"],
-            "flex": 1
+            "style": "secondary", "height": "sm",
+            "color": c["button"], "flex": 1
         })
         
         bubble = {
-            "type": "bubble",
-            "size": "mega",
+            "type": "bubble", "size": "mega",
             "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": contents,
-                "paddingAll": "20px",
+                "type": "box", "layout": "vertical",
+                "contents": contents, "paddingAll": "20px",
                 "backgroundColor": c["bg"]
             },
             "footer": {
-                "type": "box",
-                "layout": "horizontal",
-                "contents": footer_buttons,
-                "spacing": "sm",
-                "paddingAll": "12px",
-                "backgroundColor": c["card"]
+                "type": "box", "layout": "horizontal",
+                "contents": footer_buttons, "spacing": "sm",
+                "paddingAll": "12px", "backgroundColor": c["card"]
             }
         }
         
@@ -291,15 +187,12 @@ class BaseGame(ABC):
     def handle_withdrawal(self, user_id, display_name):
         if user_id in self.withdrawn_users:
             return None
-        
         self.withdrawn_users.add(user_id)
         if user_id in self.scores:
             del self.scores[user_id]
-        
         return {
             "response": self.build_text_message(f"{display_name} انسحب من اللعبة"),
-            "points": 0,
-            "withdrawn": True
+            "points": 0, "withdrawn": True
         }
     
     def start_game(self):
@@ -328,8 +221,7 @@ class BaseGame(ABC):
             bubble = {
                 "type": "bubble",
                 "body": {
-                    "type": "box",
-                    "layout": "vertical",
+                    "type": "box", "layout": "vertical",
                     "contents": [
                         {"type": "text", "text": "انتهت اللعبة", 
                          "size": "xl", "weight": "bold", "color": c["primary"], "align": "center"},
@@ -337,23 +229,17 @@ class BaseGame(ABC):
                         {"type": "text", "text": "لم يسجل أحد نقاطاً", 
                          "size": "md", "color": c["text2"], "align": "center", "margin": "lg"}
                     ],
-                    "paddingAll": "20px",
-                    "backgroundColor": c["bg"]
+                    "paddingAll": "20px", "backgroundColor": c["bg"]
                 }
             }
-            
             return {
-                "game_over": True,
-                "points": 0,
+                "game_over": True, "points": 0,
                 "response": FlexMessage(alt_text="انتهت اللعبة", 
                                        contents=FlexContainer.from_dict(bubble))
             }
         
-        sorted_players = sorted(
-            self.scores.items(),
-            key=lambda x: (-x[1]['score'], x[1].get('correct', 0))
-        )
-        
+        sorted_players = sorted(self.scores.items(),
+                               key=lambda x: (-x[1]['score'], x[1].get('correct', 0)))
         winner = sorted_players[0][1]
         
         leaderboard = [
@@ -361,8 +247,7 @@ class BaseGame(ABC):
              "size": "xl", "weight": "bold", "color": c["primary"], "align": "center"},
             {"type": "separator", "margin": "lg", "color": c["border"]},
             {
-                "type": "box",
-                "layout": "vertical",
+                "type": "box", "layout": "vertical",
                 "contents": [
                     {"type": "text", "text": "الفائز", 
                      "size": "sm", "color": c["success"], "align": "center"},
@@ -372,10 +257,8 @@ class BaseGame(ABC):
                     {"type": "text", "text": f"{winner['score']} نقطة", 
                      "size": "lg", "color": c["primary"], "align": "center", "margin": "xs"}
                 ],
-                "backgroundColor": c["card"],
-                "cornerRadius": "12px",
-                "paddingAll": "16px",
-                "margin": "md"
+                "backgroundColor": c["card"], "cornerRadius": "12px",
+                "paddingAll": "16px", "margin": "md"
             }
         ]
         
@@ -388,12 +271,10 @@ class BaseGame(ABC):
             ])
             
             for i, (uid, player) in enumerate(sorted_players[:5]):
-                medal = ["🥇", "🥈", "🥉"][i] if i < 3 else f"{i+1}."
                 leaderboard.append({
-                    "type": "box",
-                    "layout": "horizontal",
+                    "type": "box", "layout": "horizontal",
                     "contents": [
-                        {"type": "text", "text": medal, 
+                        {"type": "text", "text": f"{i+1}.", 
                          "size": "sm", "flex": 0, "weight": "bold"},
                         {"type": "text", "text": player['name'], 
                          "size": "sm", "color": c["text"], "flex": 3, "margin": "sm"},
@@ -401,52 +282,40 @@ class BaseGame(ABC):
                          "size": "sm", "color": c["primary"], "align": "end", 
                          "flex": 1, "weight": "bold"}
                     ],
-                    "paddingAll": "8px",
-                    "margin": "sm"
+                    "paddingAll": "8px", "margin": "sm"
                 })
         
         bubble = {
-            "type": "bubble",
-            "size": "mega",
+            "type": "bubble", "size": "mega",
             "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": leaderboard,
-                "paddingAll": "20px",
+                "type": "box", "layout": "vertical",
+                "contents": leaderboard, "paddingAll": "20px",
                 "backgroundColor": c["bg"]
             },
             "footer": {
-                "type": "box",
-                "layout": "horizontal",
+                "type": "box", "layout": "horizontal",
                 "contents": [
                     {
                         "type": "button",
                         "action": {"type": "message", "label": "العب مرة أخرى", "text": self.game_name},
-                        "style": "primary",
-                        "height": "sm",
-                        "color": c["primary"],
-                        "flex": 1
+                        "style": "secondary", "height": "sm",
+                        "color": c["button"], "flex": 1
                     },
                     {
                         "type": "button",
                         "action": {"type": "message", "label": "القائمة", "text": "بداية"},
-                        "style": "secondary",
-                        "height": "sm",
-                        "color": c["text2"],
-                        "flex": 1
+                        "style": "secondary", "height": "sm",
+                        "color": c["button"], "flex": 1
                     }
                 ],
-                "spacing": "sm",
-                "paddingAll": "12px",
+                "spacing": "sm", "paddingAll": "12px",
                 "backgroundColor": c["card"]
             }
         }
         
         return {
-            "game_over": True,
-            "points": winner['score'],
-            "won": True,
-            "winner": winner['name'],
+            "game_over": True, "points": winner['score'],
+            "won": True, "winner": winner['name'],
             "response": FlexMessage(alt_text="نتائج اللعبة", 
                                    contents=FlexContainer.from_dict(bubble))
         }
