@@ -1,7 +1,7 @@
 """Bot 65 - UI Module"""
 
 from constants import GAME_LABELS
-from linebot.models import QuickReply, QuickReplyItem, MessageAction
+from linebot.v3.messaging import QuickReply, QuickReplyItem, MessageAction
 
 class UI:
     THEMES = {
@@ -33,9 +33,8 @@ class UI:
 
     @staticmethod
     def get_quick_reply():
-        """ازرار سريعة مرتبة: بداية أول زر، مساعدة آخر زر، أوامر نصية 10"""
         return QuickReply(items=[
-            QuickReplyItem(action=MessageAction(label="بداية", text="بداية")),  # أول زر
+            QuickReplyItem(action=MessageAction(label="بداية", text="بداية")),
             QuickReplyItem(action=MessageAction(label="العاب", text="العاب")),
             QuickReplyItem(action=MessageAction(label="سؤال", text="سؤال")),
             QuickReplyItem(action=MessageAction(label="تحدي", text="تحدي")),
@@ -47,7 +46,7 @@ class UI:
             QuickReplyItem(action=MessageAction(label="خاص", text="خاص")),
             QuickReplyItem(action=MessageAction(label="مجهول", text="مجهول")),
             QuickReplyItem(action=MessageAction(label="نصيحة", text="نصيحة")),
-            QuickReplyItem(action=MessageAction(label="مساعدة", text="مساعدة"))  # آخر زر
+            QuickReplyItem(action=MessageAction(label="مساعدة", text="مساعدة"))
         ])
 
     @staticmethod
@@ -57,7 +56,7 @@ class UI:
         contents = [
             {"type": "text", "text": "Bot 65", "size": "xxl", 
              "weight": "bold", "align": "center", "color": c["primary"]},
-            {"type": "text", "text": f"مرحباً {name}", "size": "lg", 
+            {"type": "text", "text": f"مرحبا {name}", "size": "lg", 
              "align": "center", "color": c["text"], "margin": "sm"},
             {
                 "type": "box", "layout": "horizontal",
@@ -77,7 +76,6 @@ class UI:
             {"type": "separator", "margin": "lg", "color": c["border"]}
         ]
         
-        # السطر الاول: تسجيل/تغيير - انسحب
         contents.append({
             "type": "box", "layout": "horizontal", "spacing": "sm", "margin": "sm",
             "contents": [
@@ -86,7 +84,6 @@ class UI:
             ]
         })
         
-        # السطر الثاني: نقاطي - الصدارة
         contents.append({
             "type": "box", "layout": "horizontal", "spacing": "sm", "margin": "sm",
             "contents": [
@@ -95,25 +92,43 @@ class UI:
             ]
         })
         
-        # السطر الثالث: العاب - أوامر نصية
         contents.append({
-            "type": "box", "layout": "horizontal", "spacing": "sm", "margin": "sm",
+            "type": "box", "layout": "vertical", "spacing": "xs", "margin": "sm",
             "contents": [
-                UI._button("العاب", "العاب", c),
-                UI._button("سؤال", "سؤال", c),
-                UI._button("منشن", "منشن", c),
-                UI._button("تحدي", "تحدي", c),
-                UI._button("اعتراف", "اعتراف", c),
-                UI._button("اقتباس", "اقتباس", c),
-                UI._button("موقف", "موقف", c),
-                UI._button("شعر", "شعر", c),
-                UI._button("خاص", "خاص", c),
-                UI._button("مجهول", "مجهول", c),
-                UI._button("نصيحة", "نصيحة", c)
+                {
+                    "type": "box", "layout": "horizontal", "spacing": "xs",
+                    "contents": [
+                        UI._button("العاب", "العاب", c),
+                        UI._button("سؤال", "سؤال", c),
+                        UI._button("منشن", "منشن", c)
+                    ]
+                },
+                {
+                    "type": "box", "layout": "horizontal", "spacing": "xs", "margin": "xs",
+                    "contents": [
+                        UI._button("تحدي", "تحدي", c),
+                        UI._button("اعتراف", "اعتراف", c),
+                        UI._button("اقتباس", "اقتباس", c)
+                    ]
+                },
+                {
+                    "type": "box", "layout": "horizontal", "spacing": "xs", "margin": "xs",
+                    "contents": [
+                        UI._button("موقف", "موقف", c),
+                        UI._button("شعر", "شعر", c),
+                        UI._button("خاص", "خاص", c)
+                    ]
+                },
+                {
+                    "type": "box", "layout": "horizontal", "spacing": "xs", "margin": "xs",
+                    "contents": [
+                        UI._button("مجهول", "مجهول", c),
+                        UI._button("نصيحة", "نصيحة", c)
+                    ]
+                }
             ]
         })
         
-        # السطر الرابع: ثيم - مساعدة
         contents.append({
             "type": "box", "layout": "horizontal", "spacing": "sm", "margin": "sm",
             "contents": [
@@ -151,7 +166,7 @@ class UI:
         ]
         
         contents = [
-            {"type": "text", "text": "قائمة الألعاب", "size": "xl", 
+            {"type": "text", "text": "قائمة الالعاب", "size": "xl", 
              "weight": "bold", "align": "center", "color": c["primary"]},
             {"type": "text", "text": "اختر لعبتك المفضلة", 
              "size": "xs", "align": "center", "color": c["text3"], "margin": "sm"},
@@ -177,7 +192,7 @@ class UI:
         
         contents.extend([
             {"type": "separator", "margin": "lg", "color": c["border"]},
-            {"type": "text", "text": "أوامر اللعب: لمح | جاوب | ايقاف | انسحب", 
+            {"type": "text", "text": "اوامر اللعب: لمح - جاوب - ايقاف - انسحب", 
              "size": "xxs", "align": "center", "color": c["text3"], "margin": "sm"},
             {"type": "box", "layout": "horizontal", "margin": "md",
              "contents": [UI._button("رجوع", "بداية", c)]}
@@ -198,29 +213,21 @@ class UI:
         
         sections = [
             {
-                "title": "الأوامر الأساسية",
-                "items": ["بداية - الصفحة الرئيسية", "تسجيل - إنشاء حساب",
-                         "العاب - قائمة الألعاب", "نقاطي - إحصائياتك",
-                         "الصدارة - المتصدرين", "نص - الأوامر النصية"]
+                "title": "الاوامر الاساسية",
+                "items": ["بداية - الصفحة الرئيسية", "تسجيل - انشاء حساب",
+                         "العاب - قائمة الالعاب", "نقاطي - احصائياتك",
+                         "الصدارة - المتصدرين", "نص - الاوامر النصية"]
             },
             {
-                "title": "أوامر اللعب",
-                "items": ["لمح - الحصول على تلميح", "جاوب - إظهار الإجابة",
-                         "ايقاف - إنهاء اللعبة", "انسحب - الخروج من اللعبة"]
+                "title": "اوامر اللعب",
+                "items": ["لمح - الحصول على تلميح", "جاوب - اظهار الاجابة",
+                         "ايقاف - انهاء اللعبة", "انسحب - الخروج من اللعبة"]
             },
             {
-                "title": "الأوامر النصية",
+                "title": "الاوامر النصية",
                 "items": [
-                    "سؤال",
-                    "تحدي",
-                    "اعتراف",
-                    "منشن",
-                    "اقتباس",
-                    "موقف",
-                    "شعر",
-                    "خاص",
-                    "مجهول",
-                    "نصيحة"
+                    "سؤال", "تحدي", "اعتراف", "منشن", "اقتباس",
+                    "موقف", "شعر", "خاص", "مجهول", "نصيحة"
                 ]
             }
         ]
@@ -268,7 +275,7 @@ class UI:
         
         stats = [
             {"label": "النقاط", "value": str(user['points']), "highlight": True},
-            {"label": "الألعاب", "value": str(user['games'])},
+            {"label": "الالعاب", "value": str(user['games'])},
             {"label": "الانتصارات", "value": str(user['wins'])},
             {"label": "نسبة الفوز", "value": f"{win_rate}%"}
         ]
@@ -289,7 +296,7 @@ class UI:
             })
         
         contents = [
-            {"type": "text", "text": "إحصائياتك", "size": "xl", 
+            {"type": "text", "text": "احصائياتك", "size": "xl", 
              "weight": "bold", "align": "center", "color": c["primary"]},
             {"type": "text", "text": user['name'], "size": "md", 
              "align": "center", "color": c["text2"], "margin": "sm"},
