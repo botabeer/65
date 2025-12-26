@@ -7,43 +7,43 @@ from abc import ABC, abstractmethod
 class BaseGame(ABC):
     THEMES = {
         "light": {
-            "primary": "#1A1A1A",
-            "text": "#2D2D2D",
-            "text2": "#6B7280",
+            "primary": "#000000",
+            "text": "#000000",
+            "text2": "#4B5563",
             "text3": "#9CA3AF",
             "bg": "#FFFFFF",
-            "card": "#F9FAFB",
-            "border": "#E5E7EB",
-            "progress_bg": "#F3F4F6",
-            "progress_fill": "#374151",
-            "success": "#374151",
-            "warning": "#6B7280",
-            "error": "#4B5563",
-            "info": "#9CA3AF"
+            "card": "#F3F4F6",
+            "border": "#D1D5DB",
+            "progress_bg": "#E5E7EB",
+            "progress_fill": "#000000",
+            "success": "#000000",
+            "warning": "#4B5563",
+            "error": "#6B7280",
+            "info": "#6B7280"
         },
         "dark": {
-            "primary": "#F9FAFB",
-            "text": "#E5E7EB",
-            "text2": "#9CA3AF",
-            "text3": "#6B7280",
-            "bg": "#111827",
+            "primary": "#FFFFFF",
+            "text": "#FFFFFF",
+            "text2": "#D1D5DB",
+            "text3": "#9CA3AF",
+            "bg": "#000000",
             "card": "#1F2937",
             "border": "#374151",
             "progress_bg": "#374151",
-            "progress_fill": "#D1D5DB",
-            "success": "#D1D5DB",
+            "progress_fill": "#FFFFFF",
+            "success": "#FFFFFF",
             "warning": "#9CA3AF",
             "error": "#6B7280",
-            "info": "#9CA3AF"
+            "info": "#6B7280"
         }
     }
     
     DIFFICULTY_LEVELS = {
-        1: {"name": "سهل جداً", "questions": 3, "time": 30, "hint_penalty": 0},
+        1: {"name": "سهل جدا", "questions": 3, "time": 30, "hint_penalty": 0},
         2: {"name": "سهل", "questions": 5, "time": 25, "hint_penalty": 0},
         3: {"name": "متوسط", "questions": 5, "time": 20, "hint_penalty": 0},
         4: {"name": "صعب", "questions": 7, "time": 15, "hint_penalty": 1},
-        5: {"name": "صعب جداً", "questions": 10, "time": 10, "hint_penalty": 2}
+        5: {"name": "صعب جدا", "questions": 10, "time": 10, "hint_penalty": 2}
     }
     
     def __init__(self, line_bot_api, difficulty=3, theme="light", game_type="competitive", questions_count=None):
@@ -70,10 +70,6 @@ class BaseGame(ABC):
         self.previous_answer = None
         self.start_time = None
         self.round_start_time = None
-        
-        # لمنع تكرار الأسئلة
-        self.used_questions = set()
-        self.all_questions_used = False
         
         self.supports_hint = True
         self.supports_reveal = True
@@ -113,66 +109,30 @@ class BaseGame(ABC):
         percentage = int((current / total) * 100) if total > 0 else 0
         
         return {
-            "type": "box",
-            "layout": "vertical",
-            "spacing": "xs",
-            "margin": "md",
+            "type": "box", "layout": "vertical",
             "contents": [
                 {
-                    "type": "box",
-                    "layout": "horizontal",
+                    "type": "box", "layout": "horizontal",
                     "contents": [
-                        {
-                            "type": "text",
-                            "text": f"السؤال {current} من {total}",
-                            "size": "xs",
-                            "color": c["text2"],
-                            "flex": 1
-                        },
-                        {
-                            "type": "text",
-                            "text": f"{percentage}%",
-                            "size": "xs",
-                            "color": c["text3"],
-                            "align": "end",
-                            "flex": 0
-                        }
+                        {"type": "text", "text": f"السؤال {current}/{total}", "size": "xs", "color": c["text2"], "flex": 1},
+                        {"type": "text", "text": f"{percentage}%", "size": "xs", "color": c["primary"], "align": "end", "flex": 0}
                     ]
                 },
                 {
-                    "type": "box",
-                    "layout": "horizontal",
+                    "type": "box", "layout": "horizontal",
                     "contents": [
-                        {
-                            "type": "box",
-                            "layout": "vertical",
-                            "contents": [],
-                            "width": f"{percentage}%",
-                            "backgroundColor": c["progress_fill"],
-                            "height": "4px",
-                            "cornerRadius": "2px"
-                        }
+                        {"type": "box", "layout": "vertical", "contents": [], "width": f"{percentage}%", "backgroundColor": c["progress_fill"], "height": "6px", "cornerRadius": "3px"}
                     ],
-                    "backgroundColor": c["progress_bg"],
-                    "height": "4px",
-                    "cornerRadius": "2px",
-                    "margin": "sm"
+                    "backgroundColor": c["progress_bg"], "height": "6px", "cornerRadius": "3px", "margin": "sm"
                 }
-            ]
+            ],
+            "margin": "md"
         }
     
     def build_question_message(self, question_text, subtitle=None, show_timer=False):
         c = self.get_theme_colors()
-        
         contents = [
-            {
-                "type": "text",
-                "text": self.game_name,
-                "size": "xl",
-                "weight": "bold",
-                "color": c["primary"],
-                "align": "center"
-            }
+            {"type": "text", "text": self.game_name, "size": "xl", "weight": "bold", "color": c["primary"], "align": "center"}
         ]
         
         if self.show_progress and self.game_type == "competitive":
@@ -180,125 +140,66 @@ class BaseGame(ABC):
         
         if self.difficulty_config and self.supports_difficulty:
             contents.append({
-                "type": "text",
-                "text": f"المستوى: {self.difficulty_config['name']}",
-                "size": "xxs",
-                "color": c["text3"],
-                "align": "center",
-                "margin": "sm"
+                "type": "text", "text": f"المستوى: {self.difficulty_config['name']}", 
+                "size": "xxs", "color": c["text3"], "align": "center", "margin": "sm"
             })
         
         contents.append({"type": "separator", "margin": "md", "color": c["border"]})
         
         if self.previous_answer and self.current_question > 0:
             contents.append({
-                "type": "box",
-                "layout": "vertical",
-                "backgroundColor": c["card"],
-                "cornerRadius": "6px",
-                "paddingAll": "12px",
-                "margin": "md",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": "الإجابة السابقة",
-                        "size": "xxs",
-                        "color": c["text3"],
-                        "align": "center"
-                    },
-                    {
-                        "type": "text",
-                        "text": self.previous_answer,
-                        "size": "xs",
-                        "color": c["text2"],
-                        "align": "center",
-                        "wrap": True,
-                        "margin": "xs"
-                    }
-                ]
+                "type": "text", "text": f"الاجابة السابقة: {self.previous_answer}",
+                "size": "xxs", "color": c["text3"], "align": "center", "margin": "sm", "wrap": True
             })
         
-        contents.append({
-            "type": "text",
-            "text": question_text,
-            "size": "md",
-            "wrap": True,
-            "color": c["text"],
-            "align": "center",
-            "margin": "lg"
-        })
+        contents.extend([
+            {"type": "text", "text": question_text, "size": "md", "wrap": True, "color": c["text"], "align": "center", "margin": "lg"}
+        ])
         
         if subtitle:
             contents.append({
-                "type": "text",
-                "text": subtitle,
-                "size": "xs",
-                "color": c["text2"],
-                "align": "center",
-                "margin": "sm",
-                "wrap": True
+                "type": "text", "text": subtitle, "size": "xs", "color": c["text2"], 
+                "align": "center", "margin": "sm", "wrap": True
             })
         
         if show_timer and self.round_time:
             contents.append({
-                "type": "text",
-                "text": f"الوقت المتاح: {self.round_time} ثانية",
-                "size": "xxs",
-                "color": c["text3"],
-                "align": "center",
-                "margin": "sm"
+                "type": "text", "text": f"الوقت المتاح: {self.round_time} ثانية",
+                "size": "xxs", "color": c["text2"], "align": "center", "margin": "sm"
             })
         
         footer_buttons = []
         if self.supports_hint:
             footer_buttons.append({
-                "type": "button",
-                "action": {"type": "message", "label": "تلميح", "text": "لمح"},
-                "style": "secondary",
-                "height": "sm",
-                "color": c["text3"],
-                "flex": 1
+                "type": "button", "action": {"type": "message", "label": "لمح", "text": "لمح"},
+                "style": "secondary", "height": "sm", "color": c["text2"]
             })
         if self.supports_reveal:
             footer_buttons.append({
-                "type": "button",
-                "action": {"type": "message", "label": "الجواب", "text": "جاوب"},
-                "style": "secondary",
-                "height": "sm",
-                "color": c["text3"],
-                "flex": 1
+                "type": "button", "action": {"type": "message", "label": "جاوب", "text": "جاوب"},
+                "style": "secondary", "height": "sm", "color": c["text2"]
             })
         
         footer_buttons.append({
-            "type": "button",
-            "action": {"type": "message", "label": "إيقاف", "text": "ايقاف"},
-            "style": "secondary",
-            "height": "sm",
-            "color": c["text3"],
-            "flex": 1
+            "type": "button", "action": {"type": "message", "label": "ايقاف", "text": "ايقاف"},
+            "style": "secondary", "height": "sm", "color": c["text2"]
         })
         
         bubble = {
             "type": "bubble",
-            "size": "mega",
             "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": contents,
-                "paddingAll": "24px",
-                "backgroundColor": c["bg"],
-                "spacing": "none"
+                "type": "box", "layout": "vertical", "contents": contents,
+                "paddingAll": "20px", "backgroundColor": c["bg"]
             }
         }
         
         if footer_buttons:
             bubble["footer"] = {
-                "type": "box",
-                "layout": "horizontal",
-                "spacing": "sm",
-                "contents": footer_buttons,
-                "paddingAll": "16px",
-                "backgroundColor": c["card"]
+                "type": "box", "layout": "vertical",
+                "contents": [
+                    {"type": "box", "layout": "horizontal", "contents": footer_buttons, "spacing": "sm"}
+                ],
+                "paddingAll": "12px", "backgroundColor": c["card"]
             }
         
         return FlexMessage(alt_text=self.game_name, contents=FlexContainer.from_dict(bubble))
@@ -326,8 +227,6 @@ class BaseGame(ABC):
         self.scores = {}
         self.answered_users = set()
         self.withdrawn_users = set()
-        self.used_questions = set()
-        self.all_questions_used = False
         self.start_time = time.time()
         self.round_start_time = time.time()
         return self.get_question()
@@ -348,7 +247,7 @@ class BaseGame(ABC):
             return {
                 "game_over": True,
                 "points": 0,
-                "message": "انتهت اللعبة - لم يسجل أحد نقاطاً",
+                "message": "انتهت اللعبة - لم يسجل احد نقاطا",
                 "response": self.build_text_message("انتهت اللعبة")
             }
         
@@ -360,113 +259,43 @@ class BaseGame(ABC):
         winner = sorted_players[0][1]
         
         leaderboard_contents = [
-            {
-                "type": "text",
-                "text": "نتائج اللعبة",
-                "size": "xl",
-                "weight": "bold",
-                "color": c["primary"],
-                "align": "center"
-            },
+            {"type": "text", "text": "نتائج اللعبة", "size": "xl", "weight": "bold", "color": c["primary"], "align": "center"},
             {"type": "separator", "margin": "lg", "color": c["border"]},
             {
-                "type": "box",
-                "layout": "vertical",
-                "backgroundColor": c["card"],
-                "cornerRadius": "8px",
-                "paddingAll": "16px",
-                "margin": "md",
-                "spacing": "sm",
+                "type": "box", "layout": "vertical",
                 "contents": [
-                    {
-                        "type": "text",
-                        "text": "الفائز",
-                        "size": "xs",
-                        "color": c["text3"],
-                        "align": "center"
-                    },
-                    {
-                        "type": "text",
-                        "text": winner['name'],
-                        "size": "xl",
-                        "weight": "bold",
-                        "color": c["primary"],
-                        "align": "center",
-                        "margin": "xs"
-                    },
-                    {
-                        "type": "text",
-                        "text": f"{winner['score']} نقطة",
-                        "size": "md",
-                        "color": c["text"],
-                        "align": "center",
-                        "margin": "xs"
-                    }
-                ]
+                    {"type": "text", "text": "الفائز", "size": "md", "weight": "bold", "color": c["success"], "align": "center"},
+                    {"type": "text", "text": winner['name'], "size": "xl", "weight": "bold", "color": c["text"], "align": "center", "margin": "sm"},
+                    {"type": "text", "text": f"{winner['score']} نقطة", "size": "lg", "color": c["primary"], "align": "center", "margin": "xs"}
+                ],
+                "backgroundColor": c["card"], "cornerRadius": "12px", "paddingAll": "16px", "margin": "md"
             }
         ]
         
         if len(sorted_players) > 1:
             leaderboard_contents.extend([
                 {"type": "separator", "margin": "lg", "color": c["border"]},
-                {
-                    "type": "text",
-                    "text": "الترتيب النهائي",
-                    "size": "sm",
-                    "weight": "bold",
-                    "color": c["text2"],
-                    "align": "center",
-                    "margin": "md"
-                }
+                {"type": "text", "text": "الترتيب النهائي", "size": "sm", "weight": "bold", "color": c["text"], "align": "center", "margin": "md"}
             ])
             
+            rank_colors = {0: "#FFD700", 1: "#C0C0C0", 2: "#CD7F32"}
             for i, (uid, player) in enumerate(sorted_players[:5]):
-                is_top3 = i < 3
+                rank_color = rank_colors.get(i, c["text2"])
                 leaderboard_contents.append({
-                    "type": "box",
-                    "layout": "horizontal",
-                    "backgroundColor": c["card"] if is_top3 else "none",
-                    "cornerRadius": "6px" if is_top3 else "none",
-                    "paddingAll": "8px" if is_top3 else "4px",
-                    "margin": "sm",
+                    "type": "box", "layout": "horizontal",
                     "contents": [
-                        {
-                            "type": "text",
-                            "text": f"{i + 1}.",
-                            "size": "sm",
-                            "color": c["primary"] if is_top3 else c["text3"],
-                            "flex": 0,
-                            "weight": "bold" if is_top3 else "regular"
-                        },
-                        {
-                            "type": "text",
-                            "text": player['name'],
-                            "size": "sm",
-                            "color": c["text"],
-                            "flex": 3,
-                            "margin": "sm"
-                        },
-                        {
-                            "type": "text",
-                            "text": str(player['score']),
-                            "size": "sm",
-                            "color": c["primary"] if is_top3 else c["text2"],
-                            "align": "end",
-                            "flex": 1,
-                            "weight": "bold" if is_top3 else "regular"
-                        }
-                    ]
+                        {"type": "text", "text": str(i + 1), "size": "sm", "color": rank_color, "flex": 0, "weight": "bold"},
+                        {"type": "text", "text": player['name'], "size": "sm", "color": c["text"], "flex": 3, "margin": "sm"},
+                        {"type": "text", "text": str(player['score']), "size": "sm", "color": c["primary"], "align": "end", "flex": 1, "weight": "bold"}
+                    ],
+                    "margin": "sm", "paddingAll": "8px"
                 })
         
         bubble = {
             "type": "bubble",
-            "size": "mega",
             "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": leaderboard_contents,
-                "paddingAll": "24px",
-                "backgroundColor": c["bg"]
+                "type": "box", "layout": "vertical", "contents": leaderboard_contents,
+                "paddingAll": "20px", "backgroundColor": c["bg"]
             }
         }
         
