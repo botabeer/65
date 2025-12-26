@@ -14,7 +14,7 @@ class UI:
             "bg": "#FFFFFF",
             "card": "#F9FAFB",
             "border": "#E5E7EB",
-            "button": "#F5F5F5",  # تم التغيير هنا
+            "button": "#94A3B8",
             "success": "#374151",
             "warning": "#6B7280",
             "error": "#4B5563"
@@ -27,7 +27,7 @@ class UI:
             "bg": "#111827",
             "card": "#1F2937",
             "border": "#374151",
-            "button": "#F5F5F5",  # تم التغيير هنا
+            "button": "#64748B",
             "success": "#D1D5DB",
             "warning": "#9CA3AF",
             "error": "#6B7280"
@@ -58,17 +58,11 @@ class UI:
             items=[
                 QuickReplyItem(action=MessageAction(label="بداية", text="بداية")),
                 QuickReplyItem(action=MessageAction(label="العاب", text="العاب")),
-                QuickReplyItem(action=MessageAction(label="سؤال", text="سؤال")),
-                QuickReplyItem(action=MessageAction(label="تحدي", text="تحدي")),
-                QuickReplyItem(action=MessageAction(label="اعتراف", text="اعتراف")),
-                QuickReplyItem(action=MessageAction(label="منشن", text="منشن")),
-                QuickReplyItem(action=MessageAction(label="اقتباس", text="اقتباس")),
-                QuickReplyItem(action=MessageAction(label="موقف", text="موقف")),
-                QuickReplyItem(action=MessageAction(label="شعر", text="شعر")),
-                QuickReplyItem(action=MessageAction(label="خاص", text="خاص")),
-                QuickReplyItem(action=MessageAction(label="مجهول", text="مجهول")),
-                QuickReplyItem(action=MessageAction(label="نصيحة", text="نصيحة")),
+                QuickReplyItem(action=MessageAction(label="نص", text="نص")),
+                QuickReplyItem(action=MessageAction(label="نقاطي", text="نقاطي")),
+                QuickReplyItem(action=MessageAction(label="الصدارة", text="الصدارة")),
                 QuickReplyItem(action=MessageAction(label="مساعدة", text="مساعدة")),
+                QuickReplyItem(action=MessageAction(label="ثيم", text="ثيم")),
             ]
         )
 
@@ -115,7 +109,6 @@ class UI:
                 ]
             })
 
-        # السطر الأول
         row1 = []
         if not registered:
             row1.append(UI._button("تسجيل", "تسجيل", c))
@@ -131,7 +124,6 @@ class UI:
             "contents": row1
         })
 
-        # السطر الثاني
         contents.append({
             "type": "box",
             "layout": "horizontal",
@@ -143,7 +135,6 @@ class UI:
             ]
         })
 
-        # السطر الثالث
         contents.append({
             "type": "box",
             "layout": "horizontal",
@@ -155,7 +146,6 @@ class UI:
             ]
         })
 
-        # السطر الرابع
         contents.append({
             "type": "box",
             "layout": "horizontal",
@@ -167,7 +157,6 @@ class UI:
             ]
         })
 
-        # الحقوق
         contents.extend([
             {"type": "separator", "margin": "lg", "color": c["border"]},
             {
@@ -224,7 +213,7 @@ class UI:
                     },
                     {
                         "type": "text",
-                        "text": "بداية - القائمة الرئيسية\nالعاب - قائمة الألعاب\nنص - قائمة النصوص\nنقاطي - عرض نقاطك\nالصدارة - عرض المتصدرين\nتسجيل - تسجيل حساب جديد\nثيم - تغيير المظهر",
+                        "text": "بداية - القائمة الرئيسية\nالعاب - قائمة الألعاب\nنص - قائمة النصوص\nنقاطي - عرض نقاطك\nالصدارة - عرض المتصدرين\nتسجيل - تسجيل حساب جديد\nثيم - تغيير المظهر\n\nأوامر النصوص:\nسؤال - تحدي - اعتراف - منشن\nاقتباس - موقف - شعر - خاص\nمجهول - نصيحة",
                         "size": "xs",
                         "color": c["text2"],
                         "wrap": True,
@@ -274,26 +263,26 @@ class UI:
         ]
 
         for i in range(0, len(texts), 2):
+            row = []
+            for label, cmd in texts[i:i + 2]:
+                row.append({
+                    "type": "button",
+                    "style": "secondary",
+                    "height": "sm",
+                    "action": {
+                        "type": "message",
+                        "label": label,
+                        "text": cmd
+                    },
+                    "color": c["button"],
+                    "flex": 1
+                })
             contents.append({
                 "type": "box",
                 "layout": "horizontal",
                 "spacing": "xs",
                 "margin": "sm",
-                "contents": [
-                    {
-                        "type": "button",
-                        "style": "secondary",
-                        "height": "sm",
-                        "action": {
-                            "type": "message",
-                            "label": label,
-                            "text": cmd
-                        },
-                        "color": c["button"],
-                        "flex": 1
-                    }
-                    for label, cmd in texts[i:i + 2]
-                ]
+                "contents": row
             })
 
         contents.extend([
@@ -352,26 +341,26 @@ class UI:
         ]
 
         for i in range(0, len(games), 3):
+            row = []
+            for cmd, text in games[i:i + 3]:
+                row.append({
+                    "type": "button",
+                    "style": "secondary",
+                    "height": "sm",
+                    "action": {
+                        "type": "message",
+                        "label": GAME_LABELS.get(cmd, cmd),
+                        "text": text
+                    },
+                    "color": c["button"],
+                    "flex": 1
+                })
             contents.append({
                 "type": "box",
                 "layout": "horizontal",
                 "spacing": "xs",
                 "margin": "sm",
-                "contents": [
-                    {
-                        "type": "button",
-                        "style": "secondary",
-                        "height": "sm",
-                        "action": {
-                            "type": "message",
-                            "label": GAME_LABELS.get(cmd, cmd),
-                            "text": text
-                        },
-                        "color": c["button"],
-                        "flex": 1
-                    }
-                    for cmd, text in games[i:i + 3]
-                ]
+                "contents": row
             })
 
         contents.extend([
