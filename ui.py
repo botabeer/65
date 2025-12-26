@@ -73,83 +73,103 @@ class UI:
         )
 
     @staticmethod
-    def welcome(name, registered, theme="light"):
-        c = UI._c(theme)
-        
-        contents = [
-            {
-                "type": "text",
-                "text": f"أهلاً {name}",
-                "size": "xl",
-                "weight": "bold",
-                "align": "center",
-                "color": c["primary"]
-            },
-            {
-                "type": "text",
-                "text": "بوت ألعاب وتحديات",
-                "size": "sm",
-                "align": "center",
-                "color": c["text2"],
-                "margin": "sm"
-            },
-            {"type": "separator", "margin": "md", "color": c["border"]}
+def welcome(name, registered, theme="light"):
+    c = UI._c(theme)
+    
+    contents = [
+        {
+            "type": "text",
+            "text": f"مرحبا {name}",
+            "size": "xl",
+            "weight": "bold",
+            "align": "center",
+            "color": c["primary"]
+        },
+        {"type": "separator", "margin": "md", "color": c["border"]}
+    ]
+
+    if not registered:
+        contents.append({
+            "type": "box",
+            "layout": "vertical",
+            "backgroundColor": c["card"],
+            "cornerRadius": "8px",
+            "paddingAll": "12px",
+            "margin": "md",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "يجب التسجيل اولا",
+                    "size": "sm",
+                    "color": c["text"],
+                    "align": "center"
+                }
+            ]
+        })
+
+    # السطر الأول: تسجيل/تغيير - انسحب
+    row1 = []
+    if not registered:
+        row1.append(UI._button("تسجيل", "تسجيل", c))
+    else:
+        row1.append(UI._button("تغيير", "تغيير", c))
+    row1.append(UI._button("انسحب", "انسحب", c))
+    
+    contents.append({
+        "type": "box",
+        "layout": "horizontal",
+        "spacing": "xs",
+        "margin": "md",
+        "contents": row1
+    })
+
+    # السطر الثاني: نقاطي - الصدارة
+    contents.append({
+        "type": "box",
+        "layout": "horizontal",
+        "spacing": "xs",
+        "margin": "xs",
+        "contents": [
+            UI._button("نقاطي", "نقاطي", c),
+            UI._button("الصدارة", "الصدارة", c)
         ]
+    })
 
-        if not registered:
-            contents.append({
-                "type": "box",
-                "layout": "vertical",
-                "backgroundColor": c["card"],
-                "cornerRadius": "8px",
-                "paddingAll": "12px",
-                "margin": "md",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": "للبدء يرجى التسجيل",
-                        "size": "sm",
-                        "color": c["text"],
-                        "align": "center"
-                    }
-                ]
-            })
-
-        buttons = [
-            ("العاب", "العاب"),
-            ("نص", "نص"),
-            ("نقاطي", "نقاطي"),
-            ("الصدارة", "الصدارة")
+    # السطر الثالث: العاب - نص
+    contents.append({
+        "type": "box",
+        "layout": "horizontal",
+        "spacing": "xs",
+        "margin": "xs",
+        "contents": [
+            UI._button("العاب", "العاب", c),
+            UI._button("نص", "نص", c)
         ]
+    })
 
-        if not registered:
-            buttons.insert(0, ("تسجيل", "تسجيل"))
-        else:
-            buttons.append(("تغيير الاسم", "تغيير"))
+    # السطر الرابع: ثيم - مساعدة
+    contents.append({
+        "type": "box",
+        "layout": "horizontal",
+        "spacing": "xs",
+        "margin": "xs",
+        "contents": [
+            UI._button("ثيم", "ثيم", c),
+            UI._button("مساعدة", "مساعدة", c)
+        ]
+    })
 
-        for i in range(0, len(buttons), 2):
-            contents.append({
-                "type": "box",
-                "layout": "horizontal",
-                "spacing": "xs",
-                "margin": "sm",
-                "contents": [
-                    UI._button(label, cmd, c)
-                    for label, cmd in buttons[i:i + 2]
-                ]
-            })
-
-        return {
-            "type": "bubble",
-            "size": "mega",
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "backgroundColor": c["bg"],
-                "paddingAll": "20px",
-                "contents": contents
-            }
+    return {
+        "type": "bubble",
+        "size": "mega",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "backgroundColor": c["bg"],
+            "paddingAll": "20px",
+            "contents": contents
         }
+    }
 
     @staticmethod
     def help_card(theme="light"):
