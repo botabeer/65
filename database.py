@@ -58,14 +58,13 @@ class DB:
                 c.execute('CREATE INDEX IF NOT EXISTS idx_activity ON users(activity DESC)')
                 c.execute('PRAGMA foreign_keys = ON')
 
-            logger.info("Database initialized successfully")
+            logger.info("Database initialized")
         except Exception as e:
             logger.error(f"Failed to initialize database: {e}")
             raise
     
     @staticmethod
     def cleanup_inactive_users():
-        """حذف المستخدمين غير النشطين لمدة شهر"""
         try:
             with DB.conn() as c:
                 month_ago = datetime.now() - timedelta(days=30)
