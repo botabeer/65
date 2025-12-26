@@ -97,11 +97,29 @@ class UI:
 
         if not registered:
             contents.append({
-                "type": "text",
-                "text": "يجب التسجيل أولاً",
-                "size": "sm",
-                "align": "center",
-                "color": c["error"],
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "يجب التسجيل للعب",
+                        "size": "sm",
+                        "align": "center",
+                        "color": c["error"],
+                        "weight": "bold"
+                    },
+                    {
+                        "type": "text",
+                        "text": "اكتب اسمك في الشات",
+                        "size": "xs",
+                        "align": "center",
+                        "color": c["text3"],
+                        "margin": "xs"
+                    }
+                ],
+                "backgroundColor": c["card"],
+                "paddingAll": "12px",
+                "cornerRadius": "8px",
                 "margin": "md"
             })
 
@@ -111,7 +129,7 @@ class UI:
             "spacing": "xs",
             "margin": "md",
             "contents": [
-                UI._button("تسجيل" if not registered else "تغيير", "تسجيل" if not registered else "تغيير", c),
+                UI._button("تغيير الاسم" if registered else "تسجيل", "تسجيل", c),
                 UI._button("انسحب", "انسحب", c)
             ]
         })
