@@ -8,13 +8,13 @@ class BaseGame(ABC):
         "light": {
             "primary": "#1A1A1A", "text": "#2D2D2D", "text2": "#6B7280",
             "text3": "#9CA3AF", "bg": "#FFFFFF", "card": "#F9FAFB",
-            "border": "#E5E7EB", "button": "#F5F5F5", "success": "#10B981",
+            "border": "#E5E7EB", "button": "#F5F5F5", "success": "#2563EB",
             "warning": "#F59E0B", "error": "#EF4444"
         },
         "dark": {
             "primary": "#F9FAFB", "text": "#E5E7EB", "text2": "#9CA3AF",
             "text3": "#6B7280", "bg": "#111827", "card": "#1F2937",
-            "border": "#374151", "button": "#F5F5F5", "success": "#34D399",
+            "border": "#374151", "button": "#F5F5F5", "success": "#60A5FA",
             "warning": "#FBBF24", "error": "#F87171"
         }
     }
@@ -101,7 +101,7 @@ class BaseGame(ABC):
             ], "margin": "md"
         }
     
-    def build_question_message(self, question_text, subtitle=None):
+    def build_question_message(self, question_text, subtitle=None, show_timer=False):
         c = self.get_theme_colors()
         
         contents = [
