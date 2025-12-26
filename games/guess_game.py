@@ -44,37 +44,43 @@ class GuessGame(BaseGame):
         }
         
         self.items = self.items_by_difficulty.get(difficulty, self.items_by_difficulty[3])
-        self.questions_list = []
-        self.used_questions = []
+        self.questions_pool = []
         self.hints_used = 0
         
+        # إنشاء مجموعة الأسئلة
         for category, letters in self.items.items():
             for letter, words in letters.items():
-                self.questions_list.append({
+                question_id = f"{category}_{letter}"
+                self.questions_pool.append({
+                    "id": question_id,
                     "category": category,
                     "letter": letter,
                     "answers": words
                 })
         
-        random.shuffle(self.questions_list)
+        random.shuffle(self.questions_pool)
     
     def get_question(self):
         self.round_start_time = time.time()
         
-        available = [q for q in self.questions_list if q not in self.used_questions]
-        if not available:
-            self.used_questions = []
-            available = self.questions_list.copy()
-            random.shuffle(available)
+        # البحث عن سؤال لم يتم استخدامه
+        available_questions = [q for q in self.questions_pool if q["id"] not in self.used_questions]
         
-        q = random.choice(available)
-        self.used_questions.append(q)
+        # إذا انتهت جميع الأسئلة، إعادة تعيين
+        if not available_questions:
+            self.used_questions.clear()
+            self.all_questions_used = True
+            available_questions = self.questions_pool.copy()
+            random.shuffle(available_questions)
+        
+        q = available_questions[0]
+        self.used_questions.add(q["id"])
         
         self.current_answer = q["answers"]
         
         return self.build_question_message(
             f"الفئة: {q['category']}",
-            f"يبدا بحرف: {q['letter']}"
+            f"يبدأ بحرف: {q['letter']}"
         )
     
     def check_answer(self, user_answer, user_id, display_name):
@@ -95,7 +101,7 @@ class GuessGame(BaseGame):
         if self.supports_hint and normalized == "لمح":
             self.hints_used += 1
             sample = self.current_answer[0] if self.current_answer else "كلمة"
-            hint_text = f"يبدا ب: {sample[0]}\nعدد الحروف: {len(sample)}"
+            hint_text = f"يبدأ بـ: {sample[0]}\nعدد الحروف: {len(sample)}"
             if self.hint_penalty > 0:
                 hint_text += f"\nسيتم خصم {self.hint_penalty} نقطة"
             return {
@@ -104,7 +110,7 @@ class GuessGame(BaseGame):
             }
         
         if self.supports_reveal and normalized == "جاوب":
-            answers = " او ".join(self.current_answer)
+            answers = " أو ".join(self.current_answer)
             self.previous_answer = answers
             self.current_question += 1
             self.answered_users.clear()
