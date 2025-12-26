@@ -1,19 +1,20 @@
 """Bot 65 - UI Module"""
 
 from constants import GAME_LABELS
+from linebot.models import QuickReply, QuickReplyItem, MessageAction
 
 class UI:
     THEMES = {
         "light": {
             "primary": "#1A1A1A", "text": "#2D2D2D", "text2": "#6B7280",
             "text3": "#9CA3AF", "bg": "#FFFFFF", "card": "#F9FAFB",
-            "border": "#E5E7EB", "button": "#94A3B8", "success": "#374151",
+            "border": "#E5E7EB", "button": "#F5F5F5", "success": "#374151",
             "warning": "#6B7280", "error": "#4B5563"
         },
         "dark": {
             "primary": "#F9FAFB", "text": "#E5E7EB", "text2": "#9CA3AF",
             "text3": "#6B7280", "bg": "#111827", "card": "#1F2937",
-            "border": "#374151", "button": "#64748B", "success": "#D1D5DB",
+            "border": "#374151", "button": "#F5F5F5", "success": "#D1D5DB",
             "warning": "#9CA3AF", "error": "#6B7280"
         }
     }
@@ -29,6 +30,25 @@ class UI:
             "action": {"type": "message", "label": label, "text": text},
             "color": c["button"]
         }
+
+    @staticmethod
+    def get_quick_reply():
+        """ازرار سريعة مرتبة: بداية أول زر، مساعدة آخر زر، أوامر نصية 10"""
+        return QuickReply(items=[
+            QuickReplyItem(action=MessageAction(label="بداية", text="بداية")),  # أول زر
+            QuickReplyItem(action=MessageAction(label="العاب", text="العاب")),
+            QuickReplyItem(action=MessageAction(label="سؤال", text="سؤال")),
+            QuickReplyItem(action=MessageAction(label="تحدي", text="تحدي")),
+            QuickReplyItem(action=MessageAction(label="اعتراف", text="اعتراف")),
+            QuickReplyItem(action=MessageAction(label="منشن", text="منشن")),
+            QuickReplyItem(action=MessageAction(label="اقتباس", text="اقتباس")),
+            QuickReplyItem(action=MessageAction(label="موقف", text="موقف")),
+            QuickReplyItem(action=MessageAction(label="شعر", text="شعر")),
+            QuickReplyItem(action=MessageAction(label="خاص", text="خاص")),
+            QuickReplyItem(action=MessageAction(label="مجهول", text="مجهول")),
+            QuickReplyItem(action=MessageAction(label="نصيحة", text="نصيحة")),
+            QuickReplyItem(action=MessageAction(label="مساعدة", text="مساعدة"))  # آخر زر
+        ])
 
     @staticmethod
     def welcome(name, registered, theme="light"):
@@ -57,24 +77,53 @@ class UI:
             {"type": "separator", "margin": "lg", "color": c["border"]}
         ]
         
-        for label, text in [("الألعاب", "العاب"), 
-                            ("نقاطي" if registered else "تسجيل", 
-                             "نقاطي" if registered else "تسجيل"),
-                            ("الصدارة", "الصدارة")]:
-            contents.append({
-                "type": "box", "layout": "horizontal", "margin": "sm",
-                "contents": [UI._button(label, text, c)]
-            })
+        # السطر الاول: تسجيل/تغيير - انسحب
+        contents.append({
+            "type": "box", "layout": "horizontal", "spacing": "sm", "margin": "sm",
+            "contents": [
+                UI._button("تسجيل" if not registered else "تغيير", "تسجيل" if not registered else "تغيير", c),
+                UI._button("انسحب", "انسحب", c)
+            ]
+        })
+        
+        # السطر الثاني: نقاطي - الصدارة
+        contents.append({
+            "type": "box", "layout": "horizontal", "spacing": "sm", "margin": "sm",
+            "contents": [
+                UI._button("نقاطي", "نقاطي", c),
+                UI._button("الصدارة", "الصدارة", c)
+            ]
+        })
+        
+        # السطر الثالث: العاب - أوامر نصية
+        contents.append({
+            "type": "box", "layout": "horizontal", "spacing": "sm", "margin": "sm",
+            "contents": [
+                UI._button("العاب", "العاب", c),
+                UI._button("سؤال", "سؤال", c),
+                UI._button("منشن", "منشن", c),
+                UI._button("تحدي", "تحدي", c),
+                UI._button("اعتراف", "اعتراف", c),
+                UI._button("اقتباس", "اقتباس", c),
+                UI._button("موقف", "موقف", c),
+                UI._button("شعر", "شعر", c),
+                UI._button("خاص", "خاص", c),
+                UI._button("مجهول", "مجهول", c),
+                UI._button("نصيحة", "نصيحة", c)
+            ]
+        })
+        
+        # السطر الرابع: ثيم - مساعدة
+        contents.append({
+            "type": "box", "layout": "horizontal", "spacing": "sm", "margin": "sm",
+            "contents": [
+                UI._button("ثيم", "ثيم", c),
+                UI._button("مساعدة", "مساعدة", c)
+            ]
+        })
         
         contents.extend([
             {"type": "separator", "margin": "md", "color": c["border"]},
-            {
-                "type": "box", "layout": "horizontal", "spacing": "sm", "margin": "sm",
-                "contents": [
-                    UI._button("مساعدة", "مساعدة", c),
-                    UI._button(f"ثيم {'داكن' if theme == 'light' else 'فاتح'}", "ثيم", c)
-                ]
-            },
             {"type": "text", "text": "عبير الدوسري 2025", 
              "size": "xxs", "align": "center", "color": c["text3"], "margin": "md"}
         ])
@@ -128,7 +177,7 @@ class UI:
         
         contents.extend([
             {"type": "separator", "margin": "lg", "color": c["border"]},
-            {"type": "text", "text": "أوامر اللعب: لمح | جاوب | ايقاف", 
+            {"type": "text", "text": "أوامر اللعب: لمح | جاوب | ايقاف | انسحب", 
              "size": "xxs", "align": "center", "color": c["text3"], "margin": "sm"},
             {"type": "box", "layout": "horizontal", "margin": "md",
              "contents": [UI._button("رجوع", "بداية", c)]}
@@ -152,18 +201,27 @@ class UI:
                 "title": "الأوامر الأساسية",
                 "items": ["بداية - الصفحة الرئيسية", "تسجيل - إنشاء حساب",
                          "العاب - قائمة الألعاب", "نقاطي - إحصائياتك",
-                         "الصدارة - المتصدرين"]
+                         "الصدارة - المتصدرين", "نص - الأوامر النصية"]
             },
             {
                 "title": "أوامر اللعب",
                 "items": ["لمح - الحصول على تلميح", "جاوب - إظهار الإجابة",
-                         "ايقاف - إنهاء اللعبة"]
+                         "ايقاف - إنهاء اللعبة", "انسحب - الخروج من اللعبة"]
             },
             {
-                "title": "الأوامر التفاعلية",
-                "items": ["سؤال - أسئلة عشوائية", "تحدي - تحديات ممتعة",
-                         "اعتراف - اعترافات", "منشن - منشن لأصدقائك",
-                         "حكمة - حكم وأقوال", "موقف - مواقف افتراضية"]
+                "title": "الأوامر النصية",
+                "items": [
+                    "سؤال",
+                    "تحدي",
+                    "اعتراف",
+                    "منشن",
+                    "اقتباس",
+                    "موقف",
+                    "شعر",
+                    "خاص",
+                    "مجهول",
+                    "نصيحة"
+                ]
             }
         ]
         
@@ -246,7 +304,7 @@ class UI:
                 "type": "box", "layout": "horizontal", "margin": "lg", "spacing": "sm",
                 "contents": [
                     UI._button("رجوع", "بداية", c),
-                    UI._button("المتصدرين", "الصدارة", c)
+                    UI._button("الصدارة", "الصدارة", c)
                 ]
             }
         ]
