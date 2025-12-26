@@ -43,7 +43,6 @@ TextCommands.load_all()
 game_sessions = {}
 waiting_for_name = set()
 user_themes = {}
-game_difficulties = {}
 
 TEXT_COMMANDS = {
     'سؤال': 'questions',
@@ -114,10 +113,8 @@ def process(text, user_id, group_id, line_api):
     user = DB.get_user(user_id)
     theme = user_themes.get(user_id, user['theme'] if user else 'light')
     
-    # نظام التسجيل المحسّن
     if user_id in waiting_for_name:
         name = text.strip()
-        # قبول أي اسم بين 1 و 20 حرف (حروف، أرقام، رموز)
         if 1 <= len(name) <= 20:
             DB.register_user(user_id, name)
             waiting_for_name.discard(user_id)
@@ -126,7 +123,7 @@ def process(text, user_id, group_id, line_api):
                 contents=FlexContainer.from_dict(UI.welcome(name, True, theme))
             )
         waiting_for_name.discard(user_id)
-        msg = TextMessage(text="الاسم يجب أن يكون بين 1 و 20 حرف")
+        msg = TextMessage(text="الاسم يجب ان يكون بين 1 و 20 حرف")
         msg.quick_reply = UI.get_quick_reply()
         return msg
     
@@ -163,7 +160,7 @@ def process(text, user_id, group_id, line_api):
     
     if t == 'نقاطي':
         if not user:
-            msg = TextMessage(text="يجب التسجيل أولاً\nاكتب: تسجيل")
+            msg = TextMessage(text="يجب التسجيل اولا\nاكتب: تسجيل")
             msg.quick_reply = UI.get_quick_reply()
             return msg
         DB.update_activity(user_id)
@@ -175,7 +172,7 @@ def process(text, user_id, group_id, line_api):
     
     if t == 'ثيم':
         if not user:
-            msg = TextMessage(text="يجب التسجيل أولاً")
+            msg = TextMessage(text="يجب التسجيل اولا")
             msg.quick_reply = UI.get_quick_reply()
             return msg
         new_theme = 'dark' if theme == 'light' else 'light'
@@ -193,8 +190,6 @@ def process(text, user_id, group_id, line_api):
                 return None
             
             del game_sessions[group_id]
-            if group_id in game_difficulties:
-                del game_difficulties[group_id]
             msg = TextMessage(text="تم ايقاف اللعبة")
             msg.quick_reply = UI.get_quick_reply()
             return msg
@@ -204,28 +199,13 @@ def process(text, user_id, group_id, line_api):
             return FlexMessage(alt_text="Bot 65", contents=FlexContainer.from_dict(UI.welcome(user['name'] if user else 'مستخدم', bool(user), theme)))
         return None
     
-    if t.startswith('صعوبة ') or t.startswith('مستوى '):
-        try:
-            level = int(t.split()[-1])
-            if 1 <= level <= 5:
-                game_difficulties[group_id] = level
-                msg = TextMessage(text=f"تم تعيين الصعوبة: مستوى {level}")
-                msg.quick_reply = UI.get_quick_reply()
-                return msg
-        except:
-            pass
-        msg = TextMessage(text="استخدم: صعوبة 1 (الى 5)")
-        msg.quick_reply = UI.get_quick_reply()
-        return msg
-    
     if not user:
         return None
     
     if t in GAME_MAP:
         try:
             game_class = GAME_MAP[t]
-            difficulty = game_difficulties.get(group_id, 3)
-            game = game_class(line_api, difficulty=difficulty, theme=theme)
+            game = game_class(line_api, theme=theme)
             game_sessions[group_id] = game
             return game.start_game()
         except Exception as e:
@@ -249,8 +229,6 @@ def process(text, user_id, group_id, line_api):
             if result.get('game_over'):
                 if group_id in game_sessions:
                     del game_sessions[group_id]
-                if group_id in game_difficulties:
-                    del game_difficulties[group_id]
                 
                 if result.get('points', 0) > 0 and user:
                     DB.add_points(user_id, result['points'], result.get('won', True), game.game_name)
