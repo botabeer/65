@@ -262,8 +262,6 @@ def process(text, user_id, group_id, line_api):
         result = game.check_answer(text, user_id, user['name'])
         
         if result:
-            responses = []
-            
             if result.get('withdrawn'):
                 return result.get('response')
             
@@ -276,15 +274,7 @@ def process(text, user_id, group_id, line_api):
                 if result.get('points', 0) > 0 and user:
                     DB.add_points(user_id, result['points'], result.get('won', True), game.game_name)
             
-            if result.get('response'):
-                responses.append(result['response'])
-            
-            if result.get('next_question') and not result.get('game_over'):
-                next_q = game.get_question()
-                if next_q:
-                    responses.append(next_q)
-            
-            return responses if len(responses) > 1 else (responses[0] if responses else None)
+            return result.get('response')
     
     return None
 
