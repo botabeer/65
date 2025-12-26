@@ -12,10 +12,7 @@ class ChainGame(BaseGame):
             "سيارة", "تفاح", "قلم", "نجم", "كتاب", "باب", "رمل",
             "طائرة", "حديقة", "مدرسة", "كرسي", "شمس", "قمر", "بحر",
             "جبل", "وردة", "شجرة", "كوب", "ساعة", "مفتاح", "باب",
-            "نافذة", "طاولة", "مكتب", "قلم", "دفتر", "كتاب", "حقيبة",
-            "سرير", "وسادة", "لحاف", "مراة", "خزانة", "ملعقة", "صحن",
-            "فنجان", "قدر", "سكين", "فرن", "ثلاجة", "مكنسة", "ممسحة",
-            "صابون", "منشفة", "فرشاة", "معجون", "شامبو", "صندل", "حذاء"
+            "نافذة", "طاولة", "مكتب", "قلم", "دفتر", "كتاب", "حقيبة"
         ]
 
         self.last_word = None
@@ -73,8 +70,7 @@ class ChainGame(BaseGame):
             
             return {
                 "response": self.get_question(),
-                "points": 0,
-                "next_question": True
+                "points": 0
             }
 
         if normalized in self.used_words:
@@ -100,8 +96,7 @@ class ChainGame(BaseGame):
 
             return {
                 "response": self.get_question(),
-                "points": points,
-                "next_question": True
+                "points": points
             }
 
         return None
