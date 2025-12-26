@@ -16,7 +16,7 @@ class MafiaGame(BaseGame):
         self.alive_players = set()
         self.dead_players = set()
         self.mafia_members = set()
-        self.civilians = set()
+        self.citizens = set()
         self.doctor = None
         self.detective = None
         
@@ -27,6 +27,7 @@ class MafiaGame(BaseGame):
         self.last_killed = None
         self.last_saved = None
         self.last_investigated = None
+        self.roles_sent = False
     
     def start_game(self):
         self.game_active = True
@@ -34,6 +35,7 @@ class MafiaGame(BaseGame):
         self.current_round = 0
         self.players = {}
         self.roles = {}
+        self.roles_sent = False
         return self.get_joining_screen()
     
     def get_joining_screen(self):
@@ -58,16 +60,36 @@ class MafiaGame(BaseGame):
                 "type": "box",
                 "layout": "vertical",
                 "contents": [
-                    {"type": "text", "text": "عن اللعبة", 
+                    {"type": "text", "text": "شرح اللعبة", 
                      "size": "sm", "weight": "bold", "color": c["text"]},
                     {"type": "text", 
-                     "text": "لعبة جماعية تنقسم فيها الأدوار بين المافيا والمدنيين", 
-                     "size": "xs", "color": c["text2"], "wrap": True, "margin": "sm"}
+                     "text": "لعبة جماعية تنقسم فيها الأدوار بين المافيا والمواطنين", 
+                     "size": "xs", "color": c["text2"], "wrap": True, "margin": "xs"},
+                    {"type": "text", 
+                     "text": "• المافيا: يحاولون قتل المواطنين ليلاً\n• الدكتور: يحمي شخص واحد كل ليلة\n• المحقق: يتحقق من دور شخص كل ليلة\n• المواطنون: يصوتون لطرد المشتبه بهم نهاراً", 
+                     "size": "xxs", "color": c["text3"], "wrap": True, "margin": "xs"}
                 ],
                 "backgroundColor": c["card"],
                 "paddingAll": "12px",
                 "cornerRadius": "8px",
                 "margin": "md"
+            },
+            {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {"type": "text", "text": "ملاحظة مهمة", 
+                     "size": "sm", "weight": "bold", "color": c["warning"]},
+                    {"type": "text", 
+                     "text": "يجب إضافة البوت كصديق ليصلك دورك بالخاص", 
+                     "size": "xs", "color": c["text2"], "wrap": True, "margin": "xs"}
+                ],
+                "backgroundColor": c["card"],
+                "paddingAll": "12px",
+                "cornerRadius": "8px",
+                "margin": "md",
+                "borderWidth": "1px",
+                "borderColor": c["warning"]
             },
             {
                 "type": "box",
@@ -177,9 +199,9 @@ class MafiaGame(BaseGame):
         if len(remaining) >= 2:
             self.doctor = remaining[0]
             self.detective = remaining[1]
-            self.civilians = set(remaining[2:])
+            self.citizens = set(remaining[2:])
         else:
-            self.civilians = set(remaining)
+            self.citizens = set(remaining)
         
         for pid in self.mafia_members:
             self.roles[pid] = "مافيا"
@@ -187,20 +209,39 @@ class MafiaGame(BaseGame):
             self.roles[self.doctor] = "دكتور"
         if self.detective:
             self.roles[self.detective] = "محقق"
-        for pid in self.civilians:
-            self.roles[pid] = "مدني"
+        for pid in self.citizens:
+            self.roles[pid] = "مواطن"
         
         self.alive_players = set(player_list)
         self.dead_players = set()
     
-    def send_roles_privately(self):
-        """إرسال الأدوار للاعبين (محاكاة فقط لأن البوت في المجموعة)"""
-        messages = []
+    def send_roles_to_players(self, line_api):
+        """إرسال الأدوار للاعبين عبر الرسائل الخاصة"""
+        from linebot.v3.messaging import PushMessageRequest, TextMessage
+        
         for player_id, role in self.roles.items():
-            role_emoji = {"مافيا": "🔪", "دكتور": "💊", "محقق": "🔍", "مدني": "👤"}
-            msg = f"{role_emoji.get(role, '')} دورك: {role}"
-            messages.append((player_id, msg))
-        return messages
+            role_emoji = {"مافيا": "🔪", "دكتور": "💊", "محقق": "🔍", "مواطن": "👤"}
+            
+            if role == "مافيا":
+                mafia_names = [self.players[p] for p in self.mafia_members if p != player_id]
+                msg = f"{role_emoji.get(role, '')} دورك: {role}\n\nزملاؤك في المافيا: {', '.join(mafia_names) if mafia_names else 'أنت وحدك'}"
+            else:
+                msg = f"{role_emoji.get(role, '')} دورك: {role}"
+            
+            if role == "دكتور":
+                msg += "\n\nفي كل ليلة، اكتب اسم شخص لحمايته"
+            elif role == "محقق":
+                msg += "\n\nفي كل ليلة، اكتب اسم شخص للتحقق من دوره"
+            elif role == "مافيا":
+                msg += "\n\nفي كل ليلة، اكتب اسم شخص لقتله"
+            
+            try:
+                line_api.push_message(PushMessageRequest(
+                    to=player_id,
+                    messages=[TextMessage(text=msg)]
+                ))
+            except Exception as e:
+                pass
     
     def get_night_phase_message(self):
         c = self.get_theme_colors()
@@ -213,12 +254,20 @@ class MafiaGame(BaseGame):
             {"type": "separator", "margin": "md", "color": c["border"]},
             {
                 "type": "text",
-                "text": "الجميع نائمون... المافيا والأدوار الخاصة يتحركون في الظلام",
+                "text": "الجميع نائمون\nالمافيا والأدوار الخاصة يتحركون في الظلام",
                 "size": "sm",
                 "color": c["text2"],
                 "wrap": True,
                 "align": "center",
                 "margin": "lg"
+            },
+            {
+                "type": "text",
+                "text": "تحقق من رسائلك الخاصة من البوت",
+                "size": "xs",
+                "color": c["warning"],
+                "align": "center",
+                "margin": "md"
             }
         ]
         
@@ -287,7 +336,7 @@ class MafiaGame(BaseGame):
             },
             {
                 "type": "text",
-                "text": "حان وقت التصويت لطرد المشتبه بهم",
+                "text": "حان وقت التصويت لطرد المشتبه بهم\nاكتب اسم الشخص للتصويت عليه",
                 "size": "sm",
                 "color": c["text2"],
                 "wrap": True,
@@ -335,6 +384,10 @@ class MafiaGame(BaseGame):
                     self.game_phase = "night"
                     self.current_round = 1
                     
+                    if not self.roles_sent:
+                        self.send_roles_to_players(self.line_bot_api)
+                        self.roles_sent = True
+                    
                     return {
                         "response": self.get_night_phase_message(),
                         "points": 0
@@ -358,7 +411,7 @@ class MafiaGame(BaseGame):
         
         winner_team = None
         if not self.mafia_members.intersection(self.alive_players):
-            winner_team = "المدنيون"
+            winner_team = "المواطنون"
         elif len(self.mafia_members.intersection(self.alive_players)) >= len(self.alive_players) / 2:
             winner_team = "المافيا"
         
@@ -416,7 +469,7 @@ class MafiaGame(BaseGame):
                     },
                     {
                         "type": "button",
-                        "action": {"type": "message", "label": "القائمة", "text": "بداية"},
+                        "action": {"type": "message", "label": "بداية", "text": "بداية"},
                         "style": "secondary",
                         "height": "sm",
                         "color": c["text2"]
