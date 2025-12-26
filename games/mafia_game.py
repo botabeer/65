@@ -2,16 +2,15 @@ from games.base_game import BaseGame
 import random
 
 class MafiaGame(BaseGame):
-    def __init__(self, line_bot_api, difficulty=3, theme='light'):
-        super().__init__(line_bot_api, difficulty=difficulty, theme=theme, game_type="competitive")
+    def __init__(self, line_bot_api, difficulty=1, theme='light'):
+        super().__init__(line_bot_api, difficulty=difficulty, theme=theme, game_type="social")
         self.game_name = "مافيا"
         self.supports_hint = False
         self.supports_reveal = False
-        self.supports_difficulty = False
-        self.show_progress = False
+        self.show_difficulty_progression = False
         
         self.min_players = 4
-        self.max_players = 20
+        self.max_players = 15
         self.players = {}
         self.roles = {}
         self.alive_players = set()
@@ -20,70 +19,105 @@ class MafiaGame(BaseGame):
         self.civilians = set()
         self.doctor = None
         self.detective = None
+        
         self.game_phase = "waiting"
         self.current_round = 0
         self.night_actions = {}
         self.day_votes = {}
-
+        self.last_killed = None
+        self.last_saved = None
+        self.last_investigated = None
+    
     def start_game(self):
         self.game_active = True
         self.game_phase = "joining"
         self.current_round = 0
         self.players = {}
+        self.roles = {}
         return self.get_joining_screen()
-
+    
     def get_joining_screen(self):
         c = self.get_theme_colors()
-        joined_count = len(self.players)
+        joined = len(self.players)
+        needed = max(0, self.min_players - joined)
+        
+        player_list = []
+        for name in list(self.players.values())[:10]:
+            player_list.append({
+                "type": "text",
+                "text": f"• {name}",
+                "size": "xs",
+                "color": c["text2"]
+            })
         
         contents = [
-            {"type": "text", "text": "لعبة المافيا", "size": "xxl", "weight": "bold", "color": c["primary"], "align": "center"},
-            {"type": "separator", "margin": "lg", "color": c["border"]},
+            {"type": "text", "text": "لعبة المافيا", "size": "xxl", 
+             "weight": "bold", "color": c["primary"], "align": "center"},
+            {"type": "separator", "margin": "md", "color": c["border"]},
             {
-                "type": "box", "layout": "vertical",
+                "type": "box",
+                "layout": "vertical",
                 "contents": [
-                    {"type": "text", "text": "شرح اللعبة", "size": "md", "weight": "bold", "color": c["text"], "align": "center"},
-                    {"type": "text", "text": "لعبة جماعية تنقسم فيها الادوار بين مافيا ومدنيين", "size": "xs", "color": c["text2"], "wrap": True, "margin": "sm"},
-                    {"type": "separator", "margin": "md", "color": c["border"]},
-                    {"type": "text", "text": "الادوار", "size": "sm", "weight": "bold", "color": c["text"], "margin": "md"},
-                    {
-                        "type": "box", "layout": "vertical",
-                        "contents": [
-                            {"type": "text", "text": "مافيا: يحاولون قتل المدنيين", "size": "xs", "color": c["error"], "wrap": True},
-                            {"type": "text", "text": "مدنيين: يصوتون لطرد المشتبهين", "size": "xs", "color": c["info"], "wrap": True, "margin": "xs"},
-                            {"type": "text", "text": "دكتور: ينقذ لاعب واحد كل ليلة", "size": "xs", "color": c["success"], "wrap": True, "margin": "xs"},
-                            {"type": "text", "text": "محقق: يكشف دور لاعب واحد", "size": "xs", "color": c["warning"], "wrap": True, "margin": "xs"}
-                        ],
-                        "margin": "sm"
-                    }
+                    {"type": "text", "text": "عن اللعبة", 
+                     "size": "sm", "weight": "bold", "color": c["text"]},
+                    {"type": "text", 
+                     "text": "لعبة جماعية تنقسم فيها الأدوار بين المافيا والمدنيين", 
+                     "size": "xs", "color": c["text2"], "wrap": True, "margin": "sm"}
                 ],
                 "backgroundColor": c["card"],
-                "cornerRadius": "12px",
-                "paddingAll": "16px",
-                "borderWidth": "1px",
-                "borderColor": c["border"],
+                "paddingAll": "12px",
+                "cornerRadius": "8px",
                 "margin": "md"
             },
             {
-                "type": "box", "layout": "vertical",
+                "type": "box",
+                "layout": "horizontal",
                 "contents": [
                     {
-                        "type": "box", "layout": "horizontal",
+                        "type": "box",
+                        "layout": "vertical",
                         "contents": [
-                            {"type": "text", "text": "اللاعبون المنضمون", "size": "sm", "weight": "bold", "color": c["text"], "flex": 1},
-                            {"type": "text", "text": f"{joined_count}/{self.max_players}", "size": "lg", "weight": "bold", "color": c["primary"], "flex": 0}
-                        ]
+                            {"type": "text", "text": "اللاعبون", 
+                             "size": "xs", "color": c["text3"]},
+                            {"type": "text", "text": f"{joined}/{self.max_players}", 
+                             "size": "xl", "weight": "bold", "color": c["primary"]}
+                        ],
+                        "flex": 1
                     },
-                    {"type": "text", "text": f"الحد الادنى: {self.min_players} لاعبين", "size": "xs", "color": c["text3"], "margin": "sm"}
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {"type": "text", "text": "مطلوب", 
+                             "size": "xs", "color": c["text3"]},
+                            {"type": "text", "text": str(needed) if needed > 0 else "جاهز", 
+                             "size": "xl", "weight": "bold", 
+                             "color": c["error"] if needed > 0 else c["success"]}
+                        ],
+                        "flex": 1
+                    }
                 ],
                 "backgroundColor": c["card"],
-                "cornerRadius": "12px",
                 "paddingAll": "12px",
-                "margin": "lg"
-            },
-            {"type": "text", "text": "اكتب انضم للانضمام", "size": "sm", "color": c["text2"], "align": "center", "wrap": True, "margin": "lg"},
-            {"type": "text", "text": "اكتب ابدأ لبدء اللعبة", "size": "sm", "color": c["success"], "align": "center", "wrap": True, "margin": "sm"}
+                "cornerRadius": "8px",
+                "margin": "md"
+            }
         ]
+        
+        if player_list:
+            contents.extend([
+                {"type": "text", "text": "المنضمون:", 
+                 "size": "xs", "color": c["text3"], "margin": "md"},
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": player_list,
+                    "backgroundColor": c["card"],
+                    "paddingAll": "8px",
+                    "cornerRadius": "8px",
+                    "margin": "xs"
+                }
+            ])
         
         bubble = {
             "type": "bubble",
@@ -92,14 +126,45 @@ class MafiaGame(BaseGame):
                 "type": "box",
                 "layout": "vertical",
                 "contents": contents,
-                "paddingAll": "24px",
+                "paddingAll": "20px",
                 "backgroundColor": c["bg"]
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "button",
+                        "action": {"type": "message", "label": "انضمام", "text": "انضم"},
+                        "style": "primary" if joined < self.max_players else "secondary",
+                        "height": "sm",
+                        "color": c["primary"] if joined < self.max_players else c["text3"]
+                    },
+                    {
+                        "type": "button",
+                        "action": {"type": "message", "label": "بدء اللعبة", "text": "ابدأ"},
+                        "style": "primary" if joined >= self.min_players else "secondary",
+                        "height": "sm",
+                        "color": c["success"] if joined >= self.min_players else c["text3"],
+                        "margin": "sm"
+                    },
+                    {
+                        "type": "button",
+                        "action": {"type": "message", "label": "إلغاء", "text": "ايقاف"},
+                        "style": "secondary",
+                        "height": "sm",
+                        "color": c["text2"],
+                        "margin": "sm"
+                    }
+                ],
+                "paddingAll": "12px",
+                "backgroundColor": c["card"]
             }
         }
         
         from linebot.v3.messaging import FlexMessage, FlexContainer
-        return FlexMessage(alt_text=self.game_name, contents=FlexContainer.from_dict(bubble))
-
+        return FlexMessage(alt_text="لعبة المافيا", contents=FlexContainer.from_dict(bubble))
+    
     def assign_roles(self):
         player_list = list(self.players.keys())
         random.shuffle(player_list)
@@ -116,65 +181,45 @@ class MafiaGame(BaseGame):
         else:
             self.civilians = set(remaining)
         
-        for player_id in self.mafia_members:
-            self.roles[player_id] = "مافيا"
+        for pid in self.mafia_members:
+            self.roles[pid] = "مافيا"
         if self.doctor:
             self.roles[self.doctor] = "دكتور"
         if self.detective:
             self.roles[self.detective] = "محقق"
-        for player_id in self.civilians:
-            self.roles[player_id] = "مدني"
+        for pid in self.civilians:
+            self.roles[pid] = "مدني"
         
         self.alive_players = set(player_list)
-
-    def get_question(self):
-        return self.get_joining_screen()
-
-    def check_answer(self, user_answer, user_id, display_name):
-        if not self.game_active:
-            return None
-        
-        normalized = self.normalize_text(user_answer)
-        
-        if self.game_phase == "joining":
-            if normalized in ["انضم", "join"]:
-                if user_id not in self.players and len(self.players) < self.max_players:
-                    self.players[user_id] = display_name
-                    return {
-                        "response": self.build_text_message(f"{display_name} انضم للعبة\nالعدد الحالي: {len(self.players)}"),
-                        "points": 0
-                    }
-            
-            elif normalized in ["ابدأ", "start", "بدا"]:
-                if len(self.players) >= self.min_players:
-                    self.assign_roles()
-                    self.game_phase = "night"
-                    self.current_round = 1
-                    return {
-                        "response": self.build_text_message(f"بدأت اللعبة\nتم توزيع الادوار على {len(self.players)} لاعبين"),
-                        "points": 0,
-                        "game_over": False
-                    }
-                else:
-                    needed = self.min_players - len(self.players)
-                    return {
-                        "response": self.build_text_message(f"نحتاج {needed} لاعبين اضافيين للبدء"),
-                        "points": 0
-                    }
-        
-        if normalized in ["ايقاف", "ايقاف"]:
-            return self.end_game()
-        
-        return None
+        self.dead_players = set()
     
-    def end_game(self):
-        self.game_active = False
+    def send_roles_privately(self):
+        """إرسال الأدوار للاعبين (محاكاة فقط لأن البوت في المجموعة)"""
+        messages = []
+        for player_id, role in self.roles.items():
+            role_emoji = {"مافيا": "🔪", "دكتور": "💊", "محقق": "🔍", "مدني": "👤"}
+            msg = f"{role_emoji.get(role, '')} دورك: {role}"
+            messages.append((player_id, msg))
+        return messages
+    
+    def get_night_phase_message(self):
         c = self.get_theme_colors()
         
         contents = [
-            {"type": "text", "text": "انتهت اللعبة", "size": "xl", "weight": "bold", "color": c["primary"], "align": "center"},
-            {"type": "separator", "margin": "lg", "color": c["border"]},
-            {"type": "text", "text": "شكرا للمشاركة", "size": "md", "color": c["text"], "align": "center", "margin": "lg"}
+            {"type": "text", "text": "الليل", "size": "xxl", 
+             "weight": "bold", "color": c["primary"], "align": "center"},
+            {"type": "text", "text": f"الجولة {self.current_round}", 
+             "size": "sm", "color": c["text3"], "align": "center"},
+            {"type": "separator", "margin": "md", "color": c["border"]},
+            {
+                "type": "text",
+                "text": "الجميع نائمون... المافيا والأدوار الخاصة يتحركون في الظلام",
+                "size": "sm",
+                "color": c["text2"],
+                "wrap": True,
+                "align": "center",
+                "margin": "lg"
+            }
         ]
         
         bubble = {
@@ -189,8 +234,204 @@ class MafiaGame(BaseGame):
         }
         
         from linebot.v3.messaging import FlexMessage, FlexContainer
+        return FlexMessage(alt_text="الليل", contents=FlexContainer.from_dict(bubble))
+    
+    def get_day_phase_message(self):
+        c = self.get_theme_colors()
+        
+        alive_list = []
+        for pid in self.alive_players:
+            alive_list.append({
+                "type": "text",
+                "text": f"• {self.players[pid]}",
+                "size": "xs",
+                "color": c["text2"]
+            })
+        
+        contents = [
+            {"type": "text", "text": "النهار", "size": "xxl", 
+             "weight": "bold", "color": c["primary"], "align": "center"},
+            {"type": "text", "text": f"الجولة {self.current_round}", 
+             "size": "sm", "color": c["text3"], "align": "center"},
+            {"type": "separator", "margin": "md", "color": c["border"]}
+        ]
+        
+        if self.last_killed:
+            contents.append({
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {"type": "text", "text": "خبر عاجل", 
+                     "size": "sm", "weight": "bold", "color": c["error"]},
+                    {"type": "text", 
+                     "text": f"تم العثور على {self.players[self.last_killed]} قتيلاً", 
+                     "size": "xs", "color": c["text2"], "wrap": True, "margin": "xs"}
+                ],
+                "backgroundColor": c["card"],
+                "paddingAll": "12px",
+                "cornerRadius": "8px",
+                "margin": "md"
+            })
+        
+        contents.extend([
+            {"type": "text", "text": "الأحياء:", 
+             "size": "xs", "color": c["text3"], "margin": "md"},
+            {
+                "type": "box",
+                "layout": "vertical",
+                "contents": alive_list,
+                "backgroundColor": c["card"],
+                "paddingAll": "8px",
+                "cornerRadius": "8px",
+                "margin": "xs"
+            },
+            {
+                "type": "text",
+                "text": "حان وقت التصويت لطرد المشتبه بهم",
+                "size": "sm",
+                "color": c["text2"],
+                "wrap": True,
+                "align": "center",
+                "margin": "lg"
+            }
+        ])
+        
+        bubble = {
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": contents,
+                "paddingAll": "20px",
+                "backgroundColor": c["bg"]
+            }
+        }
+        
+        from linebot.v3.messaging import FlexMessage, FlexContainer
+        return FlexMessage(alt_text="النهار", contents=FlexContainer.from_dict(bubble))
+    
+    def get_question(self):
+        return self.get_joining_screen()
+    
+    def check_answer(self, user_answer, user_id, display_name):
+        if not self.game_active:
+            return None
+        
+        normalized = self.normalize_text(user_answer)
+        
+        if self.game_phase == "joining":
+            if normalized in ["انضم", "join"]:
+                if user_id not in self.players and len(self.players) < self.max_players:
+                    self.players[user_id] = display_name
+                    return {
+                        "response": self.get_joining_screen(),
+                        "points": 0
+                    }
+            
+            elif normalized in ["ابدأ", "start", "بدا"]:
+                if len(self.players) >= self.min_players:
+                    self.assign_roles()
+                    self.game_phase = "night"
+                    self.current_round = 1
+                    
+                    return {
+                        "response": self.get_night_phase_message(),
+                        "points": 0
+                    }
+                else:
+                    return {
+                        "response": self.build_text_message(
+                            f"نحتاج {self.min_players - len(self.players)} لاعبين إضافيين"
+                        ),
+                        "points": 0
+                    }
+        
+        if normalized in ["ايقاف", "stop"]:
+            return self.end_game()
+        
+        return None
+    
+    def end_game(self):
+        self.game_active = False
+        c = self.get_theme_colors()
+        
+        winner_team = None
+        if not self.mafia_members.intersection(self.alive_players):
+            winner_team = "المدنيون"
+        elif len(self.mafia_members.intersection(self.alive_players)) >= len(self.alive_players) / 2:
+            winner_team = "المافيا"
+        
+        contents = [
+            {"type": "text", "text": "انتهت اللعبة", 
+             "size": "xl", "weight": "bold", "color": c["primary"], "align": "center"},
+            {"type": "separator", "margin": "lg", "color": c["border"]}
+        ]
+        
+        if winner_team:
+            contents.append({
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {"type": "text", "text": "الفائزون", 
+                     "size": "sm", "color": c["success"], "align": "center"},
+                    {"type": "text", "text": winner_team, 
+                     "size": "xxl", "weight": "bold", "color": c["text"], 
+                     "align": "center", "margin": "sm"}
+                ],
+                "backgroundColor": c["card"],
+                "cornerRadius": "12px",
+                "paddingAll": "16px",
+                "margin": "md"
+            })
+        else:
+            contents.append({
+                "type": "text",
+                "text": "تم إنهاء اللعبة مبكراً",
+                "size": "md",
+                "color": c["text2"],
+                "align": "center",
+                "margin": "lg"
+            })
+        
+        bubble = {
+            "type": "bubble",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": contents,
+                "paddingAll": "20px",
+                "backgroundColor": c["bg"]
+            },
+            "footer": {
+                "type": "box",
+                "layout": "horizontal",
+                "contents": [
+                    {
+                        "type": "button",
+                        "action": {"type": "message", "label": "لعبة جديدة", "text": "مافيا"},
+                        "style": "primary",
+                        "height": "sm",
+                        "color": c["primary"]
+                    },
+                    {
+                        "type": "button",
+                        "action": {"type": "message", "label": "القائمة", "text": "بداية"},
+                        "style": "secondary",
+                        "height": "sm",
+                        "color": c["text2"]
+                    }
+                ],
+                "spacing": "sm",
+                "paddingAll": "12px",
+                "backgroundColor": c["card"]
+            }
+        }
+        
+        from linebot.v3.messaging import FlexMessage, FlexContainer
         return {
             "game_over": True,
             "points": 0,
-            "response": FlexMessage(alt_text="انتهت اللعبة", contents=FlexContainer.from_dict(bubble))
+            "response": FlexMessage(alt_text="انتهت المافيا", 
+                                   contents=FlexContainer.from_dict(bubble))
         }
