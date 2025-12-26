@@ -19,10 +19,8 @@ class BaseGame(ABC):
         }
     }
     
-    def __init__(self, line_bot_api, difficulty=3, theme="light", game_type="competitive"):
+    def __init__(self, line_bot_api, theme="light", game_type="competitive"):
         self.line_bot_api = line_bot_api
-        self.base_difficulty = difficulty
-        self.current_difficulty = 1
         self.theme = theme
         self.game_type = game_type
         self.game_name = "لعبة"
@@ -41,10 +39,6 @@ class BaseGame(ABC):
         self.supports_hint = True
         self.supports_reveal = True
         self.hints_used = 0
-    
-    def get_current_difficulty(self):
-        """تزيد الصعوبة تلقائياً مع تقدم الأسئلة"""
-        return min(5, self.current_question + 1)
     
     def normalize_text(self, text):
         if not text:
@@ -74,7 +68,6 @@ class BaseGame(ABC):
     def create_progress_bar(self):
         c = self.get_theme_colors()
         progress = int((self.current_question / self.questions_count) * 100)
-        difficulty = self.get_current_difficulty()
         
         return {
             "type": "box", "layout": "vertical",
@@ -84,8 +77,6 @@ class BaseGame(ABC):
                     "contents": [
                         {"type": "text", "text": f"السؤال {self.current_question + 1} من {self.questions_count}", 
                          "size": "xs", "color": c["text2"], "flex": 1},
-                        {"type": "text", "text": f"المستوى {difficulty}", 
-                         "size": "xs", "color": c["primary"], "align": "end", "flex": 0}
                     ]
                 },
                 {
@@ -155,7 +146,7 @@ class BaseGame(ABC):
         
         footer_buttons.append({
             "type": "button",
-            "action": {"type": "message", "label": "إيقاف", "text": "ايقاف"},
+            "action": {"type": "message", "label": "ايقاف", "text": "ايقاف"},
             "style": "secondary", "height": "sm",
             "color": c["button"], "flex": 1
         })
@@ -221,7 +212,7 @@ class BaseGame(ABC):
                         {"type": "text", "text": "انتهت اللعبة", 
                          "size": "xl", "weight": "bold", "color": c["primary"], "align": "center"},
                         {"type": "separator", "margin": "lg", "color": c["border"]},
-                        {"type": "text", "text": "لم يسجل أحد نقاطاً", 
+                        {"type": "text", "text": "لم يسجل احد نقاطا", 
                          "size": "md", "color": c["text2"], "align": "center", "margin": "lg"}
                     ],
                     "paddingAll": "20px", "backgroundColor": c["bg"]
@@ -292,7 +283,7 @@ class BaseGame(ABC):
                 "contents": [
                     {
                         "type": "button",
-                        "action": {"type": "message", "label": "لعب مرة أخرى", "text": self.game_name},
+                        "action": {"type": "message", "label": "لعب مرة اخرى", "text": self.game_name},
                         "style": "secondary", "height": "sm",
                         "color": c["button"], "flex": 1
                     },
