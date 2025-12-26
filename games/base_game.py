@@ -8,18 +8,18 @@ class BaseGame(ABC):
         "light": {
             "primary": "#1A1A1A", "text": "#2D2D2D", "text2": "#6B7280",
             "text3": "#9CA3AF", "bg": "#FFFFFF", "card": "#F9FAFB",
-            "border": "#E5E7EB", "button": "#94A3B8", "success": "#374151",
-            "warning": "#6B7280", "error": "#4B5563"
+            "border": "#E5E7EB", "button": "#F5F5F5", "success": "#10B981",
+            "warning": "#F59E0B", "error": "#EF4444"
         },
         "dark": {
             "primary": "#F9FAFB", "text": "#E5E7EB", "text2": "#9CA3AF",
             "text3": "#6B7280", "bg": "#111827", "card": "#1F2937",
-            "border": "#374151", "button": "#64748B", "success": "#D1D5DB",
-            "warning": "#9CA3AF", "error": "#6B7280"
+            "border": "#374151", "button": "#F5F5F5", "success": "#34D399",
+            "warning": "#FBBF24", "error": "#F87171"
         }
     }
     
-    def __init__(self, line_bot_api, difficulty=1, theme="light", game_type="competitive"):
+    def __init__(self, line_bot_api, difficulty=3, theme="light", game_type="competitive"):
         self.line_bot_api = line_bot_api
         self.base_difficulty = difficulty
         self.current_difficulty = 1
@@ -33,7 +33,6 @@ class BaseGame(ABC):
         self.answered_users = set()
         self.withdrawn_users = set()
         self.used_questions = set()
-        self.all_questions_used = False
         self.current_answer = None
         self.previous_answer = None
         self.previous_question = None
@@ -41,17 +40,11 @@ class BaseGame(ABC):
         self.round_start_time = None
         self.supports_hint = True
         self.supports_reveal = True
-        self.show_difficulty_progression = True
-        self.hint_penalty = 0
         self.hints_used = 0
-        
-        self.difficulty_config = {
-            1: {"name": "سهل جداً", "time": 30, "hint_cost": 0},
-            2: {"name": "سهل", "time": 25, "hint_cost": 0},
-            3: {"name": "متوسط", "time": 20, "hint_cost": 1},
-            4: {"name": "صعب", "time": 15, "hint_cost": 2},
-            5: {"name": "صعب جداً", "time": 10, "hint_cost": 3}
-        }.get(difficulty, {"name": "متوسط", "time": 20, "hint_cost": 1})
+    
+    def get_current_difficulty(self):
+        """تزيد الصعوبة تلقائياً مع تقدم الأسئلة"""
+        return min(5, self.current_question + 1)
     
     def normalize_text(self, text):
         if not text:
@@ -81,6 +74,7 @@ class BaseGame(ABC):
     def create_progress_bar(self):
         c = self.get_theme_colors()
         progress = int((self.current_question / self.questions_count) * 100)
+        difficulty = self.get_current_difficulty()
         
         return {
             "type": "box", "layout": "vertical",
@@ -88,10 +82,10 @@ class BaseGame(ABC):
                 {
                     "type": "box", "layout": "horizontal",
                     "contents": [
-                        {"type": "text", "text": f"الجولة {self.current_question + 1}/{self.questions_count}", 
+                        {"type": "text", "text": f"السؤال {self.current_question + 1} من {self.questions_count}", 
                          "size": "xs", "color": c["text2"], "flex": 1},
-                        {"type": "text", "text": f"{progress}%", 
-                         "size": "xs", "color": c["text2"], "align": "end", "flex": 0}
+                        {"type": "text", "text": f"المستوى {difficulty}", 
+                         "size": "xs", "color": c["primary"], "align": "end", "flex": 0}
                     ]
                 },
                 {
@@ -99,7 +93,7 @@ class BaseGame(ABC):
                     "contents": [{
                         "type": "box", "layout": "vertical", "contents": [],
                         "width": f"{progress}%", "height": "4px",
-                        "backgroundColor": c["primary"], "cornerRadius": "2px"
+                        "backgroundColor": c["success"], "cornerRadius": "2px"
                     }],
                     "height": "4px", "backgroundColor": c["border"],
                     "cornerRadius": "2px", "margin": "sm"
@@ -107,7 +101,7 @@ class BaseGame(ABC):
             ], "margin": "md"
         }
     
-    def build_question_message(self, question_text, subtitle=None, show_timer=False):
+    def build_question_message(self, question_text, subtitle=None):
         c = self.get_theme_colors()
         
         contents = [
@@ -121,23 +115,24 @@ class BaseGame(ABC):
             contents.append({
                 "type": "box", "layout": "vertical",
                 "contents": [
-                    {"type": "text", "text": "الإجابة السابقة:", 
-                     "size": "xxs", "color": c["text3"]},
+                    {"type": "text", "text": "الإجابة السابقة", 
+                     "size": "xs", "color": c["success"], "weight": "bold"},
                     {"type": "text", "text": str(self.previous_answer), 
-                     "size": "xs", "color": c["text2"], "wrap": True, "margin": "xs"}
+                     "size": "sm", "color": c["text"], "wrap": True, "margin": "xs"}
                 ],
-                "backgroundColor": c["card"], "paddingAll": "8px",
+                "backgroundColor": c["card"], "paddingAll": "12px",
                 "cornerRadius": "8px", "margin": "md"
             })
         
         contents.append({
-            "type": "text", "text": question_text, "size": "md", 
-            "wrap": True, "color": c["text"], "align": "center", "margin": "lg"
+            "type": "text", "text": question_text, "size": "lg", 
+            "wrap": True, "color": c["text"], "align": "center", "margin": "lg",
+            "weight": "bold"
         })
         
         if subtitle:
             contents.append({
-                "type": "text", "text": subtitle, "size": "xs", 
+                "type": "text", "text": subtitle, "size": "sm", 
                 "color": c["text2"], "align": "center", "margin": "sm", "wrap": True
             })
         
@@ -250,7 +245,7 @@ class BaseGame(ABC):
                 "type": "box", "layout": "vertical",
                 "contents": [
                     {"type": "text", "text": "الفائز", 
-                     "size": "sm", "color": c["success"], "align": "center"},
+                     "size": "sm", "color": c["success"], "align": "center", "weight": "bold"},
                     {"type": "text", "text": winner['name'], 
                      "size": "xxl", "weight": "bold", "color": c["text"], 
                      "align": "center", "margin": "sm"},
@@ -274,12 +269,12 @@ class BaseGame(ABC):
                 leaderboard.append({
                     "type": "box", "layout": "horizontal",
                     "contents": [
-                        {"type": "text", "text": f"{i+1}.", 
-                         "size": "sm", "flex": 0, "weight": "bold"},
+                        {"type": "text", "text": f"{i+1}", 
+                         "size": "sm", "flex": 0, "weight": "bold", "color": c["primary"]},
                         {"type": "text", "text": player['name'], 
                          "size": "sm", "color": c["text"], "flex": 3, "margin": "sm"},
                         {"type": "text", "text": str(player['score']), 
-                         "size": "sm", "color": c["primary"], "align": "end", 
+                         "size": "sm", "color": c["success"], "align": "end", 
                          "flex": 1, "weight": "bold"}
                     ],
                     "paddingAll": "8px", "margin": "sm"
@@ -297,13 +292,13 @@ class BaseGame(ABC):
                 "contents": [
                     {
                         "type": "button",
-                        "action": {"type": "message", "label": "العب مرة أخرى", "text": self.game_name},
+                        "action": {"type": "message", "label": "لعب مرة أخرى", "text": self.game_name},
                         "style": "secondary", "height": "sm",
                         "color": c["button"], "flex": 1
                     },
                     {
                         "type": "button",
-                        "action": {"type": "message", "label": "القائمة", "text": "بداية"},
+                        "action": {"type": "message", "label": "بداية", "text": "بداية"},
                         "style": "secondary", "height": "sm",
                         "color": c["button"], "flex": 1
                     }
