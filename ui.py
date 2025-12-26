@@ -1,32 +1,20 @@
-"""Bot 65 - UI Module - تصميم أنيق واحترافي"""
+"""Bot 65 - UI Module"""
 
 from constants import GAME_LABELS
 
 class UI:
     THEMES = {
         "light": {
-            "primary": "#000000",
-            "text": "#1A1A1A",
-            "text2": "#6B7280",
-            "text3": "#9CA3AF",
-            "bg": "#FFFFFF",
-            "card": "#F8F9FA",
-            "border": "#E5E7EB",
-            "success": "#059669",
-            "warning": "#D97706",
-            "error": "#DC2626"
+            "primary": "#1A1A1A", "text": "#2D2D2D", "text2": "#6B7280",
+            "text3": "#9CA3AF", "bg": "#FFFFFF", "card": "#F9FAFB",
+            "border": "#E5E7EB", "button": "#94A3B8", "success": "#374151",
+            "warning": "#6B7280", "error": "#4B5563"
         },
         "dark": {
-            "primary": "#FFFFFF",
-            "text": "#F9FAFB",
-            "text2": "#D1D5DB",
-            "text3": "#9CA3AF",
-            "bg": "#0F172A",
-            "card": "#1E293B",
-            "border": "#334155",
-            "success": "#10B981",
-            "warning": "#F59E0B",
-            "error": "#EF4444"
+            "primary": "#F9FAFB", "text": "#E5E7EB", "text2": "#9CA3AF",
+            "text3": "#6B7280", "bg": "#111827", "card": "#1F2937",
+            "border": "#374151", "button": "#64748B", "success": "#D1D5DB",
+            "warning": "#9CA3AF", "error": "#6B7280"
         }
     }
 
@@ -35,81 +23,56 @@ class UI:
         return UI.THEMES.get(theme, UI.THEMES["light"])
     
     @staticmethod
-    def _button(label, text, style="secondary", color=None, c=None):
-        """إنشاء زر موحد"""
-        if c is None:
-            c = UI._c("light")
-        if color is None:
-            color = c["text2"]
-        
+    def _button(label, text, c):
         return {
-            "type": "button",
-            "style": style,
-            "height": "sm",
+            "type": "button", "style": "secondary", "height": "sm",
             "action": {"type": "message", "label": label, "text": text},
-            "color": color
+            "color": c["button"]
         }
 
     @staticmethod
     def welcome(name, registered, theme="light"):
         c = UI._c(theme)
         
-        status_box = {
-            "type": "box",
-            "layout": "horizontal",
-            "contents": [
-                {
-                    "type": "box",
-                    "layout": "vertical",
+        contents = [
+            {"type": "text", "text": "Bot 65", "size": "xxl", 
+             "weight": "bold", "align": "center", "color": c["primary"]},
+            {"type": "text", "text": f"مرحباً {name}", "size": "lg", 
+             "align": "center", "color": c["text"], "margin": "sm"},
+            {
+                "type": "box", "layout": "horizontal",
+                "contents": [{
+                    "type": "box", "layout": "vertical",
                     "contents": [
                         {"type": "text", "text": "الحالة", 
                          "size": "xxs", "color": c["text3"]},
                         {"type": "text", "text": "مسجل" if registered else "ضيف", 
                          "size": "sm", "weight": "bold", 
                          "color": c["success"] if registered else c["warning"]}
-                    ],
-                    "flex": 1
-                }
-            ],
-            "backgroundColor": c["card"],
-            "paddingAll": "12px",
-            "cornerRadius": "8px",
-            "margin": "md"
-        }
-        
-        contents = [
-            {"type": "text", "text": "Bot 65", "size": "xxl", 
-             "weight": "bold", "align": "center", "color": c["primary"]},
-            {"type": "text", "text": f"مرحباً {name}", "size": "lg", 
-             "align": "center", "color": c["text"], "margin": "sm"},
-            status_box,
+                    ], "flex": 1
+                }],
+                "backgroundColor": c["card"], "paddingAll": "12px",
+                "cornerRadius": "8px", "margin": "md"
+            },
             {"type": "separator", "margin": "lg", "color": c["border"]}
         ]
         
-        quick_actions = [
-            ("الألعاب", "العاب", c["primary"]),
-            ("إحصائياتي" if registered else "تسجيل", "نقاطي" if registered else "تسجيل", c["text2"]),
-            ("المتصدرين", "الصدارة", c["text2"])
-        ]
-        
-        for label, text, color in quick_actions:
+        for label, text in [("الألعاب", "العاب"), 
+                            ("نقاطي" if registered else "تسجيل", 
+                             "نقاطي" if registered else "تسجيل"),
+                            ("الصدارة", "الصدارة")]:
             contents.append({
-                "type": "box",
-                "layout": "horizontal",
-                "margin": "sm",
-                "contents": [UI._button(label, text, "secondary", color, c)]
+                "type": "box", "layout": "horizontal", "margin": "sm",
+                "contents": [UI._button(label, text, c)]
             })
         
         contents.extend([
             {"type": "separator", "margin": "md", "color": c["border"]},
             {
-                "type": "box",
-                "layout": "horizontal",
-                "spacing": "sm",
-                "margin": "sm",
+                "type": "box", "layout": "horizontal", "spacing": "sm", "margin": "sm",
                 "contents": [
-                    UI._button("مساعدة", "مساعدة", "secondary", c["text3"], c),
-                    UI._button(f"ثيم {'داكن' if theme == 'light' else 'فاتح'}", "ثيم", "secondary", c["text3"], c)
+                    UI._button("مساعدة", "مساعدة", c),
+                    UI._button(f"ثيم {'داكن' if theme == 'light' else 'فاتح'}", "ثيم", c)
                 ]
             },
             {"type": "text", "text": "عبير الدوسري 2025", 
@@ -117,13 +80,10 @@ class UI:
         ])
         
         return {
-            "type": "bubble",
-            "size": "mega",
+            "type": "bubble", "size": "mega",
             "body": {
-                "type": "box",
-                "layout": "vertical",
-                "backgroundColor": c["bg"],
-                "paddingAll": "20px",
+                "type": "box", "layout": "vertical",
+                "backgroundColor": c["bg"], "paddingAll": "20px",
                 "contents": contents
             }
         }
@@ -150,25 +110,19 @@ class UI:
         ]
         
         for i in range(0, len(games), 3):
-            row_games = games[i:i+3]
             row_buttons = []
-            for game_cmd, game_text in row_games:
+            for game_cmd, game_text in games[i:i+3]:
                 row_buttons.append({
-                    "type": "button",
-                    "style": "secondary",
-                    "height": "sm",
+                    "type": "button", "style": "secondary", "height": "sm",
                     "action": {"type": "message", 
                               "label": GAME_LABELS.get(game_cmd, game_cmd), 
                               "text": game_text},
-                    "color": c["text2"],
-                    "flex": 1
+                    "color": c["button"], "flex": 1
                 })
             
             contents.append({
-                "type": "box",
-                "layout": "horizontal",
-                "spacing": "xs",
-                "margin": "sm",
+                "type": "box", "layout": "horizontal",
+                "spacing": "xs", "margin": "sm",
                 "contents": row_buttons
             })
         
@@ -176,22 +130,15 @@ class UI:
             {"type": "separator", "margin": "lg", "color": c["border"]},
             {"type": "text", "text": "أوامر اللعب: لمح | جاوب | ايقاف", 
              "size": "xxs", "align": "center", "color": c["text3"], "margin": "sm"},
-            {
-                "type": "box",
-                "layout": "horizontal",
-                "margin": "md",
-                "contents": [UI._button("رجوع", "بداية", "secondary", c["text2"], c)]
-            }
+            {"type": "box", "layout": "horizontal", "margin": "md",
+             "contents": [UI._button("رجوع", "بداية", c)]}
         ])
         
         return {
-            "type": "bubble",
-            "size": "mega",
+            "type": "bubble", "size": "mega",
             "body": {
-                "type": "box",
-                "layout": "vertical",
-                "backgroundColor": c["bg"],
-                "paddingAll": "20px",
+                "type": "box", "layout": "vertical",
+                "backgroundColor": c["bg"], "paddingAll": "20px",
                 "contents": contents
             }
         }
@@ -203,35 +150,20 @@ class UI:
         sections = [
             {
                 "title": "الأوامر الأساسية",
-                "icon": "⚙",
-                "items": [
-                    "بداية - الصفحة الرئيسية",
-                    "تسجيل - إنشاء حساب",
-                    "العاب - قائمة الألعاب",
-                    "نقاطي - إحصائياتك",
-                    "الصدارة - المتصدرين"
-                ]
+                "items": ["بداية - الصفحة الرئيسية", "تسجيل - إنشاء حساب",
+                         "العاب - قائمة الألعاب", "نقاطي - إحصائياتك",
+                         "الصدارة - المتصدرين"]
             },
             {
                 "title": "أوامر اللعب",
-                "icon": "🎮",
-                "items": [
-                    "لمح - الحصول على تلميح",
-                    "جاوب - إظهار الإجابة",
-                    "ايقاف - إنهاء اللعبة"
-                ]
+                "items": ["لمح - الحصول على تلميح", "جاوب - إظهار الإجابة",
+                         "ايقاف - إنهاء اللعبة"]
             },
             {
                 "title": "الأوامر التفاعلية",
-                "icon": "💬",
-                "items": [
-                    "سؤال - أسئلة عشوائية",
-                    "تحدي - تحديات ممتعة",
-                    "اعتراف - اعترافات",
-                    "منشن - منشن لأصدقائك",
-                    "حكمة - حكم وأقوال",
-                    "موقف - مواقف افتراضية"
-                ]
+                "items": ["سؤال - أسئلة عشوائية", "تحدي - تحديات ممتعة",
+                         "اعتراف - اعترافات", "منشن - منشن لأصدقائك",
+                         "حكمة - حكم وأقوال", "موقف - مواقف افتراضية"]
             }
         ]
         
@@ -243,40 +175,30 @@ class UI:
         
         for section in sections:
             contents.append({
-                "type": "box",
-                "layout": "vertical",
+                "type": "box", "layout": "vertical",
                 "contents": [
-                    {"type": "text", "text": f"{section['icon']} {section['title']}", 
+                    {"type": "text", "text": section['title'], 
                      "size": "sm", "weight": "bold", "color": c["text"], "margin": "md"}
                 ] + [
                     {"type": "text", "text": f"• {item}", 
                      "size": "xs", "color": c["text2"], "margin": "xs", "wrap": True}
                     for item in section["items"]
                 ],
-                "backgroundColor": c["card"],
-                "paddingAll": "12px",
-                "cornerRadius": "8px",
-                "margin": "md"
+                "backgroundColor": c["card"], "paddingAll": "12px",
+                "cornerRadius": "8px", "margin": "md"
             })
         
         contents.extend([
             {"type": "separator", "margin": "lg", "color": c["border"]},
-            {
-                "type": "box",
-                "layout": "horizontal",
-                "margin": "md",
-                "contents": [UI._button("رجوع", "بداية", "secondary", c["text2"], c)]
-            }
+            {"type": "box", "layout": "horizontal", "margin": "md",
+             "contents": [UI._button("رجوع", "بداية", c)]}
         ])
         
         return {
-            "type": "bubble",
-            "size": "mega",
+            "type": "bubble", "size": "mega",
             "body": {
-                "type": "box",
-                "layout": "vertical",
-                "backgroundColor": c["bg"],
-                "paddingAll": "20px",
+                "type": "box", "layout": "vertical",
+                "backgroundColor": c["bg"], "paddingAll": "20px",
                 "contents": contents
             }
         }
@@ -296,9 +218,7 @@ class UI:
         stats_contents = []
         for stat in stats:
             stats_contents.append({
-                "type": "box",
-                "layout": "horizontal",
-                "margin": "sm",
+                "type": "box", "layout": "horizontal", "margin": "sm",
                 "contents": [
                     {"type": "text", "text": stat["label"], 
                      "size": "sm", "color": c["text2"], "flex": 1},
@@ -317,34 +237,25 @@ class UI:
              "align": "center", "color": c["text2"], "margin": "sm"},
             {"type": "separator", "margin": "lg", "color": c["border"]},
             {
-                "type": "box",
-                "layout": "vertical",
-                "backgroundColor": c["card"],
-                "cornerRadius": "8px",
-                "paddingAll": "16px",
-                "margin": "md",
+                "type": "box", "layout": "vertical",
+                "backgroundColor": c["card"], "cornerRadius": "8px",
+                "paddingAll": "16px", "margin": "md",
                 "contents": stats_contents
             },
             {
-                "type": "box",
-                "layout": "horizontal",
-                "margin": "lg",
-                "spacing": "sm",
+                "type": "box", "layout": "horizontal", "margin": "lg", "spacing": "sm",
                 "contents": [
-                    UI._button("رجوع", "بداية", "secondary", c["text2"], c),
-                    UI._button("المتصدرين", "الصدارة", "secondary", c["text2"], c)
+                    UI._button("رجوع", "بداية", c),
+                    UI._button("المتصدرين", "الصدارة", c)
                 ]
             }
         ]
         
         return {
-            "type": "bubble",
-            "size": "mega",
+            "type": "bubble", "size": "mega",
             "body": {
-                "type": "box",
-                "layout": "vertical",
-                "backgroundColor": c["bg"],
-                "paddingAll": "20px",
+                "type": "box", "layout": "vertical",
+                "backgroundColor": c["bg"], "paddingAll": "20px",
                 "contents": contents
             }
         }
@@ -359,14 +270,11 @@ class UI:
             {"type": "separator", "margin": "lg", "color": c["border"]}
         ]
         
-        medals = ["🥇", "🥈", "🥉"]
         for i, leader in enumerate(leaders[:10]):
-            rank_display = medals[i] if i < 3 else f"{i + 1}."
+            rank_display = f"{i + 1}."
             
             contents.append({
-                "type": "box",
-                "layout": "horizontal",
-                "margin": "sm",
+                "type": "box", "layout": "horizontal", "margin": "sm",
                 "paddingAll": "8px" if i < 3 else "4px",
                 "backgroundColor": c["card"] if i < 3 else "none",
                 "cornerRadius": "8px" if i < 3 else "none",
@@ -374,8 +282,7 @@ class UI:
                     {"type": "text", "text": rank_display, 
                      "size": "md" if i < 3 else "sm",
                      "weight": "bold" if i < 3 else "regular",
-                     "color": c["primary"] if i < 3 else c["text3"],
-                     "flex": 0},
+                     "color": c["primary"] if i < 3 else c["text3"], "flex": 0},
                     {"type": "text", "text": leader['name'], 
                      "size": "sm", "color": c["text"], "flex": 3, "margin": "md"},
                     {"type": "text", "text": str(leader['points']), 
@@ -388,22 +295,15 @@ class UI:
         
         contents.extend([
             {"type": "separator", "margin": "lg", "color": c["border"]},
-            {
-                "type": "box",
-                "layout": "horizontal",
-                "margin": "md",
-                "contents": [UI._button("رجوع", "بداية", "secondary", c["text2"], c)]
-            }
+            {"type": "box", "layout": "horizontal", "margin": "md",
+             "contents": [UI._button("رجوع", "بداية", c)]}
         ])
         
         return {
-            "type": "bubble",
-            "size": "mega",
+            "type": "bubble", "size": "mega",
             "body": {
-                "type": "box",
-                "layout": "vertical",
-                "backgroundColor": c["bg"],
-                "paddingAll": "20px",
+                "type": "box", "layout": "vertical",
+                "backgroundColor": c["bg"], "paddingAll": "20px",
                 "contents": contents
             }
         }
