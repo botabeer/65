@@ -73,6 +73,134 @@ class UI:
         )
 
     @staticmethod
+    def welcome(name, registered, theme="light"):
+        c = UI._c(theme)
+        
+        contents = [
+            {
+                "type": "text",
+                "text": f"أهلاً {name}",
+                "size": "xl",
+                "weight": "bold",
+                "align": "center",
+                "color": c["primary"]
+            },
+            {
+                "type": "text",
+                "text": "بوت ألعاب وتحديات",
+                "size": "sm",
+                "align": "center",
+                "color": c["text2"],
+                "margin": "sm"
+            },
+            {"type": "separator", "margin": "md", "color": c["border"]}
+        ]
+
+        if not registered:
+            contents.append({
+                "type": "box",
+                "layout": "vertical",
+                "backgroundColor": c["card"],
+                "cornerRadius": "8px",
+                "paddingAll": "12px",
+                "margin": "md",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "للبدء يرجى التسجيل",
+                        "size": "sm",
+                        "color": c["text"],
+                        "align": "center"
+                    }
+                ]
+            })
+
+        buttons = [
+            ("العاب", "العاب"),
+            ("نص", "نص"),
+            ("نقاطي", "نقاطي"),
+            ("الصدارة", "الصدارة")
+        ]
+
+        if not registered:
+            buttons.insert(0, ("تسجيل", "تسجيل"))
+        else:
+            buttons.append(("تغيير الاسم", "تغيير"))
+
+        for i in range(0, len(buttons), 2):
+            contents.append({
+                "type": "box",
+                "layout": "horizontal",
+                "spacing": "xs",
+                "margin": "sm",
+                "contents": [
+                    UI._button(label, cmd, c)
+                    for label, cmd in buttons[i:i + 2]
+                ]
+            })
+
+        return {
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "backgroundColor": c["bg"],
+                "paddingAll": "20px",
+                "contents": contents
+            }
+        }
+
+    @staticmethod
+    def help_card(theme="light"):
+        c = UI._c(theme)
+        
+        return {
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "backgroundColor": c["bg"],
+                "paddingAll": "20px",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "المساعدة",
+                        "size": "xl",
+                        "weight": "bold",
+                        "align": "center",
+                        "color": c["primary"]
+                    },
+                    {"type": "separator", "margin": "md", "color": c["border"]},
+                    {
+                        "type": "text",
+                        "text": "الأوامر المتاحة:",
+                        "size": "sm",
+                        "weight": "bold",
+                        "color": c["text"],
+                        "margin": "md"
+                    },
+                    {
+                        "type": "text",
+                        "text": "بداية - القائمة الرئيسية\nالعاب - قائمة الألعاب\nنص - قائمة النصوص\nنقاطي - عرض نقاطك\nالصدارة - عرض المتصدرين\nتسجيل - تسجيل حساب جديد\nثيم - تغيير المظهر",
+                        "size": "xs",
+                        "color": c["text2"],
+                        "wrap": True,
+                        "margin": "sm"
+                    },
+                    {"type": "separator", "margin": "md", "color": c["border"]},
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "margin": "md",
+                        "contents": [UI._button("رجوع", "بداية", c)]
+                    }
+                ]
+            }
+        }
+
+    @staticmethod
     def text_menu(theme="light"):
         c = UI._c(theme)
 
@@ -207,6 +335,158 @@ class UI:
 
         contents.extend([
             {"type": "separator", "margin": "lg", "color": c["border"]},
+            {
+                "type": "box",
+                "layout": "horizontal",
+                "margin": "md",
+                "contents": [UI._button("رجوع", "بداية", c)]
+            }
+        ])
+
+        return {
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "backgroundColor": c["bg"],
+                "paddingAll": "20px",
+                "contents": contents
+            }
+        }
+
+    @staticmethod
+    def stats(user, theme="light"):
+        c = UI._c(theme)
+        
+        return {
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "backgroundColor": c["bg"],
+                "paddingAll": "20px",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "احصائياتك",
+                        "size": "xl",
+                        "weight": "bold",
+                        "align": "center",
+                        "color": c["primary"]
+                    },
+                    {"type": "separator", "margin": "md", "color": c["border"]},
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "backgroundColor": c["card"],
+                        "cornerRadius": "12px",
+                        "paddingAll": "16px",
+                        "margin": "md",
+                        "contents": [
+                            {
+                                "type": "box",
+                                "layout": "horizontal",
+                                "contents": [
+                                    {"type": "text", "text": "الاسم:", "size": "sm", "color": c["text2"], "flex": 1},
+                                    {"type": "text", "text": user['name'], "size": "sm", "weight": "bold", "color": c["text"], "align": "end", "flex": 2}
+                                ],
+                                "margin": "sm"
+                            },
+                            {
+                                "type": "box",
+                                "layout": "horizontal",
+                                "contents": [
+                                    {"type": "text", "text": "النقاط:", "size": "sm", "color": c["text2"], "flex": 1},
+                                    {"type": "text", "text": str(user['points']), "size": "sm", "weight": "bold", "color": c["primary"], "align": "end", "flex": 2}
+                                ],
+                                "margin": "sm"
+                            },
+                            {
+                                "type": "box",
+                                "layout": "horizontal",
+                                "contents": [
+                                    {"type": "text", "text": "الألعاب:", "size": "sm", "color": c["text2"], "flex": 1},
+                                    {"type": "text", "text": str(user['games']), "size": "sm", "weight": "bold", "color": c["text"], "align": "end", "flex": 2}
+                                ],
+                                "margin": "sm"
+                            },
+                            {
+                                "type": "box",
+                                "layout": "horizontal",
+                                "contents": [
+                                    {"type": "text", "text": "الانتصارات:", "size": "sm", "color": c["text2"], "flex": 1},
+                                    {"type": "text", "text": str(user['wins']), "size": "sm", "weight": "bold", "color": c["success"], "align": "end", "flex": 2}
+                                ],
+                                "margin": "sm"
+                            }
+                        ]
+                    },
+                    {"type": "separator", "margin": "md", "color": c["border"]},
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "margin": "md",
+                        "contents": [UI._button("رجوع", "بداية", c)]
+                    }
+                ]
+            }
+        }
+
+    @staticmethod
+    def leaderboard(leaders, theme="light"):
+        c = UI._c(theme)
+        
+        contents = [
+            {
+                "type": "text",
+                "text": "لوحة الصدارة",
+                "size": "xl",
+                "weight": "bold",
+                "align": "center",
+                "color": c["primary"]
+            },
+            {"type": "separator", "margin": "md", "color": c["border"]}
+        ]
+
+        if not leaders:
+            contents.append({
+                "type": "text",
+                "text": "لا يوجد متصدرين بعد",
+                "size": "sm",
+                "color": c["text2"],
+                "align": "center",
+                "margin": "md"
+            })
+        else:
+            for i, leader in enumerate(leaders[:10], 1):
+                medal = ""
+                if i == 1:
+                    medal = "المركز الأول"
+                elif i == 2:
+                    medal = "المركز الثاني"
+                elif i == 3:
+                    medal = "المركز الثالث"
+                else:
+                    medal = f"المركز {i}"
+
+                contents.append({
+                    "type": "box",
+                    "layout": "horizontal",
+                    "backgroundColor": c["card"],
+                    "cornerRadius": "8px",
+                    "paddingAll": "12px",
+                    "margin": "sm",
+                    "contents": [
+                        {"type": "text", "text": medal, "size": "xs", "color": c["text3"], "flex": 0},
+                        {"type": "text", "text": leader['name'], "size": "sm", "color": c["text"], "flex": 2, "margin": "md"},
+                        {"type": "text", "text": str(leader['points']), "size": "sm", "weight": "bold", "color": c["primary"], "align": "end", "flex": 1}
+                    ]
+                })
+
+        contents.extend([
+            {"type": "separator", "margin": "md", "color": c["border"]},
             {
                 "type": "box",
                 "layout": "horizontal",
