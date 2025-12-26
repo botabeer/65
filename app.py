@@ -132,9 +132,10 @@ def process(text, user_id, group_id, line_api):
         return msg
     
     if t == 'نص':
-        msg = TextMessage(text="اختر نوع النص:\nسؤال - منشن - تحدي - اعتراف - اقتباس - موقف - شعر - خاص - مجهول - نصيحة")
-        msg.quick_reply = UI.get_quick_reply()
-        return msg
+        return FlexMessage(
+            alt_text="قائمة النصوص",
+            contents=FlexContainer.from_dict(UI.text_menu(theme))
+        )
     
     if t in ['بداية', 'start']:
         if user:
