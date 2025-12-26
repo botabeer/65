@@ -2,7 +2,7 @@ import sqlite3
 import logging
 import os
 from threading import Lock
-from datetime import datetime
+from datetime import datetime, timedelta
 from contextlib import contextmanager
 
 logger = logging.getLogger(__name__)
@@ -55,12 +55,28 @@ class DB:
 
                 c.execute('CREATE INDEX IF NOT EXISTS idx_points ON users(points DESC)')
                 c.execute('CREATE INDEX IF NOT EXISTS idx_history ON history(user_id, played DESC)')
+                c.execute('CREATE INDEX IF NOT EXISTS idx_activity ON users(activity DESC)')
                 c.execute('PRAGMA foreign_keys = ON')
 
             logger.info("Database initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize database: {e}")
             raise
+    
+    @staticmethod
+    def cleanup_inactive_users():
+        """حذف المستخدمين غير النشطين لمدة شهر"""
+        try:
+            with DB.conn() as c:
+                month_ago = datetime.now() - timedelta(days=30)
+                c.execute('DELETE FROM users WHERE activity < ?', (month_ago,))
+                deleted = c.rowcount
+                if deleted > 0:
+                    logger.info(f"Cleaned up {deleted} inactive users")
+                return deleted
+        except Exception as e:
+            logger.error(f"Error cleaning up inactive users: {e}")
+            return 0
     
     @staticmethod
     def get_user(user_id):
@@ -77,7 +93,7 @@ class DB:
         try:
             with DB.conn() as c:
                 c.execute('''INSERT INTO users (user_id, name) VALUES (?, ?)
-                            ON CONFLICT(user_id) DO UPDATE SET name = ?''',
+                            ON CONFLICT(user_id) DO UPDATE SET name = ?, activity = CURRENT_TIMESTAMP''',
                          (user_id, name, name))
             logger.info(f"User registered: {user_id} - {name}")
         except Exception as e:
@@ -98,7 +114,8 @@ class DB:
                 c.execute('''UPDATE users SET 
                             points = points + ?,
                             games = games + 1,
-                            wins = wins + ?
+                            wins = wins + ?,
+                            activity = CURRENT_TIMESTAMP
                             WHERE user_id = ?''', (points, 1 if won else 0, user_id))
                 c.execute('INSERT INTO history (user_id, game, points, won) VALUES (?, ?, ?, ?)',
                          (user_id, game_name, points, 1 if won else 0))
@@ -120,7 +137,7 @@ class DB:
     def set_theme(user_id, theme):
         try:
             with DB.conn() as c:
-                c.execute('UPDATE users SET theme = ? WHERE user_id = ?', (theme, user_id))
+                c.execute('UPDATE users SET theme = ?, activity = CURRENT_TIMESTAMP WHERE user_id = ?', (theme, user_id))
             logger.info(f"Theme updated for {user_id}: {theme}")
         except Exception as e:
             logger.error(f"Error setting theme for {user_id}: {e}")
