@@ -32,18 +32,71 @@ class UI:
         }
 
     @staticmethod
-    def get_quick_reply():
-        return QuickReply(items=[
-            QuickReplyItem(action=MessageAction(label="بداية", text="بداية")),
-            QuickReplyItem(action=MessageAction(label="العاب", text="العاب")),
-            QuickReplyItem(action=MessageAction(label="سؤال", text="سؤال")),
-            QuickReplyItem(action=MessageAction(label="تحدي", text="تحدي")),
-            QuickReplyItem(action=MessageAction(label="اعتراف", text="اعتراف")),
-            QuickReplyItem(action=MessageAction(label="منشن", text="منشن")),
-            QuickReplyItem(action=MessageAction(label="اقتباس", text="اقتباس")),
-            QuickReplyItem(action=MessageAction(label="موقف", text="موقف")),
-            QuickReplyItem(action=MessageAction(label="مساعدة", text="مساعدة"))
+def get_quick_reply():
+    return QuickReply(items=[
+        QuickReplyItem(action=MessageAction(label="بداية", text="بداية")),
+        QuickReplyItem(action=MessageAction(label="العاب", text="العاب")),
+        QuickReplyItem(action=MessageAction(label="سؤال", text="سؤال")),
+        QuickReplyItem(action=MessageAction(label="تحدي", text="تحدي")),
+        QuickReplyItem(action=MessageAction(label="اعتراف", text="اعتراف")),
+        QuickReplyItem(action=MessageAction(label="منشن", text="منشن")),
+        QuickReplyItem(action=MessageAction(label="اقتباس", text="اقتباس")),
+        QuickReplyItem(action=MessageAction(label="موقف", text="موقف")),
+        QuickReplyItem(action=MessageAction(label="شعر", text="شعر")),
+        QuickReplyItem(action=MessageAction(label="خاص", text="خاص")),
+        QuickReplyItem(action=MessageAction(label="مجهول", text="مجهول")),
+        QuickReplyItem(action=MessageAction(label="نصيحة", text="نصيحة")),
+        QuickReplyItem(action=MessageAction(label="مساعدة", text="مساعدة"))
+    ])
+
+    @staticmethod
+    def text_menu(theme="light"):
+        c = UI._c(theme)
+        
+        texts = [
+            ("سؤال", "سؤال"), ("تحدي", "تحدي"), ("اعتراف", "اعتراف"),
+            ("منشن", "منشن"), ("اقتباس", "اقتباس"), ("موقف", "موقف"),
+            ("شعر", "شعر"), ("خاص", "خاص"), ("مجهول", "مجهول"),
+            ("نصيحة", "نصيحة")
+        ]
+        
+        contents = [
+            {"type": "text", "text": "قائمة النصوص", "size": "xl", 
+             "weight": "bold", "align": "center", "color": c["primary"]},
+            {"type": "text", "text": "اختر نوع النص", 
+             "size": "xs", "align": "center", "color": c["text3"], "margin": "sm"},
+            {"type": "separator", "margin": "md", "color": c["border"]}
+        ]
+        
+        for i in range(0, len(texts), 2):
+            row_buttons = []
+            for text_label, text_cmd in texts[i:i+2]:
+                row_buttons.append({
+                    "type": "button", "style": "secondary", "height": "sm",
+                    "action": {"type": "message", "label": text_label, "text": text_cmd},
+                    "color": c["button"], "flex": 1
+                })
+            
+            contents.append({
+                "type": "box", "layout": "horizontal",
+                "spacing": "xs", "margin": "sm",
+                "contents": row_buttons
+            })
+        
+        contents.extend([
+            {"type": "separator", "margin": "lg", "color": c["border"]},
+            {"type": "box", "layout": "horizontal", "margin": "md",
+             "contents": [UI._button("رجوع", "بداية", c)]}
         ])
+        
+        return {
+            "type": "bubble", "size": "mega",
+            "body": {
+                "type": "box", "layout": "vertical",
+                "backgroundColor": c["bg"], "paddingAll": "20px",
+                "contents": contents
+            }
+        }
 
     @staticmethod
     def welcome(name, registered, theme="light"):
@@ -90,19 +143,20 @@ class UI:
             ]
         })
         
-        # السطر الثالث: العاب - مساعدة
+        # السطر الثالث: العاب - نص
         contents.append({
             "type": "box", "layout": "horizontal", "spacing": "sm", "margin": "sm",
             "contents": [
                 UI._button("العاب", "العاب", c),
-                UI._button("مساعدة", "مساعدة", c)
+                UI._button("نص", "نص", c)
             ]
         })
         
-        # السطر الرابع: ثيم
+        # السطر الرابع: مساعدة - ثيم
         contents.append({
-            "type": "box", "layout": "horizontal", "margin": "sm",
+            "type": "box", "layout": "horizontal", "spacing": "sm", "margin": "sm",
             "contents": [
+                UI._button("مساعدة", "مساعدة", c),
                 UI._button("ثيم", "ثيم", c)
             ]
         })
@@ -185,8 +239,8 @@ class UI:
             {
                 "title": "الاوامر الاساسية",
                 "items": ["بداية - الصفحة الرئيسية", "تسجيل - انشاء حساب",
-                         "العاب - قائمة الالعاب", "نقاطي - احصائياتك",
-                         "الصدارة - المتصدرين"]
+                         "العاب - قائمة الالعاب", "نص - قائمة النصوص",
+                         "نقاطي - احصائياتك", "الصدارة - المتصدرين"]
             },
             {
                 "title": "اوامر اللعب",
@@ -196,7 +250,8 @@ class UI:
             {
                 "title": "الاوامر النصية",
                 "items": [
-                    "سؤال", "تحدي", "اعتراف", "منشن", "اقتباس", "موقف"
+                    "سؤال - تحدي - اعتراف - منشن - اقتباس",
+                    "موقف - شعر - خاص - مجهول - نصيحة"
                 ]
             }
         ]
