@@ -4,7 +4,7 @@ from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import (
     Configuration, ApiClient, MessagingApi, 
     ReplyMessageRequest, TextMessage, FlexMessage, 
-    FlexContainer, QuickReply, QuickReplyItem, MessageAction
+    FlexContainer
 )
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
 import os
@@ -77,23 +77,6 @@ GAME_MAP = {
     'سين': SeenJeemGame
 }
 
-def get_quick_reply():
-    return QuickReply(items=[
-        QuickReplyItem(action=MessageAction(label="بداية", text="بداية")),
-        QuickReplyItem(action=MessageAction(label="سؤال", text="سؤال")),
-        QuickReplyItem(action=MessageAction(label="تحدي", text="تحدي")),
-        QuickReplyItem(action=MessageAction(label="منشن", text="منشن")),
-        QuickReplyItem(action=MessageAction(label="اعتراف", text="اعتراف")),
-        QuickReplyItem(action=MessageAction(label="اقتباس", text="اقتباس")),
-        QuickReplyItem(action=MessageAction(label="موقف", text="موقف")),
-        QuickReplyItem(action=MessageAction(label="شعر", text="شعر")),
-        QuickReplyItem(action=MessageAction(label="خاص", text="خاص")),
-        QuickReplyItem(action=MessageAction(label="مجهول", text="مجهول")),
-        QuickReplyItem(action=MessageAction(label="نصيحة", text="نصيحة")),
-        QuickReplyItem(action=MessageAction(label="العاب", text="العاب")),
-        QuickReplyItem(action=MessageAction(label="مساعدة", text="مساعدة"))
-    ])
-
 @app.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers.get('X-Line-Signature', '')
@@ -136,21 +119,21 @@ def process(text, user_id, group_id, line_api):
             DB.register_user(user_id, text.strip())
             waiting_for_name.discard(user_id)
             msg = TextMessage(text=f"تم التسجيل بنجاح {text}")
-            msg.quick_reply = get_quick_reply()
+            msg.quick_reply = UI.get_quick_reply()
             return msg
         waiting_for_name.discard(user_id)
         msg = TextMessage(text="الاسم يجب ان يكون بين 2 و 50 حرف")
-        msg.quick_reply = get_quick_reply()
+        msg.quick_reply = UI.get_quick_reply()
         return msg
     
     if t in TEXT_COMMANDS:
         msg = TextMessage(text=TextCommands.get_random(TEXT_COMMANDS[t]))
-        msg.quick_reply = get_quick_reply()
+        msg.quick_reply = UI.get_quick_reply()
         return msg
     
     if t == 'نص':
-        msg = TextMessage(text="اختر نوع النص:\nسؤال | منشن | تحدي | اعتراف | اقتباس | موقف | شعر | خاص | مجهول | نصيحة")
-        msg.quick_reply = get_quick_reply()
+        msg = TextMessage(text="اختر نوع النص:\nسؤال - منشن - تحدي - اعتراف - اقتباس - موقف - شعر - خاص - مجهول - نصيحة")
+        msg.quick_reply = UI.get_quick_reply()
         return msg
     
     if t in ['بداية', 'start']:
@@ -170,13 +153,13 @@ def process(text, user_id, group_id, line_api):
     if t in ['تسجيل', 'تغيير']:
         waiting_for_name.add(user_id)
         msg = TextMessage(text="اكتب اسمك (2-50 حرف)")
-        msg.quick_reply = get_quick_reply()
+        msg.quick_reply = UI.get_quick_reply()
         return msg
     
     if t == 'نقاطي':
         if not user:
             msg = TextMessage(text="يجب التسجيل اولا\nاكتب: تسجيل")
-            msg.quick_reply = get_quick_reply()
+            msg.quick_reply = UI.get_quick_reply()
             return msg
         DB.update_activity(user_id)
         return FlexMessage(alt_text="احصائياتك", contents=FlexContainer.from_dict(UI.stats(user, theme)))
@@ -188,13 +171,13 @@ def process(text, user_id, group_id, line_api):
     if t == 'ثيم':
         if not user:
             msg = TextMessage(text="يجب التسجيل اولا")
-            msg.quick_reply = get_quick_reply()
+            msg.quick_reply = UI.get_quick_reply()
             return msg
         new_theme = 'dark' if theme == 'light' else 'light'
         DB.set_theme(user_id, new_theme)
         user_themes[user_id] = new_theme
         msg = TextMessage(text=f"تم التغيير للثيم {'الداكن' if new_theme == 'dark' else 'الفاتح'}")
-        msg.quick_reply = get_quick_reply()
+        msg.quick_reply = UI.get_quick_reply()
         return msg
     
     if t in ['ايقاف', 'انسحب']:
@@ -208,7 +191,7 @@ def process(text, user_id, group_id, line_api):
             if group_id in game_difficulties:
                 del game_difficulties[group_id]
             msg = TextMessage(text="تم ايقاف اللعبة")
-            msg.quick_reply = get_quick_reply()
+            msg.quick_reply = UI.get_quick_reply()
             return msg
         
         if t == 'انسحب' and user:
@@ -222,12 +205,12 @@ def process(text, user_id, group_id, line_api):
             if 1 <= level <= 5:
                 game_difficulties[group_id] = level
                 msg = TextMessage(text=f"تم تعيين الصعوبة: مستوى {level}")
-                msg.quick_reply = get_quick_reply()
+                msg.quick_reply = UI.get_quick_reply()
                 return msg
         except:
             pass
         msg = TextMessage(text="استخدم: صعوبة 1 (الى 5)")
-        msg.quick_reply = get_quick_reply()
+        msg.quick_reply = UI.get_quick_reply()
         return msg
     
     if not user:
@@ -243,7 +226,7 @@ def process(text, user_id, group_id, line_api):
         except Exception as e:
             logger.error(f"Game creation error: {e}", exc_info=True)
             msg = TextMessage(text="حدث خطأ في بدء اللعبة")
-            msg.quick_reply = get_quick_reply()
+            msg.quick_reply = UI.get_quick_reply()
             return msg
     
     if group_id in game_sessions:
