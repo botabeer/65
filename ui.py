@@ -14,7 +14,7 @@ class UI:
             "bg": "#FFFFFF",
             "card": "#F9FAFB",
             "border": "#E5E7EB",
-            "button": "#F5F5F5",
+            "button": "#94A3B8",
             "success": "#374151",
             "warning": "#6B7280",
             "error": "#4B5563"
@@ -27,7 +27,7 @@ class UI:
             "bg": "#111827",
             "card": "#1F2937",
             "border": "#374151",
-            "button": "#F5F5F5",
+            "button": "#64748B",
             "success": "#D1D5DB",
             "warning": "#9CA3AF",
             "error": "#6B7280"
@@ -73,103 +73,124 @@ class UI:
         )
 
     @staticmethod
-def welcome(name, registered, theme="light"):
-    c = UI._c(theme)
-    
-    contents = [
-        {
-            "type": "text",
-            "text": f"مرحبا {name}",
-            "size": "xl",
-            "weight": "bold",
-            "align": "center",
-            "color": c["primary"]
-        },
-        {"type": "separator", "margin": "md", "color": c["border"]}
-    ]
+    def welcome(name, registered, theme="light"):
+        c = UI._c(theme)
+        
+        contents = [
+            {
+                "type": "text",
+                "text": "Bot 65",
+                "size": "xxl",
+                "weight": "bold",
+                "align": "center",
+                "color": c["primary"]
+            },
+            {
+                "type": "text",
+                "text": f"مرحبا {name}",
+                "size": "md",
+                "align": "center",
+                "color": c["text2"],
+                "margin": "xs"
+            },
+            {"type": "separator", "margin": "md", "color": c["border"]}
+        ]
 
-    if not registered:
+        if not registered:
+            contents.append({
+                "type": "box",
+                "layout": "vertical",
+                "backgroundColor": c["card"],
+                "cornerRadius": "8px",
+                "paddingAll": "12px",
+                "margin": "md",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "يجب التسجيل اولا",
+                        "size": "sm",
+                        "color": c["text"],
+                        "align": "center"
+                    }
+                ]
+            })
+
+        # السطر الأول
+        row1 = []
+        if not registered:
+            row1.append(UI._button("تسجيل", "تسجيل", c))
+        else:
+            row1.append(UI._button("تغيير", "تغيير", c))
+        row1.append(UI._button("انسحب", "انسحب", c))
+        
         contents.append({
             "type": "box",
-            "layout": "vertical",
-            "backgroundColor": c["card"],
-            "cornerRadius": "8px",
-            "paddingAll": "12px",
+            "layout": "horizontal",
+            "spacing": "xs",
             "margin": "md",
+            "contents": row1
+        })
+
+        # السطر الثاني
+        contents.append({
+            "type": "box",
+            "layout": "horizontal",
+            "spacing": "xs",
+            "margin": "xs",
             "contents": [
-                {
-                    "type": "text",
-                    "text": "يجب التسجيل اولا",
-                    "size": "sm",
-                    "color": c["text"],
-                    "align": "center"
-                }
+                UI._button("نقاطي", "نقاطي", c),
+                UI._button("الصدارة", "الصدارة", c)
             ]
         })
 
-    # السطر الأول: تسجيل/تغيير - انسحب
-    row1 = []
-    if not registered:
-        row1.append(UI._button("تسجيل", "تسجيل", c))
-    else:
-        row1.append(UI._button("تغيير", "تغيير", c))
-    row1.append(UI._button("انسحب", "انسحب", c))
-    
-    contents.append({
-        "type": "box",
-        "layout": "horizontal",
-        "spacing": "xs",
-        "margin": "md",
-        "contents": row1
-    })
-
-    # السطر الثاني: نقاطي - الصدارة
-    contents.append({
-        "type": "box",
-        "layout": "horizontal",
-        "spacing": "xs",
-        "margin": "xs",
-        "contents": [
-            UI._button("نقاطي", "نقاطي", c),
-            UI._button("الصدارة", "الصدارة", c)
-        ]
-    })
-
-    # السطر الثالث: العاب - نص
-    contents.append({
-        "type": "box",
-        "layout": "horizontal",
-        "spacing": "xs",
-        "margin": "xs",
-        "contents": [
-            UI._button("العاب", "العاب", c),
-            UI._button("نص", "نص", c)
-        ]
-    })
-
-    # السطر الرابع: ثيم - مساعدة
-    contents.append({
-        "type": "box",
-        "layout": "horizontal",
-        "spacing": "xs",
-        "margin": "xs",
-        "contents": [
-            UI._button("ثيم", "ثيم", c),
-            UI._button("مساعدة", "مساعدة", c)
-        ]
-    })
-
-    return {
-        "type": "bubble",
-        "size": "mega",
-        "body": {
+        # السطر الثالث
+        contents.append({
             "type": "box",
-            "layout": "vertical",
-            "backgroundColor": c["bg"],
-            "paddingAll": "20px",
-            "contents": contents
+            "layout": "horizontal",
+            "spacing": "xs",
+            "margin": "xs",
+            "contents": [
+                UI._button("العاب", "العاب", c),
+                UI._button("نص", "نص", c)
+            ]
+        })
+
+        # السطر الرابع
+        contents.append({
+            "type": "box",
+            "layout": "horizontal",
+            "spacing": "xs",
+            "margin": "xs",
+            "contents": [
+                UI._button("ثيم", "ثيم", c),
+                UI._button("مساعدة", "مساعدة", c)
+            ]
+        })
+
+        # الحقوق
+        contents.extend([
+            {"type": "separator", "margin": "lg", "color": c["border"]},
+            {
+                "type": "text",
+                "text": "تم إنشاء هذا البوت بواسطة عبير الدوسري @ 2025",
+                "size": "xxs",
+                "color": c["text3"],
+                "align": "center",
+                "margin": "md"
+            }
+        ])
+
+        return {
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "backgroundColor": c["bg"],
+                "paddingAll": "20px",
+                "contents": contents
+            }
         }
-    }
 
     @staticmethod
     def help_card(theme="light"):
@@ -227,9 +248,7 @@ def welcome(name, registered, theme="light"):
         texts = [
             ("سؤال", "سؤال"), ("تحدي", "تحدي"),
             ("اعتراف", "اعتراف"), ("منشن", "منشن"),
-            ("اقتباس", "اقتباس"), ("موقف", "موقف"),
-            ("شعر", "شعر"), ("خاص", "خاص"),
-            ("مجهول", "مجهول"), ("نصيحة", "نصيحة")
+            ("اقتباس", "اقتباس"), ("موقف", "موقف")
         ]
 
         contents = [
