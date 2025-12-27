@@ -1,17 +1,19 @@
 from linebot.v3.messaging import QuickReply, QuickReplyItem, MessageAction
 
 class UI:
+    BUTTON_COLOR = "#F2F2F7"
+    
     THEMES = {
         "light": {
             "primary": "#2C3E50", "text": "#34495E", "text2": "#7F8C8D",
             "text3": "#95A5A6", "bg": "#FFFFFF", "card": "#F8F9FA",
-            "border": "#E9ECEF", "button": "#5DADE2", "success": "#27AE60",
+            "border": "#E9ECEF", "button": "#F2F2F7", "success": "#27AE60",
             "warning": "#F39C12", "error": "#E74C3C", "accent": "#3498DB"
         },
         "dark": {
             "primary": "#ECF0F1", "text": "#BDC3C7", "text2": "#95A5A6",
             "text3": "#7F8C8D", "bg": "#1C2833", "card": "#273746",
-            "border": "#34495E", "button": "#5DADE2", "success": "#27AE60",
+            "border": "#34495E", "button": "#F2F2F7", "success": "#27AE60",
             "warning": "#F39C12", "error": "#E74C3C", "accent": "#3498DB"
         }
     }
@@ -21,11 +23,11 @@ class UI:
         return UI.THEMES.get(theme, UI.THEMES["light"])
 
     @staticmethod
-    def _btn(label, text, c, style="secondary"):
+    def _btn(label, text, c=None, style="secondary"):
         return {
             "type": "button", "style": style, "height": "sm",
             "action": {"type": "message", "label": label, "text": text},
-            "color": c["button"], "flex": 1
+            "color": UI.BUTTON_COLOR, "flex": 1
         }
 
     @staticmethod
@@ -65,7 +67,7 @@ class UI:
             contents.append({
                 "type": "box", "layout": "horizontal", "spacing": "xs",
                 "margin": "sm" if i > 0 else "lg",
-                "contents": [UI._btn(l, t, c) for l, t in row]
+                "contents": [UI._btn(l, t) for l, t in row]
             })
         
         contents.extend([
@@ -99,7 +101,7 @@ class UI:
         
         contents.extend([
             {"type": "separator", "margin": "lg", "color": c["border"]},
-            {"type": "box", "layout": "horizontal", "margin": "md", "contents": [UI._btn("رجوع", "بداية", c)]}
+            {"type": "box", "layout": "horizontal", "margin": "md", "contents": [UI._btn("رجوع", "بداية")]}
         ])
         
         return {
@@ -128,12 +130,12 @@ class UI:
             contents.append({
                 "type": "box", "layout": "horizontal", "spacing": "xs",
                 "margin": "sm" if i > 0 else "lg",
-                "contents": [UI._btn(l, t, c) for l, t in games[i:i+3]]
+                "contents": [UI._btn(l, t) for l, t in games[i:i+3]]
             })
         
         contents.extend([
             {"type": "separator", "margin": "lg", "color": c["border"]},
-            {"type": "box", "layout": "horizontal", "margin": "md", "contents": [UI._btn("رجوع", "بداية", c)]}
+            {"type": "box", "layout": "horizontal", "margin": "md", "contents": [UI._btn("رجوع", "بداية")]}
         ])
         
         return {
@@ -180,7 +182,7 @@ class UI:
                     },
                     {"type": "separator", "margin": "lg", "color": c["border"]},
                     {"type": "box", "layout": "horizontal", "margin": "md", "spacing": "xs",
-                     "contents": [UI._btn("الصدارة", "الصدارة", c), UI._btn("رجوع", "بداية", c)]}
+                     "contents": [UI._btn("الصدارة", "الصدارة"), UI._btn("رجوع", "بداية")]}
                 ]
             }
         }
@@ -214,7 +216,7 @@ class UI:
         
         contents.extend([
             {"type": "separator", "margin": "lg", "color": c["border"]},
-            {"type": "box", "layout": "horizontal", "margin": "md", "contents": [UI._btn("رجوع", "بداية", c)]}
+            {"type": "box", "layout": "horizontal", "margin": "md", "contents": [UI._btn("رجوع", "بداية")]}
         ])
         
         return {
