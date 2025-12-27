@@ -2,12 +2,15 @@ import random
 from games.base_game import BaseGame
 
 class LetterGame(BaseGame):
+    """لعبة الحروف - اسئلة تبدأ بحرف معين"""
+    
     def __init__(self, line_bot_api, difficulty=3, theme='light'):
         super().__init__(line_bot_api, difficulty=difficulty, theme=theme)
         self.game_name = "حرف"
         self.supports_hint = True
         self.supports_reveal = True
         
+        # قاعدة بيانات الأسئلة مرتبة حسب الحروف
         self.questions_db = {
             "ا": [
                 {"q": "من هو اول نبي", "a": ["آدم", "ادم"]},
@@ -116,30 +119,39 @@ class LetterGame(BaseGame):
             ]
         }
         
+        # قائمة الحروف المتاحة
         self.letters = list(self.questions_db.keys())
         random.shuffle(self.letters)
         
+        # متغيرات اللعبة
         self.current_letter = None
         self.current_question_data = None
+        # استخدام قاموس بدلا من set للأسئلة المستخدمة
         self.used_questions = {letter: [] for letter in self.letters}
 
     def get_question(self):
+        """الحصول على السؤال التالي"""
+        # اختيار الحرف بناء على رقم السؤال
         letter_idx = self.current_question % len(self.letters)
         self.current_letter = self.letters[letter_idx]
         
+        # الحصول على الأسئلة المتاحة لهذا الحرف
         available_questions = [
             q for i, q in enumerate(self.questions_db[self.current_letter])
             if i not in self.used_questions[self.current_letter]
         ]
         
+        # إعادة تعيين الأسئلة المستخدمة إذا انتهت
         if not available_questions:
             self.used_questions[self.current_letter] = []
             available_questions = self.questions_db[self.current_letter]
         
+        # اختيار سؤال عشوائي
         self.current_question_data = random.choice(available_questions)
         question_idx = self.questions_db[self.current_letter].index(self.current_question_data)
         self.used_questions[self.current_letter].append(question_idx)
         
+        # تعيين الإجابات الصحيحة
         self.current_answer = self.current_question_data['a']
         self.previous_question = f"حرف {self.current_letter}: {self.current_question_data['q']}"
         
@@ -149,19 +161,23 @@ class LetterGame(BaseGame):
         )
 
     def check_answer(self, user_answer, user_id, display_name):
+        """التحقق من الإجابة"""
         if not self.game_active or user_id in self.answered_users:
             return None
         
         normalized = self.normalize_text(user_answer)
         
-        if normalized in ["ايقاف", "ايقاف"]:
+        # إيقاف اللعبة
+        if normalized == "ايقاف":
             return self.handle_withdrawal(user_id, display_name)
         
+        # التلميح
         if self.supports_hint and normalized == "لمح":
             answer = self.current_answer[0]
             hint = f"يبدا بحرف: {answer[0]}\nعدد الحروف: {len(answer)}"
             return {"response": self.build_text_message(hint), "points": 0}
         
+        # إظهار الجواب
         if self.supports_reveal and normalized == "جاوب":
             answers = " او ".join(self.current_answer)
             self.previous_answer = answers
@@ -171,8 +187,13 @@ class LetterGame(BaseGame):
             if self.current_question >= self.questions_count:
                 return self.end_game()
             
-            return {"response": self.get_question(), "points": 0, "next_question": True}
+            return {
+                "response": self.get_question(),
+                "points": 0,
+                "next_question": True
+            }
         
+        # التحقق من الإجابة الصحيحة
         for correct_answer in self.current_answer:
             normalized_correct = self.normalize_text(correct_answer)
             if normalized == normalized_correct:
@@ -187,6 +208,10 @@ class LetterGame(BaseGame):
                     result["points"] = points
                     return result
                 
-                return {"response": self.get_question(), "points": points, "next_question": True}
+                return {
+                    "response": self.get_question(),
+                    "points": points,
+                    "next_question": True
+                }
         
         return None
