@@ -11,24 +11,24 @@ class MafiaGame(BaseGame):
         self.supports_hint = False
         self.supports_reveal = False
         
-        # اللاعبين والأدوار
-        self.players = {}  # {user_id: {'name': str, 'role': str, 'alive': bool}}
-        self.phase = "registration"  # registration, night, day, voting, ended
+        self.players = {}
+        self.phase = "registration"
         self.day_number = 0
         
-        # إجراءات الليل
         self.night_actions = {
             'mafia_target': None,
             'doctor_target': None,
             'detective_check': None
         }
         
-        # التصويت
-        self.votes = {}  # {voter_id: voted_id}
-        
-        # الحد الأدنى للاعبين
+        self.votes = {}
         self.min_players = 4
-        
+    
+    # تنفيذ الدالة المطلوبة من BaseGame
+    def get_question(self):
+        """ترجع رسالة التسجيل - مطلوبة من BaseGame"""
+        return self.registration_message()
+    
     def start_game(self):
         """بدء التسجيل"""
         self.phase = "registration"
@@ -187,7 +187,6 @@ class MafiaGame(BaseGame):
         player_ids = list(self.players.keys())
         random.shuffle(player_ids)
         
-        # توزيع الأدوار
         roles = ['mafia', 'detective', 'doctor'] + ['citizen'] * (len(player_ids) - 3)
         
         for uid, role in zip(player_ids, roles):
@@ -716,6 +715,7 @@ class MafiaGame(BaseGame):
         
         return FlexMessage(alt_text="نهاية اللعبة", contents=FlexContainer.from_dict(bubble))
     
+  
     def status_message(self):
         """رسالة الحالة"""
         colors = self.get_theme_colors()
