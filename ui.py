@@ -59,7 +59,7 @@ class UI:
                 "backgroundColor": c["card"], "paddingAll": "12px", "cornerRadius": "8px"
             })
         
-        # السطر الأول: تسجيل/تغيير - انسحب
+        # السطر الاول: تسجيل/تغيير - انسحب
         contents.append({
             "type": "box", "layout": "horizontal", "spacing": "xs", "margin": "lg",
             "contents": [
@@ -81,7 +81,7 @@ class UI:
         contents.append({
             "type": "box", "layout": "horizontal", "spacing": "xs", "margin": "sm",
             "contents": [
-                UI._btn("نص", "سؤال"),
+                UI._btn("نص", "نص"),
                 UI._btn("العاب", "العاب")
             ]
         })
@@ -106,11 +106,78 @@ class UI:
         }
 
     @staticmethod
+    def text_commands_menu(theme="light"):
+        c = UI._c(theme)
+        
+        commands = [
+            ("سؤال", "سؤال"), ("منشن", "منشن"), ("تحدي", "تحدي"),
+            ("اعتراف", "اعتراف"), ("مجهول", "مجهول"), ("خاص", "خاص"),
+            ("نصيحة", "نصيحة"), ("موقف", "موقف"), ("اقتباس", "اقتباس")
+        ]
+        
+        contents = [
+            {
+                "type": "text",
+                "text": "قائمة النصوص",
+                "size": "xl",
+                "weight": "bold",
+                "align": "center",
+                "color": c["primary"]
+            },
+            {
+                "type": "separator",
+                "margin": "md",
+                "color": c["border"]
+            }
+        ]
+        
+        # اضافة الازرار في صفوف (3 ازرار في كل صف)
+        for i in range(0, len(commands), 3):
+            row_buttons = []
+            for label, text in commands[i:i+3]:
+                row_buttons.append(UI._btn(label, text))
+            
+            contents.append({
+                "type": "box",
+                "layout": "horizontal",
+                "spacing": "xs",
+                "margin": "sm" if i > 0 else "lg",
+                "contents": row_buttons
+            })
+        
+        # زر الرجوع
+        contents.extend([
+            {
+                "type": "separator",
+                "margin": "lg",
+                "color": c["border"]
+            },
+            {
+                "type": "box",
+                "layout": "horizontal",
+                "margin": "md",
+                "contents": [UI._btn("رجوع", "بداية")]
+            }
+        ])
+        
+        return {
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "backgroundColor": c["bg"],
+                "paddingAll": "20px",
+                "contents": contents
+            }
+        }
+
+    @staticmethod
     def help_card(theme="light"):
         c = UI._c(theme)
         sections = [
             {"title": "الاوامر الاساسية", "items": ["بداية - القائمة الرئيسية", "تسجيل - تسجيل اسمك", "نقاطي - احصائياتك", "الصدارة - قائمة المتصدرين", "ثيم - تغيير المظهر", "انسحب - الخروج من اللعبة"]},
-            {"title": "اوامر النصوص", "items": ["سؤال - اسئلة متنوعة", "تحدي - تحديات", "اعتراف - اعترافات", "منشن - منشن اصدقائك", "اقتباس - اقتباسات ملهمة", "نصيحة - نصائح يومية", "مجهول - رسائل مجهولة", "خاص - رسائل خاصة", "شعر - قصائد", "موقف - مواقف"]},
+            {"title": "اوامر النصوص", "items": ["نص - قائمة النصوص", "سؤال - اسئلة متنوعة", "تحدي - تحديات", "اعتراف - اعترافات", "منشن - منشن اصدقائك", "اقتباس - اقتباسات ملهمة", "نصيحة - نصائح يومية", "مجهول - رسائل مجهولة", "خاص - رسائل خاصة", "شعر - قصائد", "موقف - مواقف"]},
             {"title": "اوامر اللعب", "items": ["لمح - تلميح للاجابة", "جاوب - اظهار الجواب", "ايقاف - ايقاف اللعبة", "انسحب - الانسحاب من الدورة"]},
             {"title": "ملاحظات مهمة", "items": ["يجب التسجيل قبل اللعب", "النقاط تحفظ تلقائيا", "يمكن تغيير الثيم بين فاتح وداكن", "الالعاب متعددة اللاعبين في المجموعات"]}
         ]
