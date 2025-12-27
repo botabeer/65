@@ -134,7 +134,53 @@ class BaseGame(ABC):
                         "cornerRadius": "2px"
                     }
                 ]
-            },
+            }
+        ]
+
+        # اضافة نافذة الجواب السابق ان وجدت
+        if self.previous_answer and self.previous_question:
+            contents.extend([
+                {
+                    "type": "separator",
+                    "margin": "md",
+                    "color": colors["border"]
+                },
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "margin": "sm",
+                    "backgroundColor": colors["card"],
+                    "cornerRadius": "6px",
+                    "paddingAll": "8px",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "السؤال السابق",
+                            "size": "xxs",
+                            "color": colors["text3"],
+                            "weight": "bold"
+                        },
+                        {
+                            "type": "text",
+                            "text": self.previous_question[:50] + "..." if len(self.previous_question) > 50 else self.previous_question,
+                            "size": "xxs",
+                            "color": colors["text2"],
+                            "wrap": True,
+                            "margin": "xs"
+                        },
+                        {
+                            "type": "text",
+                            "text": f"الجواب: {self.previous_answer}",
+                            "size": "xs",
+                            "color": colors["success"],
+                            "weight": "bold",
+                            "margin": "xs"
+                        }
+                    ]
+                }
+            ])
+
+        contents.extend([
             {
                 "type": "separator",
                 "margin": "lg",
@@ -149,7 +195,7 @@ class BaseGame(ABC):
                 "align": "center",
                 "margin": "lg"
             }
-        ]
+        ])
 
         if subtitle:
             contents.append({
@@ -235,6 +281,8 @@ class BaseGame(ABC):
         self.answered_users = set()
         self.withdrawn_users = set()
         self.used_questions = set()
+        self.previous_answer = None
+        self.previous_question = None
         return self.get_question()
 
     @abstractmethod
@@ -303,6 +351,11 @@ class BaseGame(ABC):
     def handle_correct_answer(self, user_id, display_name):
         self.answered_users.add(user_id)
         points = self.add_score(user_id, display_name, 1)
+        
+        # حفظ الجواب الصحيح
+        answer_text = " او ".join(self.current_answer) if isinstance(self.current_answer, list) else str(self.current_answer)
+        self.previous_answer = answer_text
+        
         self.current_question += 1
         self.answered_users.clear()
         
