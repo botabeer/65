@@ -12,7 +12,7 @@ from games.word_color_game import WordColorGame
 from games.roulette_game import RouletteGame
 
 __all__ = [
-    'GuessGame',
+    'CategoryGame',
     'FastGame',
     'CompatibilityGame',
     'SongGame',
