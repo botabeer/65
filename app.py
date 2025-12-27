@@ -135,6 +135,12 @@ def process_message(text, user_id, group_id, line_api):
             contents=FlexContainer.from_dict(UI.help_card(theme))
         )
     
+    if normalized_text in ['نص', 'نصوص']:
+        return FlexMessage(
+            alt_text="قائمة النصوص",
+            contents=FlexContainer.from_dict(UI.text_commands_menu(theme))
+        )
+    
     if normalized_text in ['العاب', 'ألعاب', 'الالعاب']:
         return FlexMessage(
             alt_text="الالعاب",
@@ -263,11 +269,9 @@ def handle_game_answer(group_id, text, user_id, user):
         return None
     
     # التعامل مع النتائج المختلفة
-    # إذا كان result رسالة مباشرة (TextMessage أو FlexMessage)
     if isinstance(result, (TextMessage, FlexMessage)):
         return result
     
-    # إذا كان result قاموس
     if not isinstance(result, dict):
         return None
     
