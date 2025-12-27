@@ -1,5 +1,6 @@
 import random
 from games.base_game import BaseGame
+from linebot.v3.messaging import FlexMessage, FlexContainer
 
 class WordColorGame(BaseGame):
     def __init__(self, line_bot_api, difficulty=3, theme='light'):
@@ -55,6 +56,8 @@ class WordColorGame(BaseGame):
         c = self.get_theme_colors()
         hex_color = self.colors[color_name]
         
+        progress = int((self.current_question / self.questions_count) * 100)
+        
         contents = [
             {
                 "type": "box",
@@ -65,13 +68,48 @@ class WordColorGame(BaseGame):
                         "layout": "vertical",
                         "flex": 1,
                         "contents": [
-                            {"type": "text", "text": self.game_name, "weight": "bold", "size": "lg", "color": c["text"]},
-                            {"type": "text", "text": f"السؤال {self.current_question + 1}/{self.questions_count}", "size": "xs", "color": c["text2"], "margin": "xs"}
+                            {
+                                "type": "text", 
+                                "text": self.game_name, 
+                                "weight": "bold", 
+                                "size": "lg", 
+                                "color": c["text"]
+                            },
+                            {
+                                "type": "text", 
+                                "text": f"السؤال {self.current_question + 1}/{self.questions_count}", 
+                                "size": "xs", 
+                                "color": c["text2"], 
+                                "margin": "xs"
+                            }
                         ]
                     }
                 ]
             },
-            {"type": "separator", "margin": "lg", "color": c["border"]},
+            {
+                "type": "box",
+                "layout": "horizontal",
+                "margin": "sm",
+                "contents": [
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [],
+                        "width": f"{progress}%",
+                        "height": "4px",
+                        "backgroundColor": c["success"],
+                        "cornerRadius": "2px"
+                    }
+                ],
+                "height": "4px",
+                "backgroundColor": c["border"],
+                "cornerRadius": "2px"
+            },
+            {
+                "type": "separator", 
+                "margin": "lg", 
+                "color": c["border"]
+            },
             {
                 "type": "text",
                 "text": "ما لون هذه الكلمة",
@@ -83,6 +121,12 @@ class WordColorGame(BaseGame):
             {
                 "type": "box",
                 "layout": "vertical",
+                "margin": "lg",
+                "backgroundColor": c["card"],
+                "cornerRadius": "12px",
+                "paddingAll": "20px",
+                "borderWidth": "2px",
+                "borderColor": hex_color,
                 "contents": [
                     {
                         "type": "text",
@@ -92,13 +136,7 @@ class WordColorGame(BaseGame):
                         "color": hex_color,
                         "align": "center"
                     }
-                ],
-                "cornerRadius": "12px",
-                "paddingAll": "20px",
-                "backgroundColor": c["card"],
-                "borderWidth": "2px",
-                "borderColor": hex_color,
-                "margin": "lg"
+                ]
             },
             {
                 "type": "text",
@@ -111,48 +149,34 @@ class WordColorGame(BaseGame):
             }
         ]
         
+        footer_buttons = []
+        
         if self.supports_reveal:
-            contents.append({"type": "separator", "margin": "lg", "color": c["border"]})
-            contents.append({
-                "type": "box",
-                "layout": "horizontal",
-                "contents": [
-                    {
-                        "type": "button",
-                        "action": {"type": "message", "label": "جاوب", "text": "جاوب"},
-                        "style": "secondary",
-                        "color": c["text2"],
-                        "height": "sm",
-                        "flex": 1
-                    },
-                    {
-                        "type": "button",
-                        "action": {"type": "message", "label": "ايقاف", "text": "ايقاف"},
-                        "style": "secondary",
-                        "color": c["text2"],
-                        "height": "sm",
-                        "flex": 1
-                    }
-                ],
-                "spacing": "sm",
-                "margin": "md"
+            footer_buttons.append({
+                "type": "button",
+                "action": {
+                    "type": "message", 
+                    "label": "جاوب", 
+                    "text": "جاوب"
+                },
+                "style": "secondary",
+                "color": self.BUTTON_COLOR,
+                "height": "sm",
+                "flex": 1
             })
-        else:
-            contents.append({"type": "separator", "margin": "lg", "color": c["border"]})
-            contents.append({
-                "type": "box",
-                "layout": "horizontal",
-                "contents": [
-                    {
-                        "type": "button",
-                        "action": {"type": "message", "label": "ايقاف", "text": "ايقاف"},
-                        "style": "secondary",
-                        "color": c["text2"],
-                        "height": "sm"
-                    }
-                ],
-                "margin": "md"
-            })
+        
+        footer_buttons.append({
+            "type": "button",
+            "action": {
+                "type": "message", 
+                "label": "ايقاف", 
+                "text": "ايقاف"
+            },
+            "style": "secondary",
+            "color": self.BUTTON_COLOR,
+            "height": "sm",
+            "flex": 1
+        })
         
         bubble = {
             "type": "bubble",
@@ -163,11 +187,21 @@ class WordColorGame(BaseGame):
                 "contents": contents,
                 "paddingAll": "20px",
                 "backgroundColor": c["bg"]
+            },
+            "footer": {
+                "type": "box",
+                "layout": "horizontal",
+                "contents": footer_buttons,
+                "spacing": "sm",
+                "paddingAll": "12px",
+                "backgroundColor": c["card"]
             }
         }
         
-        from linebot.v3.messaging import FlexMessage, FlexContainer
-        return FlexMessage(alt_text=self.game_name, contents=FlexContainer.from_dict(bubble))
+        return FlexMessage(
+            alt_text=self.game_name, 
+            contents=FlexContainer.from_dict(bubble)
+        )
     
     def check_answer(self, user_answer, user_id, display_name):
         if not self.game_active or user_id in self.answered_users:
