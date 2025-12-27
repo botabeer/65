@@ -1,15 +1,9 @@
 from flask import Flask, request, abort, jsonify
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
-from linebot.v3.messaging import (
-    Configuration, ApiClient, MessagingApi, 
-    ReplyMessageRequest, TextMessage, FlexMessage, 
-    FlexContainer
-)
+from linebot.v3.messaging import Configuration, ApiClient, MessagingApi, ReplyMessageRequest, TextMessage, FlexMessage, FlexContainer
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
-import os
-import sys
-import logging
+import os, sys, logging
 from datetime import datetime
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -34,7 +28,7 @@ from games import (
     GuessGame, FastGame, CompatibilityGame, SongGame,
     OppositeGame, ChainGame, LettersGame, CategoryGame,
     HumanAnimalGame, IqGame, ScrambleGame, LetterGame,
-    MafiaGame, WordColorGame, RouletteGame, SeenJeemGame
+    WordColorGame, RouletteGame, SeenJeemGame
 )
 
 DB.init()
@@ -45,35 +39,17 @@ waiting_for_name = set()
 user_themes = {}
 
 TEXT_COMMANDS = {
-    'سؤال': 'questions',
-    'منشن': 'mentions',
-    'تحدي': 'challenges',
-    'اعتراف': 'confessions',
-    'اقتباس': 'quotes',
-    'موقف': 'situations',
-    'شعر': 'poem',
-    'خاص': 'private',
-    'مجهول': 'anonymous',
-    'نصيحة': 'advice'
+    'سؤال': 'questions', 'منشن': 'mentions', 'تحدي': 'challenges',
+    'اعتراف': 'confessions', 'اقتباس': 'quotes', 'موقف': 'situations',
+    'شعر': 'poem', 'خاص': 'private', 'مجهول': 'anonymous', 'نصيحة': 'advice'
 }
 
 GAME_MAP = {
-    'خمن': GuessGame,
-    'اسرع': FastGame,
-    'توافق': CompatibilityGame,
-    'اغنيه': SongGame,
-    'ضد': OppositeGame,
-    'سلسله': ChainGame,
-    'تكوين': LettersGame,
-    'فئه': CategoryGame,
-    'لعبه': HumanAnimalGame,
-    'ذكاء': IqGame,
-    'ترتيب': ScrambleGame,
-    'حروف': LetterGame,
-    'مافيا': MafiaGame,
-    'لون': WordColorGame,
-    'روليت': RouletteGame,
-    'سين': SeenJeemGame
+    'خمن': GuessGame, 'اسرع': FastGame, 'توافق': CompatibilityGame,
+    'اغنيه': SongGame, 'ضد': OppositeGame, 'سلسله': ChainGame,
+    'تكوين': LettersGame, 'فئه': CategoryGame, 'لعبه': HumanAnimalGame,
+    'ذكاء': IqGame, 'ترتيب': ScrambleGame, 'حروف': LetterGame,
+    'لون': WordColorGame, 'روليت': RouletteGame, 'سين': SeenJeemGame
 }
 
 @app.route("/callback", methods=['POST'])
@@ -102,11 +78,10 @@ def handle_message(event):
             if response:
                 msgs = response if isinstance(response, list) else [response]
                 line_api.reply_message(ReplyMessageRequest(
-                    reply_token=event.reply_token, 
-                    messages=msgs
+                    reply_token=event.reply_token, messages=msgs
                 ))
         except Exception as e:
-            logger.error(f"Error processing message: {e}", exc_info=True)
+            logger.error(f"Error: {e}", exc_info=True)
 
 def process(text, user_id, group_id, line_api):
     t = text.lower().strip()
@@ -118,10 +93,9 @@ def process(text, user_id, group_id, line_api):
         if 1 <= len(name) <= 20:
             DB.register_user(user_id, name)
             waiting_for_name.discard(user_id)
-            return FlexMessage(
-                alt_text="تم التسجيل",
-                contents=FlexContainer.from_dict(UI.welcome(name, True, theme))
-            )
+            msg = FlexMessage(alt_text="تم التسجيل", contents=FlexContainer.from_dict(UI.welcome(name, True, theme)))
+            msg.quick_reply = UI.get_quick_reply()
+            return msg
         waiting_for_name.discard(user_id)
         msg = TextMessage(text="الاسم يجب ان يكون بين 1 و 20 حرف")
         msg.quick_reply = UI.get_quick_reply()
@@ -132,29 +106,25 @@ def process(text, user_id, group_id, line_api):
         msg.quick_reply = UI.get_quick_reply()
         return msg
     
-    if t == 'نص':
-        return FlexMessage(
-            alt_text="قائمة النصوص",
-            contents=FlexContainer.from_dict(UI.text_menu(theme))
-        )
+    if t in ['نص', 'نصوص']:
+        return FlexMessage(alt_text="قائمة النصوص", contents=FlexContainer.from_dict(UI.text_menu(theme)))
     
-    if t in ['بداية', 'start']:
+    if t in ['بداية', 'start', 'ابدا']:
         if user:
             DB.update_activity(user_id)
-        return FlexMessage(
-            alt_text="Bot 65",
-            contents=FlexContainer.from_dict(UI.welcome(user['name'] if user else 'مستخدم', bool(user), theme))
-        )
+        msg = FlexMessage(alt_text="Bot 65", contents=FlexContainer.from_dict(UI.welcome(user['name'] if user else 'مستخدم', bool(user), theme)))
+        msg.quick_reply = UI.get_quick_reply()
+        return msg
     
-    if t in ['مساعدة', 'help']:
+    if t in ['مساعدة', 'help', 'مساعده']:
         return FlexMessage(alt_text="المساعدة", contents=FlexContainer.from_dict(UI.help_card(theme)))
     
-    if t in ['العاب', 'ألعاب', 'الالعاب']:
+    if t in ['العاب', 'ألعاب', 'الالعاب', 'العاب']:
         return FlexMessage(alt_text="الالعاب", contents=FlexContainer.from_dict(UI.games_menu(theme)))
     
     if t in ['تسجيل', 'تغيير']:
         waiting_for_name.add(user_id)
-        msg = TextMessage(text="اكتب اسمك في الشات")
+        msg = TextMessage(text="اكتب اسمك الان")
         msg.quick_reply = UI.get_quick_reply()
         return msg
     
@@ -166,7 +136,7 @@ def process(text, user_id, group_id, line_api):
         DB.update_activity(user_id)
         return FlexMessage(alt_text="احصائياتك", contents=FlexContainer.from_dict(UI.stats(user, theme)))
     
-    if t == 'الصدارة':
+    if t in ['الصدارة', 'صدارة']:
         leaders = DB.get_leaderboard()
         return FlexMessage(alt_text="الصدارة", contents=FlexContainer.from_dict(UI.leaderboard(leaders, theme)))
     
@@ -188,7 +158,6 @@ def process(text, user_id, group_id, line_api):
             if t == 'انسحب' and user:
                 game.withdrawn_users.add(user_id)
                 return None
-            
             del game_sessions[group_id]
             msg = TextMessage(text="تم ايقاف اللعبة")
             msg.quick_reply = UI.get_quick_reply()
@@ -196,7 +165,9 @@ def process(text, user_id, group_id, line_api):
         
         if t == 'انسحب' and user:
             DB.update_activity(user_id)
-            return FlexMessage(alt_text="Bot 65", contents=FlexContainer.from_dict(UI.welcome(user['name'] if user else 'مستخدم', bool(user), theme)))
+            msg = FlexMessage(alt_text="Bot 65", contents=FlexContainer.from_dict(UI.welcome(user['name'], True, theme)))
+            msg.quick_reply = UI.get_quick_reply()
+            return msg
         return None
     
     if not user:
@@ -209,19 +180,17 @@ def process(text, user_id, group_id, line_api):
             game_sessions[group_id] = game
             return game.start_game()
         except Exception as e:
-            logger.error(f"Game creation error: {e}", exc_info=True)
+            logger.error(f"Game error: {e}", exc_info=True)
             msg = TextMessage(text="حدث خطأ في بدء اللعبة")
             msg.quick_reply = UI.get_quick_reply()
             return msg
     
     if group_id in game_sessions:
         game = game_sessions[group_id]
-        
         if user_id in game.withdrawn_users:
             return None
         
         result = game.check_answer(text, user_id, user['name'])
-        
         if result:
             if result.get('withdrawn'):
                 return None
@@ -245,7 +214,6 @@ def health():
 def index():
     return "Bot 65 - Running", 200
 
-port = int(os.environ.get("PORT", 10000))
-
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
