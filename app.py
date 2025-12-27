@@ -25,7 +25,7 @@ from database import DB
 from ui import UI
 from text_commands import TextCommands
 from games import (
-    GuessGame, FastGame, CompatibilityGame, SongGame,
+    CategoryGame, FastGame, CompatibilityGame, SongGame,
     OppositeGame, ChainGame, LettersGame, RiddleGame,
     ScrambleGame, MafiaGame, WordColorGame, RouletteGame
 )
@@ -44,7 +44,7 @@ TEXT_COMMANDS = {
 }
 
 GAME_MAP = {
-    'فئه': GuessGame, 'اسرع': FastGame, 'توافق': CompatibilityGame,
+    'فئه': CategoryGame, 'اسرع': FastGame, 'توافق': CompatibilityGame,
     'اغنيه': SongGame, 'ضد': OppositeGame, 'سلسله': ChainGame,
     'تكوين': LettersGame, 'لغز': RiddleGame, 'ترتيب': ScrambleGame,
     'مافيا': MafiaGame, 'لون': WordColorGame, 'روليت': RouletteGame
