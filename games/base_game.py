@@ -137,7 +137,6 @@ class BaseGame(ABC):
             }
         ]
 
-        # اضافة نافذة الجواب السابق ان وجدت
         if self.previous_answer and self.previous_question:
             contents.extend([
                 {
@@ -287,6 +286,7 @@ class BaseGame(ABC):
 
     @abstractmethod
     def get_question(self):
+        """يجب تنفيذها في كل لعبة - ترجع السؤال التالي"""
         pass
 
     def check_answer(self, user_answer, user_id, display_name):
@@ -352,7 +352,6 @@ class BaseGame(ABC):
         self.answered_users.add(user_id)
         points = self.add_score(user_id, display_name, 1)
         
-        # حفظ الجواب الصحيح
         answer_text = " او ".join(self.current_answer) if isinstance(self.current_answer, list) else str(self.current_answer)
         self.previous_answer = answer_text
         
