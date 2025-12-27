@@ -26,9 +26,8 @@ from ui import UI
 from text_commands import TextCommands
 from games import (
     GuessGame, FastGame, CompatibilityGame, SongGame,
-    OppositeGame, ChainGame, LettersGame, CategoryGame,
-    HumanAnimalGame, IqGame, ScrambleGame, LetterGame,
-    WordColorGame, RouletteGame, SeenJeemGame
+    OppositeGame, ChainGame, LettersGame, RiddleGame,
+    ScrambleGame, MafiaGame, WordColorGame, RouletteGame
 )
 
 DB.init()
@@ -47,9 +46,8 @@ TEXT_COMMANDS = {
 GAME_MAP = {
     'خمن': GuessGame, 'اسرع': FastGame, 'توافق': CompatibilityGame,
     'اغنيه': SongGame, 'ضد': OppositeGame, 'سلسله': ChainGame,
-    'تكوين': LettersGame, 'فئه': CategoryGame, 'لعبه': HumanAnimalGame,
-    'ذكاء': IqGame, 'ترتيب': ScrambleGame, 'حروف': LetterGame,
-    'لون': WordColorGame, 'روليت': RouletteGame, 'سين': SeenJeemGame
+    'تكوين': LettersGame, 'لغز': RiddleGame, 'ترتيب': ScrambleGame,
+    'مافيا': MafiaGame, 'لون': WordColorGame, 'روليت': RouletteGame
 }
 
 @app.route("/callback", methods=['POST'])
@@ -106,9 +104,6 @@ def process(text, user_id, group_id, line_api):
         msg.quick_reply = UI.get_quick_reply()
         return msg
     
-    if t in ['نص', 'نصوص']:
-        return FlexMessage(alt_text="قائمة النصوص", contents=FlexContainer.from_dict(UI.text_menu(theme)))
-    
     if t in ['بداية', 'start', 'ابدا']:
         if user:
             DB.update_activity(user_id)
@@ -119,7 +114,7 @@ def process(text, user_id, group_id, line_api):
     if t in ['مساعدة', 'help', 'مساعده']:
         return FlexMessage(alt_text="المساعدة", contents=FlexContainer.from_dict(UI.help_card(theme)))
     
-    if t in ['العاب', 'ألعاب', 'الالعاب', 'العاب']:
+    if t in ['العاب', 'ألعاب', 'الالعاب']:
         return FlexMessage(alt_text="الالعاب", contents=FlexContainer.from_dict(UI.games_menu(theme)))
     
     if t in ['تسجيل', 'تغيير']:
@@ -130,7 +125,7 @@ def process(text, user_id, group_id, line_api):
     
     if t == 'نقاطي':
         if not user:
-            msg = TextMessage(text="يجب التسجيل اولا\nاكتب: تسجيل")
+            msg = TextMessage(text="يجب التسجيل اولا اكتب تسجيل")
             msg.quick_reply = UI.get_quick_reply()
             return msg
         DB.update_activity(user_id)
