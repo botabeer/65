@@ -123,11 +123,12 @@ class LetterGame(BaseGame):
         self.letters = list(self.questions_db.keys())
         random.shuffle(self.letters)
         
+        # استخدام قاموس لتتبع الأسئلة المستخدمة لكل حرف
+        self.used_questions = {letter: [] for letter in self.letters}
+        
         # متغيرات اللعبة
         self.current_letter = None
         self.current_question_data = None
-        # استخدام قاموس بدلا من set للأسئلة المستخدمة
-        self.used_questions = {letter: [] for letter in self.letters}
 
     def get_question(self):
         """الحصول على السؤال التالي"""
@@ -136,20 +137,21 @@ class LetterGame(BaseGame):
         self.current_letter = self.letters[letter_idx]
         
         # الحصول على الأسئلة المتاحة لهذا الحرف
-        available_questions = [
-            q for i, q in enumerate(self.questions_db[self.current_letter])
+        available_indices = [
+            i for i in range(len(self.questions_db[self.current_letter]))
             if i not in self.used_questions[self.current_letter]
         ]
         
         # إعادة تعيين الأسئلة المستخدمة إذا انتهت
-        if not available_questions:
+        if not available_indices:
             self.used_questions[self.current_letter] = []
-            available_questions = self.questions_db[self.current_letter]
+            available_indices = list(range(len(self.questions_db[self.current_letter])))
         
         # اختيار سؤال عشوائي
-        self.current_question_data = random.choice(available_questions)
-        question_idx = self.questions_db[self.current_letter].index(self.current_question_data)
+        question_idx = random.choice(available_indices)
         self.used_questions[self.current_letter].append(question_idx)
+        
+        self.current_question_data = self.questions_db[self.current_letter][question_idx]
         
         # تعيين الإجابات الصحيحة
         self.current_answer = self.current_question_data['a']
