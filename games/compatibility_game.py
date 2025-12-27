@@ -29,7 +29,7 @@ class CompatibilityGame(BaseGame):
         n2 = self.normalize_text(name2)
         combined = ''.join(sorted([n1, n2]))
         seed = sum(ord(c)*(i+1) for i,c in enumerate(combined))
-        return (seed % 81) + 20  # من 20% إلى 100%
+        return (seed % 81) + 20
 
     def get_message_text(self, percentage):
         if percentage >= 90: return "توافق ممتاز جدا"
@@ -54,27 +54,93 @@ class CompatibilityGame(BaseGame):
         c = self.get_theme_colors()
         bubble = {
             "type": "bubble",
+            "size": "mega",
             "body": {
-                "type": "box", "layout": "vertical",
+                "type": "box", 
+                "layout": "vertical",
+                "paddingAll": "20px",
+                "backgroundColor": c["bg"],
                 "contents": [
-                    {"type": "text", "text": self.game_name, "size": "xl", "weight": "bold", "align": "center", "color": c["primary"]},
-                    {"type": "separator", "margin": "lg", "color": c["border"]},
-                    {"type": "text", "text": "احسب نسبة التوافق بين شخصين", "size": "md", "color": c["text"], "align": "center", "margin": "lg"},
-                    {"type": "text", "text": "ادخل اسمين بينهما 'و'", "size": "sm", "color": c["text2"], "align": "center", "wrap": True, "margin": "sm"},
-                    {"type": "box", "layout": "vertical", "contents":[
-                        {"type":"text","text":"مثال: احمد و سارة","size":"xs","color":c["text3"],"align":"center"}
-                    ], "backgroundColor": c["card"], "cornerRadius":"8px", "paddingAll":"12px", "margin":"md"},
-                    {"type":"separator","margin":"lg","color":c["border"]},
-                    {"type":"text","text":"ملاحظة: اللعبة للترفيه فقط","size":"xxs","color":c["text3"],"align":"center","margin":"md"}
-                ],
-                "paddingAll":"20px","backgroundColor":c["bg"]
+                    {
+                        "type": "text", 
+                        "text": self.game_name, 
+                        "size": "xl", 
+                        "weight": "bold", 
+                        "align": "center", 
+                        "color": c["primary"]
+                    },
+                    {
+                        "type": "separator", 
+                        "margin": "lg", 
+                        "color": c["border"]
+                    },
+                    {
+                        "type": "text", 
+                        "text": "احسب نسبة التوافق بين شخصين", 
+                        "size": "md", 
+                        "color": c["text"], 
+                        "align": "center", 
+                        "margin": "lg"
+                    },
+                    {
+                        "type": "text", 
+                        "text": "ادخل اسمين بينهما 'و'", 
+                        "size": "sm", 
+                        "color": c["text2"], 
+                        "align": "center", 
+                        "wrap": True, 
+                        "margin": "sm"
+                    },
+                    {
+                        "type": "box", 
+                        "layout": "vertical", 
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": "مثال: اسم و اسم",
+                                "size": "xs",
+                                "color": c["text3"],
+                                "align": "center"
+                            }
+                        ], 
+                        "backgroundColor": c["card"], 
+                        "cornerRadius": "8px", 
+                        "paddingAll": "12px", 
+                        "margin": "md"
+                    },
+                    {
+                        "type": "separator",
+                        "margin": "lg",
+                        "color": c["border"]
+                    },
+                    {
+                        "type": "text",
+                        "text": "ملاحظة: اللعبة للترفيه فقط",
+                        "size": "xxs",
+                        "color": c["text3"],
+                        "align": "center",
+                        "margin": "md"
+                    }
+                ]
             },
             "footer": {
-                "type":"box","layout":"vertical",
-                "contents":[
-                    {"type":"button","action":{"type":"message","label":"ايقاف","text":"ايقاف"},"style":"secondary","height":"sm","color":c["text2"]}
-                ],
-                "paddingAll":"12px","backgroundColor":c["card"]
+                "type": "box",
+                "layout": "vertical",
+                "paddingAll": "12px",
+                "backgroundColor": c["card"],
+                "contents": [
+                    {
+                        "type": "button",
+                        "action": {
+                            "type": "message",
+                            "label": "ايقاف",
+                            "text": "ايقاف"
+                        },
+                        "style": "secondary",
+                        "height": "sm",
+                        "color": self.BUTTON_COLOR
+                    }
+                ]
             }
         }
         return FlexMessage(alt_text="توافق", contents=FlexContainer.from_dict(bubble))
@@ -100,40 +166,154 @@ class CompatibilityGame(BaseGame):
         color = self.get_message_color(percentage)
         c = self.get_theme_colors()
 
-        # شريط التوافق البصري
         progress_width = f"{percentage}%"
 
         bubble = {
-            "type":"bubble",
-            "body":{
-                "type":"box","layout":"vertical",
-                "contents":[
-                    {"type":"text","text":"نتيجة التوافق","size":"xl","weight":"bold","color":c["primary"],"align":"center"},
-                    {"type":"separator","margin":"lg","color":c["border"]},
-                    {"type":"box","layout":"vertical","contents":[
-                        {"type":"text","text":name1,"size":"lg","color":c["text"],"align":"center","weight":"bold"},
-                        {"type":"text","text":"و","size":"sm","color":c["text2"],"align":"center","margin":"sm"},
-                        {"type":"text","text":name2,"size":"lg","color":c["text"],"align":"center","weight":"bold","margin":"sm"}
-                    ],"backgroundColor":c["card"],"cornerRadius":"12px","paddingAll":"16px","margin":"lg"},
-                    {"type":"box","layout":"vertical","contents":[
-                        {"type":"text","text":f"{percentage}% - {message_text}","size":"md","weight":"bold","color":color,"align":"center"},
-                        {"type":"box","layout":"horizontal","contents":[
-                            {"type":"box","layout":"vertical","contents":[],"backgroundColor":color,"width":progress_width,"height":"8px","cornerRadius":"4px"}
-                        ], "height":"8px","backgroundColor":c["border"],"cornerRadius":"4px","margin":"sm"}
-                    ],"margin":"lg"},
-                    {"type":"separator","margin":"lg","color":c["border"]},
-                    {"type":"text","text":f"ملاحظة: نفس النتيجة لو كتبت {name2} و {name1}","size":"xxs","color":c["text3"],"align":"center","wrap":True,"margin":"md"}
-                ],
-                "paddingAll":"20px","backgroundColor":c["bg"]
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "paddingAll": "20px",
+                "backgroundColor": c["bg"],
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "نتيجة التوافق",
+                        "size": "xl",
+                        "weight": "bold",
+                        "color": c["primary"],
+                        "align": "center"
+                    },
+                    {
+                        "type": "separator",
+                        "margin": "lg",
+                        "color": c["border"]
+                    },
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "margin": "lg",
+                        "backgroundColor": c["card"],
+                        "cornerRadius": "12px",
+                        "paddingAll": "16px",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": name1,
+                                "size": "lg",
+                                "color": c["text"],
+                                "align": "center",
+                                "weight": "bold"
+                            },
+                            {
+                                "type": "text",
+                                "text": "و",
+                                "size": "sm",
+                                "color": c["text2"],
+                                "align": "center",
+                                "margin": "sm"
+                            },
+                            {
+                                "type": "text",
+                                "text": name2,
+                                "size": "lg",
+                                "color": c["text"],
+                                "align": "center",
+                                "weight": "bold",
+                                "margin": "sm"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "margin": "lg",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": f"{percentage}% - {message_text}",
+                                "size": "md",
+                                "weight": "bold",
+                                "color": color,
+                                "align": "center"
+                            },
+                            {
+                                "type": "box",
+                                "layout": "horizontal",
+                                "margin": "sm",
+                                "contents": [
+                                    {
+                                        "type": "box",
+                                        "layout": "vertical",
+                                        "contents": [],
+                                        "backgroundColor": color,
+                                        "width": progress_width,
+                                        "height": "8px",
+                                        "cornerRadius": "4px"
+                                    }
+                                ],
+                                "height": "8px",
+                                "backgroundColor": c["border"],
+                                "cornerRadius": "4px"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "separator",
+                        "margin": "lg",
+                        "color": c["border"]
+                    },
+                    {
+                        "type": "text",
+                        "text": f"ملاحظة: نفس النتيجة لو كتبت {name2} و {name1}",
+                        "size": "xxs",
+                        "color": c["text3"],
+                        "align": "center",
+                        "wrap": True,
+                        "margin": "md"
+                    }
+                ]
             },
-            "footer":{
-                "type":"box","layout":"horizontal","contents":[
-                    {"type":"button","action":{"type":"message","label":"اعادة","text":"توافق"},"style":"primary","height":"sm","color":c["primary"]},
-                    {"type":"button","action":{"type":"message","label":"ايقاف","text":"ايقاف"},"style":"secondary","height":"sm","color":c["text2"]}
-                ],
-                "spacing":"sm","paddingAll":"12px","backgroundColor":c["card"]
+            "footer": {
+                "type": "box",
+                "layout": "horizontal",
+                "spacing": "sm",
+                "paddingAll": "12px",
+                "backgroundColor": c["card"],
+                "contents": [
+                    {
+                        "type": "button",
+                        "action": {
+                            "type": "message",
+                            "label": "اعادة",
+                            "text": "توافق"
+                        },
+                        "style": "primary",
+                        "height": "sm",
+                        "color": self.BUTTON_COLOR
+                    },
+                    {
+                        "type": "button",
+                        "action": {
+                            "type": "message",
+                            "label": "ايقاف",
+                            "text": "ايقاف"
+                        },
+                        "style": "secondary",
+                        "height": "sm",
+                        "color": self.BUTTON_COLOR
+                    }
+                ]
             }
         }
 
         self.game_active = False
-        return {"response": FlexMessage(alt_text="نتيجة التوافق", contents=FlexContainer.from_dict(bubble)), "points":0, "game_over":True}
+        return {
+            "response": FlexMessage(
+                alt_text="نتيجة التوافق", 
+                contents=FlexContainer.from_dict(bubble)
+            ), 
+            "points": 0, 
+            "game_over": True
+        }
