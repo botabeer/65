@@ -11,7 +11,6 @@ import sys
 import logging
 from datetime import datetime
 
-# إعداد السجلات
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
@@ -20,7 +19,6 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# تحميل بيانات الاعتماد
 LINE_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN')
 LINE_SECRET = os.getenv('LINE_CHANNEL_SECRET')
 
@@ -31,7 +29,6 @@ if not LINE_TOKEN or not LINE_SECRET:
 configuration = Configuration(access_token=LINE_TOKEN)
 handler = WebhookHandler(LINE_SECRET)
 
-# استيراد المكونات
 from database import DB
 from ui import UI
 from text_commands import TextCommands
@@ -41,16 +38,13 @@ from games import (
     ScrambleGame, MafiaGame, WordColorGame, RouletteGame, LetterGame
 )
 
-# تهيئة قاعدة البيانات والأوامر
 DB.init()
 TextCommands.load_all()
 
-# متغيرات اللعبة
 game_sessions = {}
 waiting_for_name = set()
 user_themes = {}
 
-# خريطة الأوامر النصية
 TEXT_COMMANDS = {
     'سؤال': 'questions',
     'منشن': 'mentions',
@@ -64,7 +58,6 @@ TEXT_COMMANDS = {
     'نصيحة': 'advice'
 }
 
-# خريطة الألعاب
 GAME_MAP = {
     'فئه': CategoryGame,
     'اسرع': FastGame,
@@ -83,7 +76,6 @@ GAME_MAP = {
 
 @app.route("/callback", methods=['POST'])
 def callback():
-    """معالج الويب هوك"""
     signature = request.headers.get('X-Line-Signature', '')
     body = request.get_data(as_text=True)
     
@@ -99,7 +91,6 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
-    """معالج الرسائل"""
     with ApiClient(configuration) as api_client:
         line_api = MessagingApi(api_client)
         user_id = event.source.user_id
@@ -120,23 +111,19 @@ def handle_message(event):
             logger.error(f"خطأ في معالجة الرسالة: {e}", exc_info=True)
 
 def process_message(text, user_id, group_id, line_api):
-    """معالجة الرسائل"""
     normalized_text = text.lower().strip()
     user = DB.get_user(user_id)
     theme = user_themes.get(user_id, user['theme'] if user else 'light')
     
-    # معالجة انتظار الاسم
     if user_id in waiting_for_name:
         return handle_name_registration(text, user_id)
     
-    # الأوامر النصية
     if normalized_text in TEXT_COMMANDS:
         content = TextCommands.get_random(TEXT_COMMANDS[normalized_text])
         msg = TextMessage(text=content)
         msg.quick_reply = UI.get_quick_reply()
         return msg
     
-    # أوامر القائمة الرئيسية
     if normalized_text in ['بداية', 'start', 'ابدا']:
         if user:
             DB.update_activity(user_id)
@@ -154,7 +141,6 @@ def process_message(text, user_id, group_id, line_api):
             contents=FlexContainer.from_dict(UI.games_menu(theme))
         )
     
-    # أوامر المستخدم
     if normalized_text in ['تسجيل', 'تغيير']:
         waiting_for_name.add(user_id)
         msg = TextMessage(text="اكتب اسمك الان")
@@ -186,26 +172,21 @@ def process_message(text, user_id, group_id, line_api):
         theme_name = 'الداكن' if new_theme == 'dark' else 'الفاتح'
         return create_success_message(f"تم التغيير للثيم {theme_name}")
     
-    # أوامر اللعبة
     if normalized_text in ['ايقاف', 'انسحب']:
         return handle_game_stop(group_id, user_id, user, normalized_text, theme)
     
-    # التحقق من تسجيل المستخدم قبل اللعب
     if not user:
         return None
     
-    # بدء لعبة جديدة
     if normalized_text in GAME_MAP:
         return start_game(normalized_text, group_id, line_api, theme)
     
-    # معالجة إجابات اللعبة
     if group_id in game_sessions:
         return handle_game_answer(group_id, text, user_id, user)
     
     return None
 
 def handle_name_registration(name, user_id):
-    """معالجة تسجيل الاسم"""
     name = name.strip()
     if 1 <= len(name) <= 20:
         DB.register_user(user_id, name)
@@ -224,7 +205,6 @@ def handle_name_registration(name, user_id):
     return create_error_message("الاسم يجب ان يكون بين 1 و 20 حرف")
 
 def create_welcome_message(user, theme):
-    """إنشاء رسالة الترحيب"""
     name = user['name'] if user else 'مستخدم'
     is_registered = bool(user)
     msg = FlexMessage(
@@ -237,19 +217,16 @@ def create_welcome_message(user, theme):
     return msg
 
 def create_error_message(text):
-    """إنشاء رسالة خطأ"""
     msg = TextMessage(text=text)
     msg.quick_reply = UI.get_quick_reply()
     return msg
 
 def create_success_message(text):
-    """إنشاء رسالة نجاح"""
     msg = TextMessage(text=text)
     msg.quick_reply = UI.get_quick_reply()
     return msg
 
 def handle_game_stop(group_id, user_id, user, command, theme):
-    """معالجة إيقاف اللعبة"""
     if group_id in game_sessions:
         game = game_sessions[group_id]
         if command == 'انسحب' and user:
@@ -265,7 +242,6 @@ def handle_game_stop(group_id, user_id, user, command, theme):
     return None
 
 def start_game(game_type, group_id, line_api, theme):
-    """بدء لعبة جديدة"""
     try:
         game_class = GAME_MAP[game_type]
         game = game_class(line_api, theme=theme)
@@ -276,7 +252,6 @@ def start_game(game_type, group_id, line_api, theme):
         return create_error_message("حدث خطأ في بدء اللعبة")
 
 def handle_game_answer(group_id, text, user_id, user):
-    """معالجة إجابة اللعبة"""
     game = game_sessions[group_id]
     
     if user_id in game.withdrawn_users:
@@ -287,9 +262,20 @@ def handle_game_answer(group_id, text, user_id, user):
     if not result:
         return None
     
+    # التعامل مع النتائج المختلفة
+    # إذا كان result رسالة مباشرة (TextMessage أو FlexMessage)
+    if isinstance(result, (TextMessage, FlexMessage)):
+        return result
+    
+    # إذا كان result قاموس
+    if not isinstance(result, dict):
+        return None
+    
+    # التحقق من الانسحاب
     if result.get('withdrawn'):
         return None
     
+    # التحقق من نهاية اللعبة
     if result.get('game_over'):
         if group_id in game_sessions:
             del game_sessions[group_id]
@@ -303,7 +289,6 @@ def handle_game_answer(group_id, text, user_id, user):
 
 @app.route('/health')
 def health():
-    """نقطة فحص الصحة"""
     return jsonify({
         'status': 'ok',
         'time': datetime.now().isoformat()
@@ -311,7 +296,6 @@ def health():
 
 @app.route('/')
 def index():
-    """الصفحة الرئيسية"""
     return "Bot 65 - Running", 200
 
 if __name__ == "__main__":
