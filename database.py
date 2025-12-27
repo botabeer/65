@@ -7,7 +7,8 @@ from contextlib import contextmanager
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = os.getenv("DB_PATH", "bot65.db")
+# استخدام مسار ثابت في /opt/render/project/src للحفظ الدائم
+DB_PATH = os.getenv("DB_PATH", "/opt/render/project/src/data/bot65.db")
 
 class DB:
     _lock = Lock()
@@ -17,7 +18,14 @@ class DB:
     @staticmethod
     @contextmanager
     def conn():
-        os.makedirs(os.path.dirname(DB_PATH) if os.path.dirname(DB_PATH) else '.', exist_ok=True)
+        # إنشاء المجلد إذا لم يكن موجود
+        db_dir = os.path.dirname(DB_PATH)
+        if db_dir and not os.path.exists(db_dir):
+            try:
+                os.makedirs(db_dir, exist_ok=True)
+                logger.info(f"تم إنشاء مجلد قاعدة البيانات: {db_dir}")
+            except Exception as e:
+                logger.error(f"فشل إنشاء مجلد قاعدة البيانات: {e}")
         
         c = None
         with DB._lock:
@@ -79,9 +87,9 @@ class DB:
                 
                 c.execute('PRAGMA foreign_keys = ON')
 
-            logger.info("Database initialized successfully")
+            logger.info(f"تم تهيئة قاعدة البيانات بنجاح في: {DB_PATH}")
         except Exception as e:
-            logger.error(f"Failed to initialize database: {e}")
+            logger.error(f"فشل تهيئة قاعدة البيانات: {e}")
             raise
     
     @staticmethod
@@ -91,7 +99,7 @@ class DB:
                 row = c.execute('SELECT * FROM users WHERE user_id = ?', (user_id,)).fetchone()
                 return dict(row) if row else None
         except Exception as e:
-            logger.error(f"Error getting user {user_id}: {e}")
+            logger.error(f"خطأ في جلب المستخدم {user_id}: {e}")
             return None
     
     @staticmethod
@@ -103,10 +111,10 @@ class DB:
                             name = excluded.name, 
                             activity = CURRENT_TIMESTAMP''',
                          (user_id, name))
-            logger.info(f"User registered: {user_id} - {name}")
+            logger.info(f"تم تسجيل المستخدم: {user_id} - {name}")
             return True
         except Exception as e:
-            logger.error(f"Error registering user {user_id}: {e}")
+            logger.error(f"خطأ في تسجيل المستخدم {user_id}: {e}")
             return False
     
     @staticmethod
@@ -116,7 +124,7 @@ class DB:
                 c.execute('UPDATE users SET activity = CURRENT_TIMESTAMP WHERE user_id = ?', 
                          (user_id,))
         except Exception as e:
-            logger.error(f"Error updating activity for {user_id}: {e}")
+            logger.error(f"خطأ في تحديث نشاط المستخدم {user_id}: {e}")
     
     @staticmethod
     def add_points(user_id, points, won, game_name):
@@ -134,10 +142,10 @@ class DB:
                             VALUES (?, ?, ?, ?)''',
                          (user_id, game_name, points, 1 if won else 0))
             
-            logger.info(f"Points added for {user_id}: {points} ({game_name})")
+            logger.info(f"تمت إضافة نقاط للمستخدم {user_id}: {points} ({game_name})")
             return True
         except Exception as e:
-            logger.error(f"Error adding points for {user_id}: {e}")
+            logger.error(f"خطأ في إضافة نقاط للمستخدم {user_id}: {e}")
             return False
     
     @staticmethod
@@ -152,7 +160,7 @@ class DB:
                                 (limit,)).fetchall()
                 return [dict(row) for row in rows]
         except Exception as e:
-            logger.error(f"Error getting leaderboard: {e}")
+            logger.error(f"خطأ في جلب قائمة المتصدرين: {e}")
             return []
     
     @staticmethod
@@ -162,10 +170,10 @@ class DB:
                 c.execute('''UPDATE users SET theme = ?, activity = CURRENT_TIMESTAMP 
                             WHERE user_id = ?''', 
                          (theme, user_id))
-            logger.info(f"Theme updated for {user_id}: {theme}")
+            logger.info(f"تم تحديث الثيم للمستخدم {user_id}: {theme}")
             return True
         except Exception as e:
-            logger.error(f"Error setting theme for {user_id}: {e}")
+            logger.error(f"خطأ في تعيين الثيم للمستخدم {user_id}: {e}")
             return False
     
     @staticmethod
