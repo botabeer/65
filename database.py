@@ -7,8 +7,11 @@ from contextlib import contextmanager
 
 logger = logging.getLogger(__name__)
 
-# استخدام مسار ثابت في /opt/render/project/src للحفظ الدائم
-DB_PATH = os.getenv("DB_PATH", "/opt/render/project/src/data/bot65.db")
+# Smart DB path handling
+if os.getenv("RENDER"):
+    DB_PATH = "/opt/render/project/src/data/bot65.db"
+else:
+    DB_PATH = os.getenv("DB_PATH", "data/bot65.db")
 
 class DB:
     _lock = Lock()
@@ -19,14 +22,13 @@ class DB:
     @staticmethod
     @contextmanager
     def conn():
-        # انشاء المجلد اذا لم يكن موجود
         db_dir = os.path.dirname(DB_PATH)
         if db_dir and not os.path.exists(db_dir):
             try:
                 os.makedirs(db_dir, exist_ok=True)
-                logger.info(f"تم انشاء مجلد قاعدة البيانات: {db_dir}")
+                logger.info(f"Created database directory: {db_dir}")
             except Exception as e:
-                logger.error(f"فشل انشاء مجلد قاعدة البيانات: {e}")
+                logger.error(f"Failed to create DB directory: {e}")
         
         c = None
         with DB._lock:
@@ -59,7 +61,7 @@ class DB:
     def init():
         try:
             with DB.conn() as c:
-                # جدول المستخدمين
+                # Users table
                 c.execute('''CREATE TABLE IF NOT EXISTS users (
                     user_id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -71,7 +73,7 @@ class DB:
                     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )''')
 
-                # جدول التاريخ
+                # History table
                 c.execute('''CREATE TABLE IF NOT EXISTS history (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT,
@@ -82,7 +84,7 @@ class DB:
                     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
                 )''')
 
-                # الفهارس
+                # Indexes
                 c.execute('CREATE INDEX IF NOT EXISTS idx_points ON users(points DESC)')
                 c.execute('CREATE INDEX IF NOT EXISTS idx_activity ON users(activity DESC)')
                 c.execute('CREATE INDEX IF NOT EXISTS idx_history_user ON history(user_id)')
@@ -92,15 +94,14 @@ class DB:
                 
                 c.execute('PRAGMA foreign_keys = ON')
                 
-                # التحقق من وجود بيانات
                 row = c.execute('SELECT COUNT(*) as count FROM users').fetchone()
                 user_count = row['count'] if row else 0
 
             DB._initialized = True
-            logger.info(f"تم تهيئة قاعدة البيانات بنجاح في: {DB_PATH}")
-            logger.info(f"عدد المستخدمين المسجلين: {user_count}")
+            logger.info(f"Database initialized at: {DB_PATH}")
+            logger.info(f"Registered users: {user_count}")
         except Exception as e:
-            logger.error(f"فشل تهيئة قاعدة البيانات: {e}")
+            logger.error(f"Database init failed: {e}")
             raise
     
     @staticmethod
@@ -110,29 +111,26 @@ class DB:
                 row = c.execute('SELECT * FROM users WHERE user_id = ?', (user_id,)).fetchone()
                 return dict(row) if row else None
         except Exception as e:
-            logger.error(f"خطأ في جلب المستخدم {user_id}: {e}")
+            logger.error(f"Error fetching user {user_id}: {e}")
             return None
     
     @staticmethod
     def register_user(user_id, name):
         try:
             with DB.conn() as c:
-                # التحقق من وجود المستخدم
                 existing = c.execute('SELECT user_id FROM users WHERE user_id = ?', (user_id,)).fetchone()
                 
                 if existing:
-                    # تحديث الاسم فقط
                     c.execute('''UPDATE users SET name = ?, activity = CURRENT_TIMESTAMP 
                                 WHERE user_id = ?''', (name, user_id))
-                    logger.info(f"تم تحديث اسم المستخدم: {user_id} - {name}")
+                    logger.info(f"Updated user: {user_id} - {name}")
                 else:
-                    # تسجيل جديد
                     c.execute('''INSERT INTO users (user_id, name) VALUES (?, ?)''',
                              (user_id, name))
-                    logger.info(f"تم تسجيل مستخدم جديد: {user_id} - {name}")
+                    logger.info(f"Registered new user: {user_id} - {name}")
             return True
         except Exception as e:
-            logger.error(f"خطأ في تسجيل المستخدم {user_id}: {e}")
+            logger.error(f"Error registering user {user_id}: {e}")
             return False
     
     @staticmethod
@@ -142,7 +140,7 @@ class DB:
                 c.execute('UPDATE users SET activity = CURRENT_TIMESTAMP WHERE user_id = ?', 
                          (user_id,))
         except Exception as e:
-            logger.error(f"خطأ في تحديث نشاط المستخدم {user_id}: {e}")
+            logger.error(f"Error updating activity {user_id}: {e}")
     
     @staticmethod
     def add_points(user_id, points, won, game_name):
@@ -160,10 +158,10 @@ class DB:
                             VALUES (?, ?, ?, ?)''',
                          (user_id, game_name, points, 1 if won else 0))
             
-            logger.info(f"تمت اضافة نقاط للمستخدم {user_id}: {points} ({game_name})")
+            logger.info(f"Added points to {user_id}: {points} ({game_name})")
             return True
         except Exception as e:
-            logger.error(f"خطأ في اضافة نقاط للمستخدم {user_id}: {e}")
+            logger.error(f"Error adding points to {user_id}: {e}")
             return False
     
     @staticmethod
@@ -178,7 +176,7 @@ class DB:
                                 (limit,)).fetchall()
                 return [dict(row) for row in rows]
         except Exception as e:
-            logger.error(f"خطأ في جلب قائمة المتصدرين: {e}")
+            logger.error(f"Error fetching leaderboard: {e}")
             return []
     
     @staticmethod
@@ -188,10 +186,10 @@ class DB:
                 c.execute('''UPDATE users SET theme = ?, activity = CURRENT_TIMESTAMP 
                             WHERE user_id = ?''', 
                          (theme, user_id))
-            logger.info(f"تم تحديث الثيم للمستخدم {user_id}: {theme}")
+            logger.info(f"Updated theme for {user_id}: {theme}")
             return True
         except Exception as e:
-            logger.error(f"خطأ في تعيين الثيم للمستخدم {user_id}: {e}")
+            logger.error(f"Error setting theme for {user_id}: {e}")
             return False
     
     @staticmethod
@@ -200,34 +198,66 @@ class DB:
         return user['theme'] if user else 'light'
     
     @staticmethod
+    def cleanup_inactive_users(days=7):
+        """Remove users inactive for specified days"""
+        try:
+            cutoff_date = datetime.now() - timedelta(days=days)
+            with DB.conn() as c:
+                # Delete history first (foreign key)
+                c.execute('''DELETE FROM history WHERE user_id IN (
+                            SELECT user_id FROM users 
+                            WHERE activity < ?
+                        )''', (cutoff_date,))
+                
+                # Delete inactive users
+                result = c.execute('''DELETE FROM users 
+                                     WHERE activity < ?''', 
+                                  (cutoff_date,))
+                deleted = result.rowcount
+            
+            logger.info(f"Cleaned up {deleted} inactive users (older than {days} days)")
+            return deleted
+        except Exception as e:
+            logger.error(f"Cleanup error: {e}")
+            return 0
+    
+    @staticmethod
     def backup_database():
-        """عمل نسخة احتياطية من قاعدة البيانات"""
+        """Create database backup"""
         try:
             import shutil
             backup_path = DB_PATH + '.backup'
             shutil.copy2(DB_PATH, backup_path)
-            logger.info(f"تم عمل نسخة احتياطية: {backup_path}")
+            logger.info(f"Backup created: {backup_path}")
             return True
         except Exception as e:
-            logger.error(f"فشل عمل نسخة احتياطية: {e}")
+            logger.error(f"Backup failed: {e}")
             return False
     
     @staticmethod
     def get_stats():
-        """احصائيات قاعدة البيانات"""
+        """Get database statistics"""
         try:
             with DB.conn() as c:
                 users_count = c.execute('SELECT COUNT(*) as count FROM users').fetchone()['count']
                 games_count = c.execute('SELECT COUNT(*) as count FROM history').fetchone()['count']
                 total_points = c.execute('SELECT SUM(points) as total FROM users').fetchone()['total'] or 0
                 
+                # Get inactive users count (7 days)
+                cutoff = datetime.now() - timedelta(days=7)
+                inactive_count = c.execute(
+                    'SELECT COUNT(*) as count FROM users WHERE activity < ?', 
+                    (cutoff,)
+                ).fetchone()['count']
+                
                 return {
                     'users': users_count,
                     'games': games_count,
                     'total_points': total_points,
+                    'inactive_users': inactive_count,
                     'db_path': DB_PATH,
                     'db_size': os.path.getsize(DB_PATH) if os.path.exists(DB_PATH) else 0
                 }
         except Exception as e:
-            logger.error(f"خطأ في جلب الاحصائيات: {e}")
+            logger.error(f"Error getting stats: {e}")
             return None
