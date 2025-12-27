@@ -37,7 +37,7 @@ env/
 .env
 .env.local
 
-# Database
+# Database (محلي فقط)
 *.db
 *.db-shm
 *.db-wal
@@ -53,7 +53,7 @@ logs/
 .DS_Store
 Thumbs.db
 
-# Data
+# Data folder للتطوير المحلي فقط
 data/
 
 # Testing
