@@ -7,31 +7,30 @@ class GuessGame(BaseGame):
         super().__init__(line_bot_api, game_type="competitive", difficulty=difficulty, theme=theme)
         self.game_name = "خمن"
         
-        # بيانات الأسئلة مقسمة حسب المستوى
         self.items_by_level = {
-            1: {  # سهل جداً
+            1: {
                 "المطبخ": {"ق": ["قدر"], "م": ["ملعقة"], "ك": ["كوب"]},
                 "الحيوانات": {"ق": ["قطة"], "ك": ["كلب"]}
             },
-            2: {  # سهل
+            2: {
                 "المطبخ": {"ق": ["قدر"], "م": ["ملعقة"], "س": ["سكين"], "ك": ["كوب"]},
                 "الحيوانات": {"ق": ["قطة"], "ك": ["كلب"], "ح": ["حمار"]},
                 "الفواكه": {"ت": ["تفاح"], "م": ["موز"]}
             },
-            3: {  # متوسط
+            3: {
                 "المطبخ": {"ق": ["قدر"], "م": ["ملعقة"], "س": ["سكين"], "ك": ["كوب"], "ص": ["صحن"]},
                 "غرفة النوم": {"س": ["سرير"], "و": ["وسادة"], "م": ["مراة"]},
                 "الفواكه": {"ت": ["تفاح"], "م": ["موز"], "ع": ["عنب"]},
                 "الحيوانات": {"ق": ["قطة"], "ف": ["فيل"], "ا": ["اسد"]}
             },
-            4: {  # صعب
+            4: {
                 "المطبخ": {"ق": ["قدر", "قلاية"], "م": ["ملعقة", "مقلاة"], "س": ["سكين"]},
                 "غرفة النوم": {"س": ["سرير"], "و": ["وسادة"], "م": ["مراة", "مخدة"]},
                 "المدرسة": {"ق": ["قلم"], "د": ["دفتر"], "ك": ["كتاب"], "م": ["مسطرة"]},
                 "الفواكه": {"ت": ["تفاح", "توت"], "م": ["موز"], "ع": ["عنب"], "ب": ["برتقال"]},
                 "البلاد": {"س": ["سعودية"], "م": ["مصر"], "ع": ["عمان"]}
             },
-            5: {  # صعب جداً
+            5: {
                 "المطبخ": {"ق": ["قدر", "قلاية"], "م": ["ملعقة", "مقلاة", "مغرفة"], "ط": ["طنجرة"]},
                 "غرفة النوم": {"س": ["سرير"], "و": ["وسادة"], "م": ["مراة", "مخدة"], "ل": ["لحاف"]},
                 "المدرسة": {"ق": ["قلم"], "د": ["دفتر"], "ك": ["كتاب"], "م": ["مسطرة", "ممحاة"], "ب": ["براية"]},
@@ -46,7 +45,6 @@ class GuessGame(BaseGame):
         self._build_questions_pool()
     
     def _build_questions_pool(self):
-        """بناء مجموعة الأسئلة من جميع المستويات"""
         for level in range(1, 6):
             items = self.items_by_level.get(level, self.items_by_level[3])
             for category, letters in items.items():
@@ -62,19 +60,16 @@ class GuessGame(BaseGame):
     
     def get_question(self):
         self.round_start_time = time.time()
-        current_level = self.get_current_difficulty()
+        current_level = 3
         
-        # البحث عن سؤال بالمستوى الحالي لم يتم استخدامه
         available = [q for q in self.questions_pool 
                     if q["id"] not in self.used_questions and q["level"] == current_level]
         
-        # إذا لم توجد أسئلة بهذا المستوى، نأخذ من مستويات قريبة
         if not available:
             available = [q for q in self.questions_pool 
                         if q["id"] not in self.used_questions and 
                         abs(q["level"] - current_level) <= 1]
         
-        # إذا انتهت جميع الأسئلة
         if not available:
             self.used_questions.clear()
             available = [q for q in self.questions_pool if q["level"] == current_level]
@@ -86,10 +81,7 @@ class GuessGame(BaseGame):
         self.used_questions.add(q["id"])
         self.current_answer = q["answers"]
         
-        return self.build_question_message(
-            f"الفئة: {q['category']}",
-            f"يبدأ بحرف: {q['letter']}"
-        )
+        return self.build_question_message(f"الفئة: {q['category']}", f"يبدأ بحرف: {q['letter']}")
     
     def check_answer(self, user_answer, user_id, display_name):
         if not self.game_active or user_id in self.withdrawn_users:
@@ -110,7 +102,7 @@ class GuessGame(BaseGame):
             return {"response": self.build_text_message(hint_text), "points": 0}
         
         if self.supports_reveal and normalized == "جاوب":
-            answers = " أو ".join(self.current_answer)
+            answers = " او ".join(self.current_answer)
             self.previous_answer = answers
             self.current_question += 1
             self.answered_users.clear()
@@ -118,11 +110,7 @@ class GuessGame(BaseGame):
             if self.current_question >= self.questions_count:
                 return self.end_game()
             
-            return {
-                "response": self.get_question(),
-                "points": 0,
-                "next_question": True
-            }
+            return {"response": self.get_question(), "points": 0, "next_question": True}
         
         for correct in self.current_answer:
             if self.normalize_text(correct) == normalized:
@@ -140,10 +128,6 @@ class GuessGame(BaseGame):
                     result["points"] = earned
                     return result
                 
-                return {
-                    "response": self.get_question(),
-                    "points": earned,
-                    "next_question": True
-                }
+                return {"response": self.get_question(), "points": earned, "next_question": True}
         
         return None
