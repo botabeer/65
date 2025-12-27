@@ -16,7 +16,6 @@ class MafiaGame:
         self.vote_timeout = 40
         self.reset_game()
         
-        # ألوان الثيم
         self.themes = {
             "light": {
                 "primary": "#1C1C1E",
@@ -37,7 +36,6 @@ class MafiaGame:
         }
 
     def reset_game(self):
-        """إعادة تعيين حالة اللعبة"""
         self.game_active = False
         self.phase = "lobby"
         self.players = {}
@@ -55,17 +53,14 @@ class MafiaGame:
         self.withdrawn_users = set()
 
     def start_game(self):
-        """بدء اللعبة"""
         self.game_active = True
         self.phase = "lobby"
         return self._build_lobby_message()
     
     def get_question(self):
-        """متطلب من BaseGame - لكن Mafia لا تستخدمه"""
         return self._build_lobby_message()
 
     def join_player(self, user_id, display_name):
-        """انضمام لاعب للعبة"""
         if self.phase != "lobby":
             return TextMessage(text="اللعبة بدأت بالفعل")
         if user_id in self.players:
@@ -77,7 +72,6 @@ class MafiaGame:
         return self._build_lobby_message()
 
     def _build_lobby_message(self):
-        """بناء رسالة اللوبي"""
         count = len(self.players)
         c = self.themes[self.theme]
         player_list = []
@@ -155,8 +149,8 @@ class MafiaGame:
                         ]
                     }
                 ] + player_list + [
-                    {"type": "button", "style": "primary", "margin": "lg", "action": {"type": "message", "label": "انضمام", "text": "انضم"}, "color": c["button"], "height": "sm"},
-                    {"type": "button", "style": "secondary", "margin": "sm", "action": {"type": "message", "label": "بدء اللعبة", "text": "ابدا"}, "color": c["button"], "height": "sm"},
+                    {"type": "button", "style": "primary", "margin": "lg", "action": {"type": "message", "label": "انضم للعبة", "text": "انضم مافيا"}, "color": c["button"], "height": "sm"},
+                    {"type": "button", "style": "secondary", "margin": "sm", "action": {"type": "message", "label": "ابدأ اللعبة", "text": "ابدا مافيا"}, "color": c["button"], "height": "sm"},
                     {"type": "button", "style": "secondary", "margin": "sm", "action": {"type": "message", "label": "إلغاء", "text": "ايقاف"}, "color": c["button"], "height": "sm"}
                 ]
             }
@@ -164,7 +158,6 @@ class MafiaGame:
         return FlexMessage(alt_text="مافيا", contents=FlexContainer.from_dict(bubble))
 
     def start_mafia_game(self):
-        """بدء لعبة المافيا الفعلية"""
         if len(self.players) < self.min_players:
             return TextMessage(text=f"عدد اللاعبين غير كاف. يحتاج {self.min_players} لاعبين على الأقل")
         self._assign_roles()
@@ -182,7 +175,6 @@ class MafiaGame:
         return TextMessage(text="بدأت اللعبة! تم إرسال الأدوار للجميع في الخاص")
 
     def _assign_roles(self):
-        """توزيع الأدوار على اللاعبين"""
         ids = list(self.players.keys())
         random.shuffle(ids)
         mafia_count = max(1, len(ids) // 3)
@@ -201,7 +193,6 @@ class MafiaGame:
             self.roles[uid] = "مواطن"
 
     def _send_roles_privately(self):
-        """إرسال الأدوار للاعبين بشكل خاص"""
         for uid, role in self.roles.items():
             role_desc = {
                 "مافيا": "أنت من المافيا! اختر ضحية كل ليلة",
@@ -215,7 +206,6 @@ class MafiaGame:
                 pass
 
     def build_night_flex(self, user_id):
-        """بناء رسالة الليل"""
         role = self.roles.get(user_id)
         c = self.themes[self.theme]
         if user_id not in self.alive_players:
@@ -256,7 +246,6 @@ class MafiaGame:
         return FlexMessage(alt_text="ليل", contents=FlexContainer.from_dict(bubble))
 
     def build_vote_flex(self, voter_id):
-        """بناء رسالة التصويت"""
         c = self.themes[self.theme]
         buttons = []
         for uid in self.alive_players:
@@ -290,11 +279,10 @@ class MafiaGame:
         return FlexMessage(alt_text="تصويت", contents=FlexContainer.from_dict(bubble))
 
     def handle_message(self, user_id, text, display_name=None):
-        """معالجة رسائل اللعبة"""
         self.check_timeout()
-        if text == "انضم":
+        if text == "انضم مافيا":
             return self.join_player(user_id, display_name)
-        if text == "ابدا":
+        if text == "ابدا مافيا":
             return self.start_mafia_game()
         if text == "ايقاف":
             self.reset_game()
@@ -308,7 +296,6 @@ class MafiaGame:
         return None
 
     def handle_night_action(self, user_id, target):
-        """معالجة أفعال الليل"""
         role = self.roles.get(user_id)
         if role not in ["مافيا", "دكتور", "محقق"]:
             return TextMessage(text="ليس دورك الآن")
@@ -329,7 +316,6 @@ class MafiaGame:
         return TextMessage(text="تم تسجيل اختيارك. في انتظار باقي اللاعبين...")
 
     def _night_complete(self):
-        """التحقق من اكتمال أفعال الليل"""
         required = []
         if any(m in self.alive_players for m in self.mafia):
             required.append("مافيا")
@@ -340,7 +326,6 @@ class MafiaGame:
         return all(r in self.night_actions for r in required)
 
     def _resolve_night(self):
-        """حل أفعال الليل"""
         kill = self.night_actions.get("مافيا")
         save = self.night_actions.get("دكتور")
         killed_name = None
@@ -370,7 +355,6 @@ class MafiaGame:
         return TextMessage(text="انتهى الليل. لم يقتل أحد!")
 
     def handle_vote(self, voter, target):
-        """معالجة التصويت"""
         if voter not in self.alive_players:
             return TextMessage(text="أنت خارج اللعبة")
         if target not in self.alive_players:
@@ -383,7 +367,6 @@ class MafiaGame:
         return TextMessage(text=f"تم تسجيل تصويتك. ({len(self.votes)}/{len(self.alive_players)})")
 
     def _resolve_votes(self):
-        """حل التصويت"""
         if not self.votes:
             self.phase = "night"
             self.phase_start_time = time.time()
@@ -416,13 +399,11 @@ class MafiaGame:
         return TextMessage(text=f"تم طرد {eliminated_name} ({eliminated_role}) بـ {vote_count} صوت. بدأت ليلة جديدة")
 
     def _check_end(self):
-        """التحقق من نهاية اللعبة"""
         mafia_alive = [m for m in self.mafia if m in self.alive_players]
         citizens_alive = len(self.alive_players) - len(mafia_alive)
         return len(mafia_alive) == 0 or len(mafia_alive) >= citizens_alive
 
     def _build_end_message(self):
-        """بناء رسالة النهاية"""
         mafia_alive = [m for m in self.mafia if m in self.alive_players]
         if len(mafia_alive) == 0:
             winner = "المواطنون"
@@ -436,7 +417,6 @@ class MafiaGame:
         return TextMessage(text=result_text)
 
     def check_timeout(self):
-        """التحقق من انتهاء الوقت"""
         if not self.phase_start_time:
             return
         elapsed = time.time() - self.phase_start_time
@@ -452,5 +432,4 @@ class MafiaGame:
                 self.round_number += 1
     
     def check_answer(self, user_answer, user_id, display_name):
-        """متطلب من BaseGame"""
         return self.handle_message(user_id, user_answer, display_name)
