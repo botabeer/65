@@ -53,16 +53,12 @@ class BaseGame(ABC):
         self.used_questions = set()
 
     def normalize_text(self, text):
-        """تطبيع النص العربي"""
         if not text:
             return ""
         
         text = str(text).strip().lower()
-        
-        # إزالة التشكيل
         text = re.sub(r'[\u064B-\u065F\u0670]', '', text)
         
-        # توحيد الأحرف المتشابهة
         replacements = {
             'أ': 'ا', 'إ': 'ا', 'آ': 'ا', 'ٱ': 'ا',
             'ى': 'ي', 'ة': 'ه', 'ؤ': 'و', 'ئ': 'ي'
@@ -71,16 +67,12 @@ class BaseGame(ABC):
         for old, new in replacements.items():
             text = text.replace(old, new)
         
-        # إزالة الرموز الخاصة
         text = re.sub(r'[^\w\s]', '', text)
-        
-        # إزالة المسافات الزائدة
         text = re.sub(r'\s+', ' ', text).strip()
         
         return text
 
     def add_score(self, user_id, display_name, points=1):
-        """إضافة نقاط للاعب"""
         if user_id not in self.scores:
             self.scores[user_id] = {
                 'name': display_name,
@@ -90,19 +82,15 @@ class BaseGame(ABC):
         return self.scores[user_id]['score']
 
     def get_theme_colors(self):
-        """الحصول على ألوان الثيم"""
         return self.THEMES.get(self.theme, self.THEMES['light'])
 
     def build_text_message(self, text):
-        """بناء رسالة نصية"""
         return TextMessage(text=text)
 
     def build_question_message(self, question_text, subtitle=""):
-        """بناء رسالة السؤال"""
         colors = self.get_theme_colors()
         progress = int((self.current_question / self.questions_count) * 100)
 
-        # محتوى الرسالة
         contents = [
             {
                 "type": "text",
@@ -161,7 +149,6 @@ class BaseGame(ABC):
             }
         ]
 
-        # إضافة العنوان الفرعي
         if subtitle:
             contents.append({
                 "type": "text",
@@ -172,7 +159,6 @@ class BaseGame(ABC):
                 "margin": "md"
             })
 
-        # أزرار التحكم
         footer_buttons = []
         if self.supports_hint:
             footer_buttons.append({
@@ -181,7 +167,7 @@ class BaseGame(ABC):
                 "height": "sm",
                 "action": {
                     "type": "message",
-                    "label": "تلميح",
+                    "label": "لمح",
                     "text": "لمح"
                 },
                 "color": colors["button"],
@@ -195,7 +181,7 @@ class BaseGame(ABC):
                 "height": "sm",
                 "action": {
                     "type": "message",
-                    "label": "اظهار",
+                    "label": "جاوب",
                     "text": "جاوب"
                 },
                 "color": colors["button"],
@@ -215,7 +201,6 @@ class BaseGame(ABC):
             "flex": 1
         })
 
-        # بناء الفقاعة
         bubble = {
             "type": "bubble",
             "size": "mega",
@@ -242,7 +227,6 @@ class BaseGame(ABC):
         )
 
     def start_game(self):
-        """بدء اللعبة"""
         self.game_active = True
         self.current_question = 0
         self.scores = {}
@@ -253,37 +237,29 @@ class BaseGame(ABC):
 
     @abstractmethod
     def get_question(self):
-        """الحصول على السؤال التالي - يجب تنفيذها في الفئة الفرعية"""
         pass
 
     def check_answer(self, user_answer, user_id, display_name):
-        """التحقق من الإجابة"""
         if not self.game_active or user_id in self.withdrawn_users:
             return None
 
         normalized = self.normalize_text(user_answer)
 
-        # إيقاف اللعبة
         if normalized == "ايقاف":
             return self.handle_withdrawal(user_id, display_name)
 
-        # تجنب الإجابات المتكررة
         if user_id in self.answered_users:
             return None
 
-        # التلميح
         if self.supports_hint and normalized == "لمح":
             return self.handle_hint()
 
-        # إظهار الجواب
         if self.supports_reveal and normalized == "جاوب":
             return self.handle_reveal()
 
-        # التحقق من الإجابة الصحيحة
         return self.validate_answer(normalized, user_id, display_name)
 
     def handle_hint(self):
-        """معالجة طلب التلميح"""
         if not self.current_answer:
             return None
         
@@ -296,7 +272,6 @@ class BaseGame(ABC):
         }
 
     def handle_reveal(self):
-        """معالجة إظهار الجواب"""
         if not self.current_answer:
             return None
         
@@ -315,7 +290,6 @@ class BaseGame(ABC):
         }
 
     def validate_answer(self, normalized, user_id, display_name):
-        """التحقق من صحة الإجابة"""
         correct_answers = self.current_answer if isinstance(self.current_answer, list) else [self.current_answer]
         
         for correct in correct_answers:
@@ -325,7 +299,6 @@ class BaseGame(ABC):
         return None
 
     def handle_correct_answer(self, user_id, display_name):
-        """معالجة الإجابة الصحيحة"""
         self.answered_users.add(user_id)
         points = self.add_score(user_id, display_name, 1)
         self.current_question += 1
@@ -343,7 +316,6 @@ class BaseGame(ABC):
         }
 
     def handle_withdrawal(self, user_id, display_name):
-        """معالجة الانسحاب من اللعبة"""
         self.withdrawn_users.add(user_id)
         
         if user_id in self.scores:
@@ -357,7 +329,6 @@ class BaseGame(ABC):
         }
 
     def end_game(self):
-        """إنهاء اللعبة"""
         self.game_active = False
         colors = self.get_theme_colors()
         
@@ -368,14 +339,12 @@ class BaseGame(ABC):
                 "game_over": True
             }
 
-        # ترتيب اللاعبين
         sorted_players = sorted(
             self.scores.items(),
             key=lambda x: -x[1]['score']
         )
         winner = sorted_players[0][1]
 
-        # بناء رسالة النتيجة
         contents = [
             {
                 "type": "text",
@@ -419,7 +388,6 @@ class BaseGame(ABC):
             }
         ]
 
-        # إضافة قائمة النتائج
         if len(sorted_players) > 1:
             contents.append({
                 "type": "text",
