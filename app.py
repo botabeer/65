@@ -44,7 +44,7 @@ TEXT_COMMANDS = {
 }
 
 GAME_MAP = {
-    'خمن': GuessGame, 'اسرع': FastGame, 'توافق': CompatibilityGame,
+    'فئه': GuessGame, 'اسرع': FastGame, 'توافق': CompatibilityGame,
     'اغنيه': SongGame, 'ضد': OppositeGame, 'سلسله': ChainGame,
     'تكوين': LettersGame, 'لغز': RiddleGame, 'ترتيب': ScrambleGame,
     'مافيا': MafiaGame, 'لون': WordColorGame, 'روليت': RouletteGame
