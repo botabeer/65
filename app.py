@@ -3,7 +3,9 @@ from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import Configuration, ApiClient, MessagingApi, ReplyMessageRequest, TextMessage, FlexMessage, FlexContainer
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
-import os, sys, logging
+import os
+import sys
+import logging
 from datetime import datetime
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -27,7 +29,7 @@ from text_commands import TextCommands
 from games import (
     CategoryGame, FastGame, CompatibilityGame, SongGame,
     OppositeGame, ChainGame, LettersGame, RiddleGame,
-    ScrambleGame, MafiaGame, WordColorGame, RouletteGame
+    ScrambleGame, MafiaGame, WordColorGame, RouletteGame, LetterGame
 )
 
 DB.init()
@@ -47,7 +49,8 @@ GAME_MAP = {
     'فئه': CategoryGame, 'اسرع': FastGame, 'توافق': CompatibilityGame,
     'اغنيه': SongGame, 'ضد': OppositeGame, 'سلسله': ChainGame,
     'تكوين': LettersGame, 'لغز': RiddleGame, 'ترتيب': ScrambleGame,
-    'مافيا': MafiaGame, 'لون': WordColorGame, 'روليت': RouletteGame
+    'مافيا': MafiaGame, 'لون': WordColorGame, 'روليت': RouletteGame,
+    'حرف': LetterGame
 }
 
 @app.route("/callback", methods=['POST'])
