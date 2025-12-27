@@ -6,6 +6,8 @@ from abc import ABC, abstractmethod
 class BaseGame(ABC):
     """الفئة الأساسية لجميع الألعاب"""
     
+    BUTTON_COLOR = "#F2F2F7"
+    
     THEMES = {
         "light": {
             "primary": "#1E293B",
@@ -15,7 +17,7 @@ class BaseGame(ABC):
             "bg": "#FFFFFF",
             "card": "#F8FAFC",
             "border": "#E2E8F0",
-            "button": "#F1F5F9",
+            "button": "#F2F2F7",
             "success": "#0EA5E9",
             "accent": "#3B82F6"
         },
@@ -27,7 +29,7 @@ class BaseGame(ABC):
             "bg": "#0F172A",
             "card": "#1E293B",
             "border": "#334155",
-            "button": "#334155",
+            "button": "#F2F2F7",
             "success": "#38BDF8",
             "accent": "#60A5FA"
         }
@@ -170,7 +172,7 @@ class BaseGame(ABC):
                     "label": "لمح",
                     "text": "لمح"
                 },
-                "color": colors["button"],
+                "color": self.BUTTON_COLOR,
                 "flex": 1
             })
         
@@ -184,7 +186,7 @@ class BaseGame(ABC):
                     "label": "جاوب",
                     "text": "جاوب"
                 },
-                "color": colors["button"],
+                "color": self.BUTTON_COLOR,
                 "flex": 1
             })
         
@@ -197,7 +199,7 @@ class BaseGame(ABC):
                 "label": "ايقاف",
                 "text": "ايقاف"
             },
-            "color": colors["button"],
+            "color": self.BUTTON_COLOR,
             "flex": 1
         })
 
