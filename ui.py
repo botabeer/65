@@ -59,16 +59,41 @@ class UI:
                 "backgroundColor": c["card"], "paddingAll": "12px", "cornerRadius": "8px"
             })
         
-        rows = [[("العاب", "العاب"), ("نقاطي", "نقاطي")], [("الصدارة", "الصدارة"), ("ثيم", "ثيم")]]
-        if not registered:
-            rows.append([("تسجيل", "تسجيل")])
+        # السطر الأول: تسجيل/تغيير - انسحب
+        contents.append({
+            "type": "box", "layout": "horizontal", "spacing": "xs", "margin": "lg",
+            "contents": [
+                UI._btn("تسجيل/تغيير", "تسجيل"),
+                UI._btn("انسحب", "انسحب")
+            ]
+        })
         
-        for i, row in enumerate(rows):
-            contents.append({
-                "type": "box", "layout": "horizontal", "spacing": "xs",
-                "margin": "sm" if i > 0 else "lg",
-                "contents": [UI._btn(l, t) for l, t in row]
-            })
+        # السطر الثاني: نقاطي - الصدارة
+        contents.append({
+            "type": "box", "layout": "horizontal", "spacing": "xs", "margin": "sm",
+            "contents": [
+                UI._btn("نقاطي", "نقاطي"),
+                UI._btn("الصدارة", "الصدارة")
+            ]
+        })
+        
+        # السطر الثالث: نص - العاب
+        contents.append({
+            "type": "box", "layout": "horizontal", "spacing": "xs", "margin": "sm",
+            "contents": [
+                UI._btn("نص", "سؤال"),
+                UI._btn("العاب", "العاب")
+            ]
+        })
+        
+        # السطر الرابع: ثيم - مساعدة
+        contents.append({
+            "type": "box", "layout": "horizontal", "spacing": "xs", "margin": "sm",
+            "contents": [
+                UI._btn("ثيم", "ثيم"),
+                UI._btn("مساعدة", "مساعدة")
+            ]
+        })
         
         contents.extend([
             {"type": "separator", "margin": "lg", "color": c["border"]},
@@ -84,7 +109,7 @@ class UI:
     def help_card(theme="light"):
         c = UI._c(theme)
         sections = [
-            {"title": "الاوامر الاساسية", "items": ["بداية - القائمة الرئيسية", "تسجيل - تسجيل اسمك", "نقاطي - احصائياتك", "الصدارة - قائمة المتصدرين", "ثيم - تغيير المظهر"]},
+            {"title": "الاوامر الاساسية", "items": ["بداية - القائمة الرئيسية", "تسجيل - تسجيل اسمك", "نقاطي - احصائياتك", "الصدارة - قائمة المتصدرين", "ثيم - تغيير المظهر", "انسحب - الخروج من اللعبة"]},
             {"title": "اوامر النصوص", "items": ["سؤال - اسئلة متنوعة", "تحدي - تحديات", "اعتراف - اعترافات", "منشن - منشن اصدقائك", "اقتباس - اقتباسات ملهمة", "نصيحة - نصائح يومية", "مجهول - رسائل مجهولة", "خاص - رسائل خاصة", "شعر - قصائد", "موقف - مواقف"]},
             {"title": "اوامر اللعب", "items": ["لمح - تلميح للاجابة", "جاوب - اظهار الجواب", "ايقاف - ايقاف اللعبة", "انسحب - الانسحاب من الدورة"]},
             {"title": "ملاحظات مهمة", "items": ["يجب التسجيل قبل اللعب", "النقاط تحفظ تلقائيا", "يمكن تغيير الثيم بين فاتح وداكن", "الالعاب متعددة اللاعبين في المجموعات"]}
