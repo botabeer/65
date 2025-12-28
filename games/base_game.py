@@ -19,7 +19,9 @@ class BaseGame(ABC):
             "border": "#E2E8F0",
             "button": "#F2F2F7",
             "success": "#0EA5E9",
-            "accent": "#3B82F6"
+            "accent": "#3B82F6",
+            "warning": "#F59E0B",
+            "error": "#EF4444"
         },
         "dark": {
             "primary": "#F1F5F9",
@@ -31,7 +33,9 @@ class BaseGame(ABC):
             "border": "#334155",
             "button": "#F2F2F7",
             "success": "#38BDF8",
-            "accent": "#60A5FA"
+            "accent": "#60A5FA",
+            "warning": "#FBBF24",
+            "error": "#F87171"
         }
     }
 
@@ -84,7 +88,16 @@ class BaseGame(ABC):
         return self.scores[user_id]['score']
 
     def get_theme_colors(self):
-        return self.THEMES.get(self.theme, self.THEMES['light'])
+        colors = self.THEMES.get(self.theme, self.THEMES['light']).copy()
+        # حماية من الألوان المفقودة
+        defaults = {
+            "warning": colors.get("accent", "#F59E0B"),
+            "error": colors.get("primary", "#EF4444")
+        }
+        for key, value in defaults.items():
+            if key not in colors:
+                colors[key] = value
+        return colors
 
     def build_text_message(self, text):
         return TextMessage(text=text)
