@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 class MafiaGame(BaseGame):
     """لعبة المافيا - لعبة جماعية احترافية"""
     
+    BUTTON_COLOR = "#F2F2F7"
+    
     def __init__(self, line_bot_api, theme='light'):
         super().__init__(line_bot_api, theme=theme)
         self.game_name = "مافيا"
@@ -28,6 +30,7 @@ class MafiaGame(BaseGame):
         }
         self.votes = {}
         self.min_players = 4
+        self.max_players = 15
         self.created_at = time.time()
     
     def start_game(self):
@@ -98,14 +101,14 @@ class MafiaGame(BaseGame):
                 "contents": [
                     {
                         "type": "text",
-                        "text": "شرح الادوار",
+                        "text": "شرح اللعبة",
                         "size": "md",
                         "weight": "bold",
                         "color": c["text"]
                     },
                     {
                         "type": "text",
-                        "text": "المافيا: يقتلون شخص كل ليلة",
+                        "text": "لعبة جماعية تنقسم فيها الادوار بين المافيا والمواطنين",
                         "size": "xs",
                         "color": c["text2"],
                         "wrap": True,
@@ -113,7 +116,7 @@ class MafiaGame(BaseGame):
                     },
                     {
                         "type": "text",
-                        "text": "الدكتور: يحمي شخص واحد كل ليلة",
+                        "text": "المافيا: يحاولون قتل المواطنين ليلا",
                         "size": "xs",
                         "color": c["text2"],
                         "wrap": True,
@@ -121,7 +124,7 @@ class MafiaGame(BaseGame):
                     },
                     {
                         "type": "text",
-                        "text": "المحقق: يفحص شخص ليعرف دوره",
+                        "text": "الدكتور: يحمي شخص واحد كل ليلة (يمكنه حماية نفسه)",
                         "size": "xs",
                         "color": c["text2"],
                         "wrap": True,
@@ -129,7 +132,40 @@ class MafiaGame(BaseGame):
                     },
                     {
                         "type": "text",
-                        "text": "المواطنون: يصوتون على المشتبه به نهارا",
+                        "text": "المحقق: يتحقق من دور شخص كل ليلة",
+                        "size": "xs",
+                        "color": c["text2"],
+                        "wrap": True,
+                        "margin": "xs"
+                    },
+                    {
+                        "type": "text",
+                        "text": "المواطنون: يصوتون لطرد المشتبه به نهارا",
+                        "size": "xs",
+                        "color": c["text2"],
+                        "wrap": True,
+                        "margin": "xs"
+                    }
+                ]
+            },
+            {
+                "type": "box",
+                "layout": "vertical",
+                "margin": "lg",
+                "backgroundColor": c["card"],
+                "cornerRadius": "8px",
+                "paddingAll": "12px",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "ملاحظة مهمة",
+                        "size": "sm",
+                        "weight": "bold",
+                        "color": c["warning"]
+                    },
+                    {
+                        "type": "text",
+                        "text": "يجب اضافة البوت كصديق ليصلك دورك بالخاص",
                         "size": "xs",
                         "color": c["text2"],
                         "wrap": True,
@@ -158,6 +194,29 @@ class MafiaGame(BaseGame):
                             {
                                 "type": "text",
                                 "text": "اللاعبون",
+                                "size": "xs",
+                                "color": c["text2"],
+                                "align": "center",
+                                "margin": "xs"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "flex": 1,
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": f"{self.max_players}",
+                                "size": "xl",
+                                "weight": "bold",
+                                "color": c["text3"],
+                                "align": "center"
+                            },
+                            {
+                                "type": "text",
+                                "text": "الحد الاقصى",
                                 "size": "xs",
                                 "color": c["text2"],
                                 "align": "center",
@@ -203,7 +262,7 @@ class MafiaGame(BaseGame):
                         "text": "انضم مافيا"
                     },
                     "style": "primary",
-                    "color": c["success"],
+                    "color": self.BUTTON_COLOR,
                     "height": "sm"
                 },
                 {
@@ -214,7 +273,7 @@ class MafiaGame(BaseGame):
                         "text": "بدء مافيا"
                     },
                     "style": "primary",
-                    "color": c["accent"],
+                    "color": self.BUTTON_COLOR,
                     "height": "sm"
                 },
                 {
@@ -258,6 +317,9 @@ class MafiaGame(BaseGame):
         
         if user_id in self.players:
             return {"response": self.build_text_message("انت مسجل بالفعل")}
+        
+        if len(self.players) >= self.max_players:
+            return {"response": self.build_text_message(f"عذرا وصل العدد للحد الاقصى ({self.max_players} لاعب)")}
         
         self.players[user_id] = {
             'name': name,
@@ -461,7 +523,7 @@ class MafiaGame(BaseGame):
                     "text": f"{config['action']} نفسي"
                 },
                 "style": "primary",
-                "color": config['color'],
+                "color": self.BUTTON_COLOR,
                 "height": "sm"
             })
         
@@ -604,7 +666,7 @@ class MafiaGame(BaseGame):
                                     "text": "انهاء الليل"
                                 },
                                 "style": "primary",
-                                "color": c["accent"],
+                                "color": self.BUTTON_COLOR,
                                 "height": "sm"
                             },
                             {
@@ -734,7 +796,7 @@ class MafiaGame(BaseGame):
                                     "text": "تصويت مافيا"
                                 },
                                 "style": "primary",
-                                "color": c["accent"],
+                                "color": self.BUTTON_COLOR,
                                 "height": "sm"
                             },
                             {
@@ -793,7 +855,7 @@ class MafiaGame(BaseGame):
                 "text": "انهاء التصويت"
             },
             "style": "primary",
-            "color": c.get("error", c["primary"]),
+            "color": self.BUTTON_COLOR,
             "height": "sm",
             "margin": "md"
         })
@@ -939,8 +1001,52 @@ class MafiaGame(BaseGame):
     def winner_message(self, winner_team):
         c = self.get_theme_colors()
         
+        # عرض ادوار جميع اللاعبين
+        role_names = {
+            'mafia': 'المافيا',
+            'detective': 'المحقق',
+            'doctor': 'الدكتور',
+            'citizen': 'مواطن'
+        }
+        
+        players_list = []
+        for uid, p in self.players.items():
+            role_name = role_names.get(p['role'], p['role'])
+            status = "حي" if p['alive'] else "ميت"
+            players_list.append({
+                "type": "box",
+                "layout": "horizontal",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": p['name'],
+                        "size": "sm",
+                        "color": c["text"],
+                        "flex": 2
+                    },
+                    {
+                        "type": "text",
+                        "text": role_name,
+                        "size": "sm",
+                        "color": c["accent"],
+                        "flex": 1,
+                        "align": "center"
+                    },
+                    {
+                        "type": "text",
+                        "text": status,
+                        "size": "sm",
+                        "color": c["success"] if p['alive'] else c["text3"],
+                        "flex": 1,
+                        "align": "end"
+                    }
+                ],
+                "margin": "sm"
+            })
+        
         bubble = {
             "type": "bubble",
+            "size": "mega",
             "body": {
                 "type": "box",
                 "layout": "vertical",
@@ -983,6 +1089,58 @@ class MafiaGame(BaseGame):
                         "color": c["border"]
                     },
                     {
+                        "type": "text",
+                        "text": "ادوار اللاعبين",
+                        "size": "md",
+                        "weight": "bold",
+                        "color": c["text"],
+                        "margin": "lg"
+                    },
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": "الاسم",
+                                "size": "xs",
+                                "color": c["text3"],
+                                "flex": 2,
+                                "weight": "bold"
+                            },
+                            {
+                                "type": "text",
+                                "text": "الدور",
+                                "size": "xs",
+                                "color": c["text3"],
+                                "flex": 1,
+                                "align": "center",
+                                "weight": "bold"
+                            },
+                            {
+                                "type": "text",
+                                "text": "الحالة",
+                                "size": "xs",
+                                "color": c["text3"],
+                                "flex": 1,
+                                "align": "end",
+                                "weight": "bold"
+                            }
+                        ],
+                        "margin": "md"
+                    },
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": players_list,
+                        "margin": "xs"
+                    },
+                    {
+                        "type": "separator",
+                        "margin": "lg",
+                        "color": c["border"]
+                    },
+                    {
                         "type": "button",
                         "action": {
                             "type": "message",
@@ -990,7 +1148,7 @@ class MafiaGame(BaseGame):
                             "text": "مافيا"
                         },
                         "style": "primary",
-                        "color": c["accent"],
+                        "color": self.BUTTON_COLOR,
                         "height": "sm",
                         "margin": "lg"
                     }
@@ -1216,8 +1374,15 @@ class MafiaGame(BaseGame):
             for uid, p in self.players.items():
                 if p['name'] == target_name and p['alive'] and uid != user_id:
                     role = p['role']
+                    role_names = {
+                        'mafia': 'المافيا',
+                        'detective': 'المحقق',
+                        'doctor': 'الدكتور',
+                        'citizen': 'مواطن'
+                    }
+                    role_display = role_names.get(role, role)
                     result = "مافيا" if role == 'mafia' else "بريء"
-                    return {"response": self.build_text_message(f"{target_name} هو {result}")}
+                    return {"response": self.build_text_message(f"{target_name} دوره: {role_display}\nالنتيجة: {result}")}
             return {"response": self.build_text_message("لا يوجد لاعب بهذا الاسم")}
         
         # اجراءات الدكتور
