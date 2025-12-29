@@ -63,7 +63,7 @@ TEXT_COMMANDS = {
     'شعر': 'poem'
 }
 
-# Game mapping (بدون روليت)
+# Game mapping
 GAME_MAP = {
     'فئه': CategoryGame,
     'اسرع': FastGame,
@@ -83,7 +83,6 @@ GAME_MAP = {
 scheduler = BackgroundScheduler()
 
 def cleanup_inactive_users():
-    """Remove inactive users after 7 days"""
     try:
         deleted = DB.cleanup_inactive_users(days=7)
         logger.info(f"Cleanup: Removed {deleted} inactive users")
@@ -176,7 +175,7 @@ def process_message(text, user_id, group_id, line_api):
         )
     
     # Games menu
-    if normalized_text in ['العاب', 'ألعاب', 'الالعاب']:
+    if normalized_text in ['العاب', 'ألعاب', 'الالعاب', 'العاب']:
         return FlexMessage(
             alt_text="Games",
             contents=FlexContainer.from_dict(UI.games_menu(theme))
@@ -238,16 +237,20 @@ def process_message(text, user_id, group_id, line_api):
             return create_success_message("تم ايقاف اللعبة")
         return None
     
-    # Must be registered to play
-    if not user:
-        return None
+    # Must be registered to play (except for Mafia and Compatibility)
+    if normalized_text not in ['مافيا', 'توافق']:
+        if not user:
+            return None
     
     # Start game
     if normalized_text in GAME_MAP:
-        return start_game(normalized_text, group_id, line_api, theme)
+        return start_game(normalized_text, group_id, line_api, theme, user)
     
     # Handle game answer
     if group_id in game_sessions:
+        # For games that don't require registration
+        if not user and normalized_text not in ['مافيا', 'توافق']:
+            return None
         return handle_game_answer(group_id, text, user_id, user)
     
     return None
@@ -294,12 +297,18 @@ def create_success_message(text):
     msg.quick_reply = UI.get_quick_reply()
     return msg
 
-def start_game(game_type, group_id, line_api, theme):
+def start_game(game_type, group_id, line_api, theme, user):
     try:
         game_class = GAME_MAP[game_type]
         game = game_class(line_api, theme=theme)
         game_sessions[group_id] = game
-        return game.start_game()
+        response = game.start_game()
+        
+        # Add quick reply to response
+        if isinstance(response, TextMessage):
+            response.quick_reply = UI.get_quick_reply()
+        
+        return response
     except Exception as e:
         logger.error(f"Game start error {game_type}: {e}", exc_info=True)
         return create_error_message("حدث خطأ في بدء اللعبة")
@@ -310,12 +319,18 @@ def handle_game_answer(group_id, text, user_id, user):
     if user_id in game.withdrawn_users:
         return None
     
-    result = game.check_answer(text, user_id, user['name'])
+    # For games that need user name
+    display_name = user['name'] if user else 'لاعب'
+    
+    result = game.check_answer(text, user_id, display_name)
     
     if not result:
         return None
     
+    # Handle different response types
     if isinstance(result, (TextMessage, FlexMessage)):
+        if isinstance(result, TextMessage):
+            result.quick_reply = UI.get_quick_reply()
         return result
     
     if not isinstance(result, dict):
@@ -329,11 +344,15 @@ def handle_game_answer(group_id, text, user_id, user):
             del game_sessions[group_id]
         
         points = result.get('points', 0)
-        if points > 0:
+        if points > 0 and user:
             won = result.get('won', True)
             DB.add_points(user_id, points, won, game.game_name)
     
-    return result.get('response')
+    response = result.get('response')
+    if response and isinstance(response, TextMessage):
+        response.quick_reply = UI.get_quick_reply()
+    
+    return response
 
 @app.route('/health')
 def health():
