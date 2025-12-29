@@ -89,7 +89,6 @@ class BaseGame(ABC):
 
     def get_theme_colors(self):
         colors = self.THEMES.get(self.theme, self.THEMES['light']).copy()
-        # حماية من الألوان المفقودة
         defaults = {
             "warning": colors.get("accent", "#F59E0B"),
             "error": colors.get("primary", "#EF4444")
@@ -150,7 +149,8 @@ class BaseGame(ABC):
             }
         ]
 
-        if self.previous_answer and self.previous_question:
+        # عرض الجواب السابق فقط بدون السؤال السابق
+        if self.previous_answer:
             contents.extend([
                 {
                     "type": "separator",
@@ -167,26 +167,11 @@ class BaseGame(ABC):
                     "contents": [
                         {
                             "type": "text",
-                            "text": "السؤال السابق",
-                            "size": "xxs",
-                            "color": colors["text3"],
-                            "weight": "bold"
-                        },
-                        {
-                            "type": "text",
-                            "text": self.previous_question[:50] + "..." if len(self.previous_question) > 50 else self.previous_question,
-                            "size": "xxs",
-                            "color": colors["text2"],
-                            "wrap": True,
-                            "margin": "xs"
-                        },
-                        {
-                            "type": "text",
-                            "text": f"الجواب: {self.previous_answer}",
+                            "text": f"الجواب السابق: {self.previous_answer}",
                             "size": "xs",
                             "color": colors["success"],
                             "weight": "bold",
-                            "margin": "xs"
+                            "wrap": True
                         }
                     ]
                 }
