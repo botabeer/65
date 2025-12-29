@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 class BaseGame(ABC):
     """الفئة الأساسية لجميع الألعاب"""
     
-    BUTTON_COLOR = "#F2F2F7"
+    BUTTON_COLOR = "#F8FBFC"
     
     THEMES = {
         "light": {
