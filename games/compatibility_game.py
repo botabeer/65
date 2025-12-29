@@ -28,7 +28,7 @@ class CompatibilityGame(BaseGame):
         n1 = self.normalize_text(name1)
         n2 = self.normalize_text(name2)
         combined = ''.join(sorted([n1, n2]))
-        seed = sum(ord(c)*(i+1) for i,c in enumerate(combined))
+        seed = sum(ord(c) * (i + 1) for i, c in enumerate(combined))
         return (seed % 81) + 20
 
     def get_message_text(self, percentage):
@@ -56,44 +56,44 @@ class CompatibilityGame(BaseGame):
             "type": "bubble",
             "size": "mega",
             "body": {
-                "type": "box", 
+                "type": "box",
                 "layout": "vertical",
                 "paddingAll": "20px",
                 "backgroundColor": c["bg"],
                 "contents": [
                     {
-                        "type": "text", 
-                        "text": self.game_name, 
-                        "size": "xl", 
-                        "weight": "bold", 
-                        "align": "center", 
+                        "type": "text",
+                        "text": self.game_name,
+                        "size": "xl",
+                        "weight": "bold",
+                        "align": "center",
                         "color": c["primary"]
                     },
                     {
-                        "type": "separator", 
-                        "margin": "lg", 
+                        "type": "separator",
+                        "margin": "lg",
                         "color": c["border"]
                     },
                     {
-                        "type": "text", 
-                        "text": "احسب نسبة التوافق بين شخصين", 
-                        "size": "md", 
-                        "color": c["text"], 
-                        "align": "center", 
+                        "type": "text",
+                        "text": "احسب نسبة التوافق بين شخصين",
+                        "size": "md",
+                        "color": c["text"],
+                        "align": "center",
                         "margin": "lg"
                     },
                     {
-                        "type": "text", 
-                        "text": "ادخل اسمين بينهما 'و'", 
-                        "size": "sm", 
-                        "color": c["text2"], 
-                        "align": "center", 
-                        "wrap": True, 
+                        "type": "text",
+                        "text": "ادخل اسمين بينهما 'و'",
+                        "size": "sm",
+                        "color": c["text2"],
+                        "align": "center",
+                        "wrap": True,
                         "margin": "sm"
                     },
                     {
-                        "type": "box", 
-                        "layout": "vertical", 
+                        "type": "box",
+                        "layout": "vertical",
                         "contents": [
                             {
                                 "type": "text",
@@ -102,10 +102,10 @@ class CompatibilityGame(BaseGame):
                                 "color": c["text3"],
                                 "align": "center"
                             }
-                        ], 
-                        "backgroundColor": c["card"], 
-                        "cornerRadius": "8px", 
-                        "paddingAll": "12px", 
+                        ],
+                        "backgroundColor": c["card"],
+                        "cornerRadius": "8px",
+                        "paddingAll": "12px",
                         "margin": "md"
                     },
                     {
@@ -152,21 +152,29 @@ class CompatibilityGame(BaseGame):
         normalized = self.normalize_text(user_answer)
         if normalized == "ايقاف":
             self.game_active = False
-            return {"response": TextMessage(text="تم ايقاف اللعبة"), "points": 0, "game_over": True}
+            return {
+                "response": TextMessage(text="تم ايقاف اللعبة"),
+                "points": 0,
+                "game_over": True
+            }
 
         name1, name2 = self.parse_names(user_answer)
         if not name1 or not name2:
-            return {"response": TextMessage(text="الصيغة غير صحيحة\nاكتب: اسم و اسم"), "points": 0}
+            return {
+                "response": TextMessage(text="الصيغة غير صحيحة\nاكتب: اسم و اسم"),
+                "points": 0
+            }
 
         if not self.is_valid_text(name1) or not self.is_valid_text(name2):
-            return {"response": TextMessage(text="غير مسموح بالرموز او الارقام\nاستخدم اسماء عربية فقط"), "points": 0}
+            return {
+                "response": TextMessage(text="غير مسموح بالرموز او الارقام\nاستخدم اسماء عربية فقط"),
+                "points": 0
+            }
 
         percentage = self.calculate_compatibility(name1, name2)
         message_text = self.get_message_text(percentage)
         color = self.get_message_color(percentage)
         c = self.get_theme_colors()
-
-        progress_width = f"{percentage}%"
 
         bubble = {
             "type": "bubble",
@@ -192,11 +200,12 @@ class CompatibilityGame(BaseGame):
                     },
                     {
                         "type": "box",
-                        "layout": "vertical",
+                        "layout": "horizontal",
                         "margin": "lg",
                         "backgroundColor": c["card"],
                         "cornerRadius": "12px",
                         "paddingAll": "16px",
+                        "spacing": "md",
                         "contents": [
                             {
                                 "type": "text",
@@ -204,15 +213,16 @@ class CompatibilityGame(BaseGame):
                                 "size": "lg",
                                 "color": c["text"],
                                 "align": "center",
-                                "weight": "bold"
+                                "weight": "bold",
+                                "flex": 3
                             },
                             {
                                 "type": "text",
                                 "text": "و",
-                                "size": "sm",
+                                "size": "md",
                                 "color": c["text2"],
                                 "align": "center",
-                                "margin": "sm"
+                                "flex": 1
                             },
                             {
                                 "type": "text",
@@ -221,7 +231,7 @@ class CompatibilityGame(BaseGame):
                                 "color": c["text"],
                                 "align": "center",
                                 "weight": "bold",
-                                "margin": "sm"
+                                "flex": 3
                             }
                         ]
                     },
@@ -242,20 +252,20 @@ class CompatibilityGame(BaseGame):
                                 "type": "box",
                                 "layout": "horizontal",
                                 "margin": "sm",
+                                "height": "8px",
+                                "backgroundColor": c["border"],
+                                "cornerRadius": "4px",
                                 "contents": [
                                     {
                                         "type": "box",
                                         "layout": "vertical",
-                                        "contents": [],
                                         "backgroundColor": color,
-                                        "width": progress_width,
+                                        "width": f"{percentage}%",
                                         "height": "8px",
-                                        "cornerRadius": "4px"
+                                        "cornerRadius": "4px",
+                                        "contents": []
                                     }
-                                ],
-                                "height": "8px",
-                                "backgroundColor": c["border"],
-                                "cornerRadius": "4px"
+                                ]
                             }
                         ]
                     },
@@ -289,9 +299,8 @@ class CompatibilityGame(BaseGame):
                             "label": "اعادة",
                             "text": "توافق"
                         },
-                        "style": "primary",
-                        "height": "sm",
-                        "color": self.BUTTON_COLOR
+                        "style": "secondary",
+                        "height": "sm"
                     },
                     {
                         "type": "button",
@@ -311,9 +320,9 @@ class CompatibilityGame(BaseGame):
         self.game_active = False
         return {
             "response": FlexMessage(
-                alt_text="نتيجة التوافق", 
+                alt_text="نتيجة التوافق",
                 contents=FlexContainer.from_dict(bubble)
-            ), 
-            "points": 0, 
+            ),
+            "points": 0,
             "game_over": True
         }
