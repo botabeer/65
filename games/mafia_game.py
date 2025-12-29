@@ -72,9 +72,9 @@ class MafiaGame(BaseGame):
             {"type": "separator", "margin": "lg", "color": c["border"]},
             {"type": "box", "layout": "vertical", "margin": "lg", "contents": [{"type": "text", "text": "الاعبون:", "size": "sm", "weight": "bold", "color": c["text"]}] + player_list},
             {"type": "separator", "margin": "lg", "color": c["border"]},
-            {"type": "box", "layout": "vertical", "margin": "lg", "backgroundColor": "#FEF3C7", "cornerRadius": "8px", "paddingAll": "10px", "contents": [
-                {"type": "text", "text": "ملاحظة مهمة", "size": "sm", "weight": "bold", "color": "#92400E", "margin": "none"},
-                {"type": "text", "text": "يجب اضافة البوت كصديق ليصلك دورك بالخاص", "size": "xs", "color": "#92400E", "wrap": True, "margin": "xs"}
+            {"type": "box", "layout": "vertical", "margin": "lg", "backgroundColor": "#F8FBFC", "cornerRadius": "8px", "paddingAll": "10px", "contents": [
+                {"type": "text", "text": "ملاحظة مهمة", "size": "sm", "weight": "bold", "color": "#000000", "margin": "none"},
+                {"type": "text", "text": "يجب اضافة البوت كصديق ليصلك دورك بالخاص", "size": "xs", "color": "#000000", "wrap": True, "margin": "xs"}
             ]}
         ]
 
