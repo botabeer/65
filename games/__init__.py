@@ -8,7 +8,6 @@ from games.riddle_game import RiddleGame
 from games.scramble_word_game import ScrambleGame
 from games.mafia_game import MafiaGame
 from games.word_color_game import WordColorGame
-from games.roulette_game import RouletteGame
 from games.category_letter_game import CategoryGame
 from games.letter_game import LetterGame
 
@@ -24,6 +23,5 @@ __all__ = [
     'ScrambleGame',
     'MafiaGame',
     'WordColorGame',
-    'RouletteGame',
     'LetterGame'
 ]
