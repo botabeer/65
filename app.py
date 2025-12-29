@@ -36,7 +36,7 @@ from text_commands import TextCommands
 from games import (
     CategoryGame, FastGame, CompatibilityGame, SongGame,
     OppositeGame, ChainGame, LettersGame, RiddleGame,
-    ScrambleGame, MafiaGame, WordColorGame, RouletteGame, LetterGame
+    ScrambleGame, MafiaGame, WordColorGame, LetterGame
 )
 
 # Initialize database and load text commands
@@ -47,7 +47,7 @@ TextCommands.load_all()
 game_sessions = {}
 waiting_for_name = set()
 user_themes = {}
-silent_users = set()  # NEW: Users who clicked "انسحب"
+silent_users = set()
 
 # Text commands mapping
 TEXT_COMMANDS = {
@@ -59,10 +59,11 @@ TEXT_COMMANDS = {
     'موقف': 'situations',
     'خاص': 'private',
     'مجهول': 'anonymous',
-    'نصيحة': 'advice'
+    'نصيحة': 'advice',
+    'شعر': 'poem'
 }
 
-# Game mapping
+# Game mapping (بدون روليت)
 GAME_MAP = {
     'فئه': CategoryGame,
     'اسرع': FastGame,
@@ -75,7 +76,6 @@ GAME_MAP = {
     'ترتيب': ScrambleGame,
     'مافيا': MafiaGame,
     'لون': WordColorGame,
-    'روليت': RouletteGame,
     'حرف': LetterGame
 }
 
@@ -132,15 +132,12 @@ def handle_message(event):
 def process_message(text, user_id, group_id, line_api):
     normalized_text = text.lower().strip()
     
-    # CRITICAL: Check if user is in silent mode
-    # Allow only "تسجيل" and "بداية" to reactivate
+    # Check if user is in silent mode
     if user_id in silent_users:
         if normalized_text in ['تسجيل', 'بداية', 'start', 'ابدا']:
             silent_users.discard(user_id)
             logger.info(f"User {user_id} reactivated from silent mode")
-            # Continue processing below
         else:
-            # Ignore ALL other messages
             logger.info(f"Ignoring message from silent user {user_id}")
             return None
     
@@ -185,9 +182,9 @@ def process_message(text, user_id, group_id, line_api):
             contents=FlexContainer.from_dict(UI.games_menu(theme))
         )
     
-    # Registration - removes from silent mode
+    # Registration
     if normalized_text in ['تسجيل', 'تغيير']:
-        silent_users.discard(user_id)  # Ensure user is active
+        silent_users.discard(user_id)
         waiting_for_name.add(user_id)
         msg = TextMessage(text="اكتب اسمك الان")
         msg.quick_reply = UI.get_quick_reply()
@@ -221,13 +218,12 @@ def process_message(text, user_id, group_id, line_api):
         theme_name = 'الداكن' if new_theme == 'dark' else 'الفاتح'
         return create_success_message(f"تم التغيير للثيم {theme_name}")
     
-    # WITHDRAW - Enter silent mode
+    # Withdraw
     if normalized_text == 'انسحب':
         if group_id in game_sessions:
             game = game_sessions[group_id]
             game.withdrawn_users.add(user_id)
         
-        # Add user to silent mode
         silent_users.add(user_id)
         logger.info(f"User {user_id} entered silent mode")
         
@@ -235,7 +231,7 @@ def process_message(text, user_id, group_id, line_api):
         msg.quick_reply = UI.get_quick_reply()
         return msg
     
-    # STOP game
+    # Stop game
     if normalized_text == 'ايقاف':
         if group_id in game_sessions:
             del game_sessions[group_id]
@@ -261,7 +257,7 @@ def handle_name_registration(name, user_id):
     if 1 <= len(name) <= 20:
         DB.register_user(user_id, name)
         waiting_for_name.discard(user_id)
-        silent_users.discard(user_id)  # Ensure active after registration
+        silent_users.discard(user_id)
         
         user = DB.get_user(user_id)
         msg = FlexMessage(
@@ -311,7 +307,6 @@ def start_game(game_type, group_id, line_api, theme):
 def handle_game_answer(group_id, text, user_id, user):
     game = game_sessions[group_id]
     
-    # Skip if user withdrawn from this specific game
     if user_id in game.withdrawn_users:
         return None
     
