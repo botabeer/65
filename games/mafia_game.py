@@ -52,9 +52,7 @@ class MafiaGame(BaseGame):
             }]
 
         current_count = len(self.players)
-        ready_text = f"{current_count}/{self.max_players}"
-        min_text = f"الحد الادنى: {self.min_players}"
-
+        
         contents = [
             {
                 "type": "text",
@@ -309,10 +307,8 @@ class MafiaGame(BaseGame):
         player_ids = list(self.players.keys())
         random.shuffle(player_ids)
         
-        # حساب عدد المافيا (1 مافيا لكل 4 لاعبين)
         num_mafia = max(1, len(player_ids) // 4)
         
-        # توزيع الادوار: مافيا + محقق + دكتور + مواطنين
         roles = ['mafia'] * num_mafia + ['detective', 'doctor'] + ['citizen'] * (len(player_ids) - num_mafia - 2)
         
         for uid, role in zip(player_ids, roles):
@@ -943,7 +939,6 @@ class MafiaGame(BaseGame):
         """معالجة رسائل اللاعبين"""
         text = text.strip()
         
-        # اوامر التسجيل والبداية
         if text == "انضم مافيا":
             return self.add_player(user_id, display_name)
         
@@ -962,13 +957,11 @@ class MafiaGame(BaseGame):
                 }
             return {"response": self.simple_message("لا يمكن الالغاء بعد بدء اللعبة")}
         
-        # اوامر الليل
         if text == "انهاء الليل":
             if self.phase == "night":
                 return self.process_night()
             return {"response": self.simple_message("ليس وقت الليل الآن")}
         
-        # اوامر النهار والتصويت
         if text == "تصويت مافيا":
             if self.phase in ["day", "voting"]:
                 self.phase = "voting"
@@ -984,24 +977,14 @@ class MafiaGame(BaseGame):
                 return self.end_voting()
             return {"response": self.simple_message("ليس وقت التصويت الآن")}
         
-        # اوامر الادوار الخاصة
         if text == "اقتل" or text.startswith("اقتل "):
-            return self.mafia_action(
-                user_id,
-                text.replace("اقتل ", "").strip() if " " in text else ""
-            )
+            return self.mafia_action(user_id, text.replace("اقتل ", "").strip() if " " in text else "")
         
         if text == "افحص" or text.startswith("افحص "):
-            return self.detective_action(
-                user_id,
-                text.replace("افحص ", "").strip() if " " in text else ""
-            )
+            return self.detective_action(user_id, text.replace("افحص ", "").strip() if " " in text else "")
         
         if text == "احمي" or text.startswith("احمي "):
-            return self.doctor_action(
-                user_id,
-                text.replace("احمي ", "").strip() if " " in text else ""
-            )
+            return self.doctor_action(user_id, text.replace("احمي ", "").strip() if " " in text else "")
         
         return None
     
@@ -1023,16 +1006,11 @@ class MafiaGame(BaseGame):
                     return {"response": self.simple_message(f"تم اختيار {target_name} للقتل")}
             return {"response": self.simple_message("لا يوجد لاعب حي بهذا الاسم")}
         
-        # عرض قائمة بالأزرار
         buttons = []
         for uid, p in alive:
             buttons.append({
                 "type": "button",
-                "action": {
-                    "type": "message",
-                    "label": p['name'],
-                    "text": f"اقتل {p['name']}"
-                },
+                "action": {"type": "message", "label": p['name'], "text": f"اقتل {p['name']}"},
                 "style": "primary",
                 "color": "#F8FBFC",
                 "height": "sm"
@@ -1050,35 +1028,12 @@ class MafiaGame(BaseGame):
                 "backgroundColor": c["bg"],
                 "paddingAll": "20px",
                 "contents": [
-                    {
-                        "type": "text",
-                        "text": "اختر من تريد قتله",
-                        "size": "lg",
-                        "weight": "bold",
-                        "color": c["text"],
-                        "align": "center"
-                    },
-                    {
-                        "type": "separator",
-                        "margin": "md",
-                        "color": c["border"]
-                    },
-                    {
-                        "type": "text",
-                        "text": "اختر لاعب من القائمة",
-                        "size": "sm",
-                        "color": c["text2"],
-                        "align": "center",
-                        "margin": "lg"
-                    }
+                    {"type": "text", "text": "اختر من تريد قتله", "size": "lg", "weight": "bold", "color": c["text"], "align": "center"},
+                    {"type": "separator", "margin": "md", "color": c["border"]},
+                    {"type": "text", "text": "اختر لاعب من القائمة", "size": "sm", "color": c["text2"], "align": "center", "margin": "lg"}
                 ]
             },
-            "footer": {
-                "type": "box",
-                "layout": "vertical",
-                "spacing": "sm",
-                "contents": buttons
-            }
+            "footer": {"type": "box", "layout": "vertical", "spacing": "sm", "contents": buttons}
         }
         
         return {"response": FlexMessage(alt_text="اختر الهدف", contents=FlexContainer.from_dict(bubble))}
@@ -1109,19 +1064,8 @@ class MafiaGame(BaseGame):
                             "backgroundColor": c["bg"],
                             "paddingAll": "20px",
                             "contents": [
-                                {
-                                    "type": "text",
-                                    "text": "نتيجة الفحص",
-                                    "size": "xl",
-                                    "weight": "bold",
-                                    "color": c["text"],
-                                    "align": "center"
-                                },
-                                {
-                                    "type": "separator",
-                                    "margin": "md",
-                                    "color": c["border"]
-                                },
+                                {"type": "text", "text": "نتيجة الفحص", "size": "xl", "weight": "bold", "color": c["text"], "align": "center"},
+                                {"type": "separator", "margin": "md", "color": c["border"]},
                                 {
                                     "type": "box",
                                     "layout": "vertical",
@@ -1130,23 +1074,8 @@ class MafiaGame(BaseGame):
                                     "cornerRadius": "8px",
                                     "paddingAll": "15px",
                                     "contents": [
-                                        {
-                                            "type": "text",
-                                            "text": target_name,
-                                            "size": "lg",
-                                            "weight": "bold",
-                                            "color": c["text"],
-                                            "align": "center"
-                                        },
-                                        {
-                                            "type": "text",
-                                            "text": result,
-                                            "size": "xxl",
-                                            "weight": "bold",
-                                            "color": c["text"],
-                                            "align": "center",
-                                            "margin": "md"
-                                        }
+                                        {"type": "text", "text": target_name, "size": "lg", "weight": "bold", "color": c["text"], "align": "center"},
+                                        {"type": "text", "text": result, "size": "xxl", "weight": "bold", "color": c["text"], "align": "center", "margin": "md"}
                                     ]
                                 }
                             ]
@@ -1156,16 +1085,11 @@ class MafiaGame(BaseGame):
                     return {"response": FlexMessage(alt_text="نتيجة الفحص", contents=FlexContainer.from_dict(bubble))}
             return {"response": self.simple_message("لا يوجد لاعب حي بهذا الاسم")}
         
-        # عرض قائمة بالأزرار
         buttons = []
         for uid, p in alive:
             buttons.append({
                 "type": "button",
-                "action": {
-                    "type": "message",
-                    "label": p['name'],
-                    "text": f"افحص {p['name']}"
-                },
+                "action": {"type": "message", "label": p['name'], "text": f"افحص {p['name']}"},
                 "style": "primary",
                 "color": "#F8FBFC",
                 "height": "sm"
@@ -1183,35 +1107,12 @@ class MafiaGame(BaseGame):
                 "backgroundColor": c["bg"],
                 "paddingAll": "20px",
                 "contents": [
-                    {
-                        "type": "text",
-                        "text": "اختر من تريد فحصه",
-                        "size": "lg",
-                        "weight": "bold",
-                        "color": c["text"],
-                        "align": "center"
-                    },
-                    {
-                        "type": "separator",
-                        "margin": "md",
-                        "color": c["border"]
-                    },
-                    {
-                        "type": "text",
-                        "text": "اختر لاعب من القائمة",
-                        "size": "sm",
-                        "color": c["text2"],
-                        "align": "center",
-                        "margin": "lg"
-                    }
+                    {"type": "text", "text": "اختر من تريد فحصه", "size": "lg", "weight": "bold", "color": c["text"], "align": "center"},
+                    {"type": "separator", "margin": "md", "color": c["border"]},
+                    {"type": "text", "text": "اختر لاعب من القائمة", "size": "sm", "color": c["text2"], "align": "center", "margin": "lg"}
                 ]
             },
-            "footer": {
-                "type": "box",
-                "layout": "vertical",
-                "spacing": "sm",
-                "contents": buttons
-            }
+            "footer": {"type": "box", "layout": "vertical", "spacing": "sm", "contents": buttons}
         }
         
         return {"response": FlexMessage(alt_text="اختر من تريد فحصه", contents=FlexContainer.from_dict(bubble))}
@@ -1238,30 +1139,13 @@ class MafiaGame(BaseGame):
                     return {"response": self.simple_message(f"تم حماية {target_text}")}
             return {"response": self.simple_message("لا يوجد لاعب حي بهذا الاسم")}
         
-        # عرض قائمة بالأزرار
-        buttons = [
-            {
-                "type": "button",
-                "action": {
-                    "type": "message",
-                    "label": "احمي نفسي",
-                    "text": "احمي نفسي"
-                },
-                "style": "primary",
-                "color": "#F8FBFC",
-                "height": "sm"
-            }
-        ]
+        buttons = [{"type": "button", "action": {"type": "message", "label": "احمي نفسي", "text": "احمي نفسي"}, "style": "primary", "color": "#F8FBFC", "height": "sm"}]
         
         for uid, p in alive:
             if uid != user_id:
                 buttons.append({
                     "type": "button",
-                    "action": {
-                        "type": "message",
-                        "label": p['name'],
-                        "text": f"احمي {p['name']}"
-                    },
+                    "action": {"type": "message", "label": p['name'], "text": f"احمي {p['name']}"},
                     "style": "primary",
                     "color": "#F8FBFC",
                     "height": "sm"
@@ -1276,155 +1160,16 @@ class MafiaGame(BaseGame):
                 "backgroundColor": c["bg"],
                 "paddingAll": "20px",
                 "contents": [
-                    {
-                        "type": "text",
-                        "text": "اختر من تريد حمايته",
-                        "size": "lg",
-                        "weight": "bold",
-                        "color": c["text"],
-                        "align": "center"
-                    },
-                    {
-                        "type": "separator",
-                        "margin": "md",
-                        "color": c["border"]
-                    },
-                    {
-                        "type": "text",
-                        "text": "اختر لاعب من القائمة",
-                        "size": "sm",
-                        "color": c["text2"],
-                        "align": "center",
-                        "margin": "lg"
-                    }
+                    {"type": "text", "text": "اختر من تريد حمايته", "size": "lg", "weight": "bold", "color": c["text"], "align": "center"},
+                    {"type": "separator", "margin": "md", "color": c["border"]},
+                    {"type": "text", "text": "اختر لاعب من القائمة", "size": "sm", "color": c["text2"], "align": "center", "margin": "lg"}
                 ]
             },
-            "footer": {
-                "type": "box",
-                "layout": "vertical",
-                "spacing": "sm",
-                "contents": buttons
-            }
+            "footer": {"type": "box", "layout": "vertical", "spacing": "sm", "contents": buttons}
         }
         
-        return {"response": FlexMessage(alt_text="اختر من تريد حمايته", contents=FlexContainer.from_dict(bubble))}("\n".join(result_parts)),
-                    self.winner_message(winner)
-                ],
-                "game_over": True
-            }
-        
-        self.phase = "day"
-        return {
-            "response": [
-                self.simple_message("\n".join(result_parts)),
-                self.day_message()
-            ]
-        }
-
-    def day_message(self):
-        """رسالة مرحلة النهار"""
-        c = self.get_theme_colors()
-        alive = [p for p in self.players.values() if p['alive']]
-        
-        alive_list = []
-        for i, p in enumerate(alive, 1):
-            alive_list.append({
-                "type": "text",
-                "text": f"{i}. {p['name']}",
-                "size": "sm",
-                "color": c["text"],
-                "margin": "xs" if i > 1 else "md"
-            })
-        
-        contents = [
-            {
-                "type": "text",
-                "text": f"النهار - اليوم {self.day_number}",
-                "size": "xl",
-                "weight": "bold",
-                "color": c["text"],
-                "align": "center"
-            },
-            {
-                "type": "separator",
-                "margin": "md",
-                "color": c["border"]
-            },
-            {
-                "type": "box",
-                "layout": "vertical",
-                "margin": "lg",
-                "backgroundColor": c["card"],
-                "cornerRadius": "8px",
-                "paddingAll": "12px",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": "وقت النقاش والتصويت",
-                        "size": "sm",
-                        "color": c["text2"],
-                        "align": "center"
-                    }
-                ]
-            },
-            {
-                "type": "box",
-                "layout": "vertical",
-                "margin": "lg",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": "الاحياء:",
-                        "size": "sm",
-                        "weight": "bold",
-                        "color": c["text"]
-                    }
-                ] + alive_list
-            },
-            {
-                "type": "separator",
-                "margin": "lg",
-                "color": c["border"]
-            }
-        ]
-        
-        footer = {
-            "type": "box",
-            "layout": "vertical",
-            "spacing": "sm",
-            "contents": [
-                {
-                    "type": "button",
-                    "action": {"type": "message", "label": "بدء التصويت", "text": "تصويت مافيا"},
-                    "style": "primary",
-                    "color": "#F8FBFC",
-                    "height": "sm"
-                },
-                {
-                    "type": "button",
-                    "action": {"type": "message", "label": "حالة اللعبة", "text": "حالة مافيا"},
-                    "style": "secondary",
-                    "color": "#F8FBFC",
-                    "height": "sm"
-                }
-            ]
-        }
-        
-        bubble = {
-            "type": "bubble",
-            "size": "mega",
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": contents,
-                "paddingAll": "20px",
-                "backgroundColor": c["bg"]
-            },
-            "footer": footer
-        }
-        
-        return FlexMessage(alt_text="مافيا - النهار", contents=FlexContainer.from_dict(bubble))
-
+        return {"response": FlexMessage(alt_text="اختر من تريد حمايته", contents=FlexContainer.from_dict(bubble))}
+    
     def voting_message(self):
         """رسالة التصويت"""
         c = self.get_theme_colors()
@@ -1434,11 +1179,7 @@ class MafiaGame(BaseGame):
         for uid, p in alive:
             vote_buttons.append({
                 "type": "button",
-                "action": {
-                    "type": "message",
-                    "label": p['name'],
-                    "text": f"صوت {p['name']}"
-                },
+                "action": {"type": "message", "label": p['name'], "text": f"صوت {p['name']}"},
                 "style": "primary",
                 "color": "#F8FBFC",
                 "height": "sm"
@@ -1451,37 +1192,14 @@ class MafiaGame(BaseGame):
                 vote_counts[target_name] = vote_counts.get(target_name, 0) + 1
             
             for target_name, count in sorted(vote_counts.items(), key=lambda x: x[1], reverse=True):
-                vote_list.append({
-                    "type": "text",
-                    "text": f"{target_name}: {count} صوت",
-                    "size": "sm",
-                    "color": c["text"],
-                    "margin": "xs"
-                })
+                vote_list.append({"type": "text", "text": f"{target_name}: {count} صوت", "size": "sm", "color": c["text"], "margin": "xs"})
         
         if not vote_list:
-            vote_list = [{
-                "type": "text",
-                "text": "لا توجد اصوات بعد",
-                "size": "xs",
-                "color": c["text2"],
-                "margin": "md"
-            }]
+            vote_list = [{"type": "text", "text": "لا توجد اصوات بعد", "size": "xs", "color": c["text2"], "margin": "md"}]
         
         contents = [
-            {
-                "type": "text",
-                "text": "التصويت",
-                "size": "xl",
-                "weight": "bold",
-                "color": c["text"],
-                "align": "center"
-            },
-            {
-                "type": "separator",
-                "margin": "md",
-                "color": c["border"]
-            },
+            {"type": "text", "text": "التصويت", "size": "xl", "weight": "bold", "color": c["text"], "align": "center"},
+            {"type": "separator", "margin": "md", "color": c["border"]},
             {
                 "type": "box",
                 "layout": "vertical",
@@ -1489,70 +1207,24 @@ class MafiaGame(BaseGame):
                 "backgroundColor": c["card"],
                 "cornerRadius": "8px",
                 "paddingAll": "12px",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": "اختر من تريد طرده",
-                        "size": "sm",
-                        "color": c["text2"],
-                        "align": "center"
-                    }
-                ]
+                "contents": [{"type": "text", "text": "اختر من تريد طرده", "size": "sm", "color": c["text2"], "align": "center"}]
             },
-            {
-                "type": "separator",
-                "margin": "md",
-                "color": c["border"]
-            },
-            {
-                "type": "box",
-                "layout": "vertical",
-                "margin": "md",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": "الاصوات الحالية:",
-                        "size": "sm",
-                        "weight": "bold",
-                        "color": c["text"]
-                    }
-                ] + vote_list
-            },
-            {
-                "type": "separator",
-                "margin": "lg",
-                "color": c["border"]
-            }
+            {"type": "separator", "margin": "md", "color": c["border"]},
+            {"type": "box", "layout": "vertical", "margin": "md", "contents": [{"type": "text", "text": "الاصوات الحالية:", "size": "sm", "weight": "bold", "color": c["text"]}] + vote_list},
+            {"type": "separator", "margin": "lg", "color": c["border"]}
         ]
         
         footer_contents = vote_buttons + [
             {"type": "separator", "margin": "sm"},
-            {
-                "type": "button",
-                "action": {"type": "message", "label": "انهاء التصويت", "text": "انهاء التصويت"},
-                "style": "primary",
-                "color": "#F8FBFC",
-                "height": "sm"
-            }
+            {"type": "button", "action": {"type": "message", "label": "انهاء التصويت", "text": "انهاء التصويت"}, "style": "primary", "color": "#F8FBFC", "height": "sm"}
         ]
         
-        footer = {
-            "type": "box",
-            "layout": "vertical",
-            "spacing": "sm",
-            "contents": footer_contents
-        }
+        footer = {"type": "box", "layout": "vertical", "spacing": "sm", "contents": footer_contents}
         
         bubble = {
             "type": "bubble",
             "size": "mega",
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": contents,
-                "paddingAll": "20px",
-                "backgroundColor": c["bg"]
-            },
+            "body": {"type": "box", "layout": "vertical", "contents": contents, "paddingAll": "20px", "backgroundColor": c["bg"]},
             "footer": footer
         }
         
@@ -1569,12 +1241,7 @@ class MafiaGame(BaseGame):
         for uid, p in self.players.items():
             if p['name'] == target_name and p['alive']:
                 self.votes[user_id] = target_name
-                return {
-                    "response": [
-                        self.simple_message(f"تم تسجيل صوتك لـ {target_name}"),
-                        self.voting_message()
-                    ]
-                }
+                return {"response": [self.simple_message(f"تم تسجيل صوتك لـ {target_name}"), self.voting_message()]}
         
         return {"response": self.simple_message("لا يوجد لاعب حي بهذا الاسم")}
 
@@ -1591,33 +1258,23 @@ class MafiaGame(BaseGame):
         eliminated = [name for name, count in vote_counts.items() if count == max_votes]
         
         if len(eliminated) > 1:
-            result_parts = [
-                f"تعادل في الاصوات بين:",
-                ", ".join(eliminated),
-                "لا احد تم طرده"
-            ]
+            result_parts = ["تعادل في الاصوات بين:", ", ".join(eliminated), "لا احد تم طرده"]
         else:
             eliminated_name = eliminated[0]
             for uid, p in self.players.items():
                 if p['name'] == eliminated_name:
                     self.players[uid]['alive'] = False
-                    role_names = {
-                        'mafia': 'مافيا',
-                        'detective': 'محقق',
-                        'doctor': 'دكتور',
-                        'citizen': 'مواطن'
-                    }
+                    role_names = {'mafia': 'مافيا', 'detective': 'محقق', 'doctor': 'دكتور', 'citizen': 'مواطن'}
                     role_name = role_names[p['role']]
-                    result_parts = [
-                        f"تم طرد: {eliminated_name}",
-                        f"الدور: {role_name}"
-                    ]
+                    result_parts = [f"تم طرد: {eliminated_name}", f"الدور: {role_name}"]
                     break
         
         self.votes = {}
         winner = self.check_winner()
         
         if winner:
-            return {
-                "response": [
-                    self.simple_message
+            return {"response": [self.simple_message("\n".join(result_parts)), self.winner_message(winner)], "game_over": True}
+        
+        self.phase = "night"
+        self.day_number += 1
+        return {"response": [self.simple_message("\n".join(result_parts)), self.night_message()]}
