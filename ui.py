@@ -1,7 +1,7 @@
 from linebot.v3.messaging import QuickReply, QuickReplyItem, MessageAction
 
 class UI:
-    BUTTON_COLOR = "#F2F2F7"
+    BUTTON_COLOR = "#F8FBFC"
     
     THEMES = {
         "light": {
