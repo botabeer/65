@@ -11,7 +11,7 @@ class TextCommands:
         'mentions': 'games/mentions.txt',
         'quotes': 'games/quotes.txt',
         'situations': 'games/situations.txt',
-        'poem': 'games/poems.json',
+        'poem': 'games/poem.txt',
         'private': 'games/private.txt',
         'anonymous': 'games/anonymous.txt',
         'advice': 'games/advice.txt'
