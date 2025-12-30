@@ -39,17 +39,14 @@ from games import (
     ScrambleGame, MafiaGame, WordColorGame, LetterGame
 )
 
-# Initialize database and load text commands
 DB.init()
 TextCommands.load_all()
 
-# Game sessions and user state
 game_sessions = {}
 waiting_for_name = set()
 user_themes = {}
 silent_users = set()
 
-# Text commands mapping
 TEXT_COMMANDS = {
     'سؤال': 'questions',
     'منشن': 'mentions',
@@ -59,11 +56,9 @@ TEXT_COMMANDS = {
     'موقف': 'situations',
     'خاص': 'private',
     'مجهول': 'anonymous',
-    'نصيحة': 'advice',
-    'شعر': 'poem'
+    'نصيحة': 'advice'
 }
 
-# Game mapping
 GAME_MAP = {
     'فئه': CategoryGame,
     'اسرع': FastGame,
@@ -79,7 +74,6 @@ GAME_MAP = {
     'حرف': LetterGame
 }
 
-# Auto-cleanup scheduler
 scheduler = BackgroundScheduler()
 
 def cleanup_inactive_users():
@@ -131,7 +125,6 @@ def handle_message(event):
 def process_message(text, user_id, group_id, line_api):
     normalized_text = text.lower().strip()
     
-    # Check if user is in silent mode
     if user_id in silent_users:
         if normalized_text in ['تسجيل', 'بداية', 'start', 'ابدا']:
             silent_users.discard(user_id)
@@ -143,45 +136,38 @@ def process_message(text, user_id, group_id, line_api):
     user = DB.get_user(user_id)
     theme = user_themes.get(user_id, user['theme'] if user else 'light')
     
-    # Handle name registration
     if user_id in waiting_for_name:
         return handle_name_registration(text, user_id)
     
-    # Text commands
     if normalized_text in TEXT_COMMANDS:
         content = TextCommands.get_random(TEXT_COMMANDS[normalized_text])
         msg = TextMessage(text=content)
         msg.quick_reply = UI.get_quick_reply()
         return msg
     
-    # Start command
     if normalized_text in ['بداية', 'start', 'ابدا']:
         if user:
             DB.update_activity(user_id)
         return create_welcome_message(user, theme)
     
-    # Help command
     if normalized_text in ['مساعدة', 'help', 'مساعده']:
         return FlexMessage(
             alt_text="Help",
             contents=FlexContainer.from_dict(UI.help_card(theme))
         )
     
-    # Text commands menu
     if normalized_text in ['نص', 'نصوص']:
         return FlexMessage(
             alt_text="Text Commands",
             contents=FlexContainer.from_dict(UI.text_commands_menu(theme))
         )
     
-    # Games menu
-    if normalized_text in ['العاب', 'ألعاب', 'الالعاب', 'العاب']:
+    if normalized_text in ['العاب', 'ألعاب', 'الالعاب']:
         return FlexMessage(
             alt_text="Games",
             contents=FlexContainer.from_dict(UI.games_menu(theme))
         )
     
-    # Registration
     if normalized_text in ['تسجيل', 'تغيير']:
         silent_users.discard(user_id)
         waiting_for_name.add(user_id)
@@ -189,7 +175,6 @@ def process_message(text, user_id, group_id, line_api):
         msg.quick_reply = UI.get_quick_reply()
         return msg
     
-    # Stats
     if normalized_text == 'نقاطي':
         if not user:
             return create_error_message("يجب التسجيل اولا - اكتب: تسجيل")
@@ -199,7 +184,6 @@ def process_message(text, user_id, group_id, line_api):
             contents=FlexContainer.from_dict(UI.stats(user, theme))
         )
     
-    # Leaderboard
     if normalized_text in ['الصدارة', 'صدارة']:
         leaders = DB.get_leaderboard()
         return FlexMessage(
@@ -207,7 +191,6 @@ def process_message(text, user_id, group_id, line_api):
             contents=FlexContainer.from_dict(UI.leaderboard(leaders, theme))
         )
     
-    # Theme toggle
     if normalized_text == 'ثيم':
         if not user:
             return create_error_message("يجب التسجيل اولا")
@@ -217,7 +200,6 @@ def process_message(text, user_id, group_id, line_api):
         theme_name = 'الداكن' if new_theme == 'dark' else 'الفاتح'
         return create_success_message(f"تم التغيير للثيم {theme_name}")
     
-    # Withdraw
     if normalized_text == 'انسحب':
         if group_id in game_sessions:
             game = game_sessions[group_id]
@@ -230,25 +212,20 @@ def process_message(text, user_id, group_id, line_api):
         msg.quick_reply = UI.get_quick_reply()
         return msg
     
-    # Stop game
     if normalized_text == 'ايقاف':
         if group_id in game_sessions:
             del game_sessions[group_id]
             return create_success_message("تم ايقاف اللعبة")
         return None
     
-    # Must be registered to play (except for Mafia and Compatibility)
     if normalized_text not in ['مافيا', 'توافق']:
         if not user:
             return None
     
-    # Start game
     if normalized_text in GAME_MAP:
         return start_game(normalized_text, group_id, line_api, theme, user)
     
-    # Handle game answer
     if group_id in game_sessions:
-        # For games that don't require registration
         if not user and normalized_text not in ['مافيا', 'توافق']:
             return None
         return handle_game_answer(group_id, text, user_id, user)
@@ -304,7 +281,6 @@ def start_game(game_type, group_id, line_api, theme, user):
         game_sessions[group_id] = game
         response = game.start_game()
         
-        # Add quick reply to response
         if isinstance(response, TextMessage):
             response.quick_reply = UI.get_quick_reply()
         
@@ -319,7 +295,6 @@ def handle_game_answer(group_id, text, user_id, user):
     if user_id in game.withdrawn_users:
         return None
     
-    # For games that need user name
     display_name = user['name'] if user else 'لاعب'
     
     result = game.check_answer(text, user_id, display_name)
@@ -327,7 +302,6 @@ def handle_game_answer(group_id, text, user_id, user):
     if not result:
         return None
     
-    # Handle different response types
     if isinstance(result, (TextMessage, FlexMessage)):
         if isinstance(result, TextMessage):
             result.quick_reply = UI.get_quick_reply()
