@@ -6,38 +6,36 @@ from abc import ABC, abstractmethod
 class BaseGame(ABC):
     """الفئة الأساسية لجميع الألعاب"""
     
+    BUTTON_COLOR = "#F8FBFC"
+    
     THEMES = {
         "light": {
             "primary": "#1E293B",
-            "secondary": "#475569",
             "text": "#334155",
             "text2": "#64748B",
             "text3": "#94A3B8",
-            "bg": "#F8FAFC",
-            "card": "#F8FAFC",  # الخلفية تأخذ لون الثيم نفسه
+            "bg": "#FFFFFF",
+            "card": "#F8FAFC",
             "border": "#E2E8F0",
-            "button": "#F5F5F5",  # موحد لكل الأزرار
-            "button_text": "#000000",  # نص أسود على الأزرار
-            "success": "#10B981",
+            "button": "#F2F2F7",
+            "success": "#0EA5E9",
+            "accent": "#3B82F6",
             "warning": "#F59E0B",
-            "error": "#EF4444",
-            "accent": "#3B82F6"
+            "error": "#EF4444"
         },
         "dark": {
             "primary": "#F1F5F9",
-            "secondary": "#CBD5E1",
-            "text": "#E2E8F0",
+            "text": "#CBD5E1",
             "text2": "#94A3B8",
             "text3": "#64748B",
             "bg": "#0F172A",
-            "card": "#0F172A",  # الخلفية تأخذ لون الثيم
+            "card": "#1E293B",
             "border": "#334155",
-            "button": "#F5F5F5",  # موحد لكل الأزرار
-            "button_text": "#000000",  # نص أسود
-            "success": "#10B981",
-            "warning": "#F59E0B",
-            "error": "#EF4444",
-            "accent": "#60A5FA"
+            "button": "#F2F2F7",
+            "success": "#38BDF8",
+            "accent": "#60A5FA",
+            "warning": "#FBBF24",
+            "error": "#F87171"
         }
     }
 
@@ -91,22 +89,14 @@ class BaseGame(ABC):
 
     def get_theme_colors(self):
         colors = self.THEMES.get(self.theme, self.THEMES['light']).copy()
-        return colors
-
-    def build_button(self, label, text):
-        colors = self.get_theme_colors()
-        return {
-            "type": "button",
-            "style": "primary",
-            "height": "sm",
-            "action": {
-                "type": "message",
-                "label": label,
-                "text": text
-            },
-            "color": colors["button"],
-            "flex": 1
+        defaults = {
+            "warning": colors.get("accent", "#F59E0B"),
+            "error": colors.get("primary", "#EF4444")
         }
+        for key, value in defaults.items():
+            if key not in colors:
+                colors[key] = value
+        return colors
 
     def build_text_message(self, text):
         return TextMessage(text=text)
@@ -159,6 +149,7 @@ class BaseGame(ABC):
             }
         ]
 
+        # عرض الجواب السابق فقط بدون السؤال السابق
         if self.previous_answer:
             contents.extend([
                 {
@@ -170,7 +161,7 @@ class BaseGame(ABC):
                     "type": "box",
                     "layout": "vertical",
                     "margin": "sm",
-                    "backgroundColor": colors["bg"],  # الخلفية تأخذ لون الثيم
+                    "backgroundColor": colors["card"],
                     "cornerRadius": "6px",
                     "paddingAll": "8px",
                     "contents": [
@@ -215,10 +206,45 @@ class BaseGame(ABC):
 
         footer_buttons = []
         if self.supports_hint:
-            footer_buttons.append(self.build_button("لمح", "لمح"))
+            footer_buttons.append({
+                "type": "button",
+                "style": "secondary",
+                "height": "sm",
+                "action": {
+                    "type": "message",
+                    "label": "لمح",
+                    "text": "لمح"
+                },
+                "color": self.BUTTON_COLOR,
+                "flex": 1
+            })
+        
         if self.supports_reveal:
-            footer_buttons.append(self.build_button("جاوب", "جاوب"))
-        footer_buttons.append(self.build_button("ايقاف", "ايقاف"))
+            footer_buttons.append({
+                "type": "button",
+                "style": "secondary",
+                "height": "sm",
+                "action": {
+                    "type": "message",
+                    "label": "جاوب",
+                    "text": "جاوب"
+                },
+                "color": self.BUTTON_COLOR,
+                "flex": 1
+            })
+        
+        footer_buttons.append({
+            "type": "button",
+            "style": "secondary",
+            "height": "sm",
+            "action": {
+                "type": "message",
+                "label": "ايقاف",
+                "text": "ايقاف"
+            },
+            "color": self.BUTTON_COLOR,
+            "flex": 1
+        })
 
         bubble = {
             "type": "bubble",
@@ -236,7 +262,7 @@ class BaseGame(ABC):
                 "contents": footer_buttons,
                 "spacing": "sm",
                 "paddingAll": "12px",
-                "backgroundColor": colors["bg"]
+                "backgroundColor": colors["card"]
             }
         }
 
@@ -286,7 +312,7 @@ class BaseGame(ABC):
             return None
         
         answer_sample = self.current_answer[0] if isinstance(self.current_answer, list) else str(self.current_answer)
-        hint = f"يبدا ب: {answer_sample[0]}\nعدد الحروف: {len(answer_sample)}"
+        hint = f"يبدأ بـ: {answer_sample[0]}\nعدد الحروف: {len(answer_sample)}"
         
         return {
             "response": self.build_text_message(hint),
@@ -408,7 +434,7 @@ class BaseGame(ABC):
                         "margin": "sm"
                     }
                 ],
-                "backgroundColor": colors["bg"],  # الخلفية تأخذ لون الثيم
+                "backgroundColor": colors["card"],
                 "cornerRadius": "12px",
                 "paddingAll": "16px"
             }
