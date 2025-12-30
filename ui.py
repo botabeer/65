@@ -3,36 +3,38 @@ from linebot.v3.messaging import QuickReply, QuickReplyItem, MessageAction
 class UI:
     """واجهة مستخدم احترافية ومحسّنة"""
     
-    BUTTON_COLOR = "#F8FBFC"
-    
     THEMES = {
         "light": {
-            "primary": "#2C3E50",
-            "text": "#34495E",
-            "text2": "#7F8C8D",
-            "text3": "#95A5A6",
-            "bg": "#FFFFFF",
-            "card": "#F8F9FA",
-            "border": "#E9ECEF",
-            "button": "#F2F2F7",
-            "success": "#27AE60",
-            "warning": "#F39C12",
-            "error": "#E74C3C",
-            "accent": "#3498DB"
+            "primary": "#1E293B",
+            "secondary": "#475569",
+            "text": "#334155",
+            "text2": "#64748B",
+            "text3": "#94A3B8",
+            "bg": "#F8FAFC",
+            "card": "#FFFFFF",
+            "border": "#E2E8F0",
+            "button": "#3B82F6",
+            "button_text": "#FFFFFF",
+            "success": "#10B981",
+            "warning": "#F59E0B",
+            "error": "#EF4444",
+            "accent": "#3B82F6"
         },
         "dark": {
-            "primary": "#ECF0F1",
-            "text": "#BDC3C7",
-            "text2": "#95A5A6",
-            "text3": "#7F8C8D",
-            "bg": "#1C2833",
-            "card": "#273746",
-            "border": "#34495E",
-            "button": "#F2F2F7",
-            "success": "#27AE60",
-            "warning": "#F39C12",
-            "error": "#E74C3C",
-            "accent": "#3498DB"
+            "primary": "#F1F5F9",
+            "secondary": "#CBD5E1",
+            "text": "#E2E8F0",
+            "text2": "#94A3B8",
+            "text3": "#64748B",
+            "bg": "#0F172A",
+            "card": "#1E293B",
+            "border": "#334155",
+            "button": "#3B82F6",
+            "button_text": "#FFFFFF",
+            "success": "#10B981",
+            "warning": "#F59E0B",
+            "error": "#EF4444",
+            "accent": "#60A5FA"
         }
     }
 
@@ -42,24 +44,32 @@ class UI:
         return UI.THEMES.get(theme, UI.THEMES["light"])
 
     @staticmethod
-    def _btn(label, text, style="secondary", color=None):
+    def _btn(label, text, theme="light", style="primary"):
         """إنشاء زر"""
-        btn = {
+        c = UI._c(theme)
+        
+        if style == "primary":
+            bg_color = c["button"]
+            text_color = c["button_text"]
+        elif style == "secondary":
+            bg_color = c["card"]
+            text_color = c["text"]
+        else:
+            bg_color = c["card"]
+            text_color = c["text2"]
+        
+        return {
             "type": "button",
-            "style": style,
+            "style": "primary" if style == "primary" else "secondary",
             "height": "sm",
             "action": {
                 "type": "message",
                 "label": label,
                 "text": text
             },
+            "color": bg_color if style == "primary" else None,
             "flex": 1
         }
-        if color:
-            btn["color"] = color
-        else:
-            btn["color"] = UI.BUTTON_COLOR
-        return btn
 
     @staticmethod
     def get_quick_reply():
@@ -98,7 +108,7 @@ class UI:
             },
             {
                 "type": "text",
-                "text": f"مرحباً {name}",
+                "text": f"مرحبا {name}",
                 "size": "md",
                 "align": "center",
                 "color": c["text2"],
@@ -139,7 +149,6 @@ class UI:
                 "cornerRadius": "8px"
             })
         
-        # الأزرار الرئيسية
         contents.extend([
             {
                 "type": "box",
@@ -147,8 +156,8 @@ class UI:
                 "spacing": "xs",
                 "margin": "lg",
                 "contents": [
-                    UI._btn("تسجيل", "تسجيل"),
-                    UI._btn("انسحب", "انسحب")
+                    UI._btn("تسجيل", "تسجيل", theme),
+                    UI._btn("انسحب", "انسحب", theme, "secondary")
                 ]
             },
             {
@@ -157,8 +166,8 @@ class UI:
                 "spacing": "xs",
                 "margin": "sm",
                 "contents": [
-                    UI._btn("نقاطي", "نقاطي"),
-                    UI._btn("الصدارة", "الصدارة")
+                    UI._btn("نقاطي", "نقاطي", theme),
+                    UI._btn("الصدارة", "الصدارة", theme)
                 ]
             },
             {
@@ -167,8 +176,8 @@ class UI:
                 "spacing": "xs",
                 "margin": "sm",
                 "contents": [
-                    UI._btn("نص", "نص"),
-                    UI._btn("العاب", "العاب")
+                    UI._btn("نص", "نص", theme),
+                    UI._btn("العاب", "العاب", theme)
                 ]
             },
             {
@@ -177,8 +186,8 @@ class UI:
                 "spacing": "xs",
                 "margin": "sm",
                 "contents": [
-                    UI._btn("ثيم", "ثيم"),
-                    UI._btn("مساعدة", "مساعدة")
+                    UI._btn("ثيم", "ثيم", theme, "secondary"),
+                    UI._btn("مساعدة", "مساعدة", theme, "secondary")
                 ]
             },
             {
@@ -241,9 +250,8 @@ class UI:
             }
         ]
         
-        # ترتيب الأزرار 3 في كل صف
         for i in range(0, len(commands), 3):
-            row_buttons = [UI._btn(l, t) for l, t in commands[i:i+3]]
+            row_buttons = [UI._btn(l, t, theme) for l, t in commands[i:i+3]]
             contents.append({
                 "type": "box",
                 "layout": "horizontal",
@@ -262,7 +270,7 @@ class UI:
                 "type": "box",
                 "layout": "horizontal",
                 "margin": "md",
-                "contents": [UI._btn("رجوع", "بداية")]
+                "contents": [UI._btn("رجوع", "بداية", theme, "secondary")]
             }
         ])
         
@@ -301,7 +309,7 @@ class UI:
         contents = [
             {
                 "type": "text",
-                "text": "قائمة الألعاب",
+                "text": "قائمة الالعاب",
                 "size": "xl",
                 "weight": "bold",
                 "align": "center",
@@ -322,14 +330,13 @@ class UI:
             }
         ]
         
-        # ترتيب الأزرار 3 في كل صف
         for i in range(0, len(games), 3):
             contents.append({
                 "type": "box",
                 "layout": "horizontal",
                 "spacing": "xs",
                 "margin": "sm" if i > 0 else "lg",
-                "contents": [UI._btn(l, t) for l, t in games[i:i+3]]
+                "contents": [UI._btn(l, t, theme) for l, t in games[i:i+3]]
             })
         
         contents.extend([
@@ -342,7 +349,7 @@ class UI:
                 "type": "box",
                 "layout": "horizontal",
                 "margin": "md",
-                "contents": [UI._btn("رجوع", "بداية")]
+                "contents": [UI._btn("رجوع", "بداية", theme, "secondary")]
             }
         ])
         
@@ -365,33 +372,33 @@ class UI:
         
         sections = [
             {
-                "title": "الأوامر الأساسية",
+                "title": "الاوامر الاساسية",
                 "items": [
                     "بداية - القائمة الرئيسية",
                     "تسجيل - تسجيل اسمك",
-                    "نقاطي - إحصائياتك",
+                    "نقاطي - احصائياتك",
                     "الصدارة - قائمة المتصدرين",
                     "ثيم - تغيير المظهر",
                     "انسحب - الخروج من اللعبة"
                 ]
             },
             {
-                "title": "أوامر النصوص",
+                "title": "اوامر النصوص",
                 "items": [
                     "نص - قائمة النصوص",
-                    "سؤال - أسئلة متنوعة",
+                    "سؤال - اسئلة متنوعة",
                     "تحدي - تحديات ممتعة",
                     "اعتراف - اعترافات",
-                    "منشن - منشن أصدقائك",
+                    "منشن - منشن اصدقائك",
                     "اقتباس - اقتباسات ملهمة"
                 ]
             },
             {
-                "title": "أوامر اللعب",
+                "title": "اوامر اللعب",
                 "items": [
-                    "لمح - تلميح للإجابة",
-                    "جاوب - إظهار الجواب",
-                    "ايقاف - إيقاف اللعبة",
+                    "لمح - تلميح للاجابة",
+                    "جاوب - اظهار الجواب",
+                    "ايقاف - ايقاف اللعبة",
                     "انسحب - الانسحاب من الدورة"
                 ]
             },
@@ -399,9 +406,9 @@ class UI:
                 "title": "ملاحظات مهمة",
                 "items": [
                     "يجب التسجيل قبل اللعب",
-                    "النقاط تُحفظ تلقائياً",
+                    "النقاط تحفظ تلقائيا",
                     "يمكن تغيير الثيم بين فاتح وداكن",
-                    "الألعاب متعددة اللاعبين في المجموعات"
+                    "الالعاب متعددة اللاعبين في المجموعات"
                 ]
             }
         ]
@@ -452,7 +459,7 @@ class UI:
                 "type": "box",
                 "layout": "horizontal",
                 "margin": "md",
-                "contents": [UI._btn("رجوع", "بداية")]
+                "contents": [UI._btn("رجوع", "بداية", theme, "secondary")]
             }
         ])
         
@@ -470,7 +477,7 @@ class UI:
 
     @staticmethod
     def stats(user, theme="light"):
-        """بطاقة الإحصائيات"""
+        """بطاقة الاحصائيات"""
         c = UI._c(theme)
         win_rate = int((user['wins'] / user['games'] * 100)) if user['games'] > 0 else 0
         
@@ -485,7 +492,7 @@ class UI:
                 "contents": [
                     {
                         "type": "text",
-                        "text": "إحصائياتك",
+                        "text": "احصائياتك",
                         "size": "xl",
                         "weight": "bold",
                         "align": "center",
@@ -535,7 +542,7 @@ class UI:
                                 "contents": [
                                     {
                                         "type": "text",
-                                        "text": "ألعاب",
+                                        "text": "العاب",
                                         "size": "xs",
                                         "color": c["text2"],
                                         "align": "center"
@@ -610,8 +617,8 @@ class UI:
                         "margin": "md",
                         "spacing": "xs",
                         "contents": [
-                            UI._btn("الصدارة", "الصدارة"),
-                            UI._btn("رجوع", "بداية")
+                            UI._btn("الصدارة", "الصدارة", theme),
+                            UI._btn("رجوع", "بداية", theme, "secondary")
                         ]
                     }
                 ]
@@ -699,7 +706,7 @@ class UI:
                 "type": "box",
                 "layout": "horizontal",
                 "margin": "md",
-                "contents": [UI._btn("رجوع", "بداية")]
+                "contents": [UI._btn("رجوع", "بداية", theme, "secondary")]
             }
         ])
         
