@@ -1,38 +1,38 @@
 from linebot.v3.messaging import QuickReply, QuickReplyItem, MessageAction
 
 class UI:
-    """واجهة مستخدم محسّنة واحترافية"""
+    """واجهة مستخدم محسنة واحترافية"""
 
     THEMES = {
         "light": {
-            "primary": "#1E293B",
-            "text": "#334155",
-            "text2": "#64748B",
-            "text3": "#94A3B8",
+            "primary": "#000000",
+            "text": "#1A1A1A",
+            "text2": "#4D4D4D",
+            "text3": "#808080",
             "bg": "#FFFFFF",
-            "card": "#F8FAFC",
-            "border": "#E2E8F0",
+            "card": "#F5F5F5",
+            "border": "#E0E0E0",
             "button": "#F5F5F5",
-            "button_text": "#1E293B",
-            "success": "#10B981",
-            "accent": "#3B82F6",
-            "warning": "#F59E0B",
-            "error": "#EF4444"
+            "button_text": "#000000",
+            "success": "#000000",
+            "accent": "#4D4D4D",
+            "warning": "#808080",
+            "error": "#000000"
         },
         "dark": {
-            "primary": "#F1F5F9",
-            "text": "#CBD5E1",
-            "text2": "#94A3B8",
-            "text3": "#64748B",
-            "bg": "#0F172A",
-            "card": "#1E293B",
-            "border": "#334155",
+            "primary": "#FFFFFF",
+            "text": "#E6E6E6",
+            "text2": "#B3B3B3",
+            "text3": "#808080",
+            "bg": "#1A1A1A",
+            "card": "#2D2D2D",
+            "border": "#404040",
             "button": "#F5F5F5",
-            "button_text": "#1E293B",
-            "success": "#10B981",
-            "accent": "#3B82F6",
-            "warning": "#F59E0B",
-            "error": "#EF4444"
+            "button_text": "#000000",
+            "success": "#FFFFFF",
+            "accent": "#B3B3B3",
+            "warning": "#808080",
+            "error": "#FFFFFF"
         }
     }
 
@@ -127,7 +127,6 @@ class UI:
                 ]
             })
 
-        # الأزرار الرئيسية
         button_groups = [
             [("تسجيل", "تسجيل"), ("انسحب", "انسحب")],
             [("نقاطي", "نقاطي"), ("الصدارة", "الصدارة")],
@@ -213,7 +212,6 @@ class UI:
             }
         ]
 
-        # ترتيب الأزرار 3 في كل صف
         for i in range(0, len(commands), 3):
             row = commands[i:i+3]
             contents.append({
@@ -294,7 +292,6 @@ class UI:
             }
         ]
 
-        # ترتيب الألعاب 3 في كل صف
         for i in range(0, len(games), 3):
             row = games[i:i+3]
             contents.append({
