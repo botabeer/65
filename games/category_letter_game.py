@@ -12,7 +12,7 @@ class CategoryGame(BaseGame):
         self.supports_hint = True
         self.supports_reveal = True
         
-        # 50 تحدي متنوع
+        # 100 تحدي متنوع
         self.challenges = [
             {"category": "المطبخ", "letter": "ق", "answers": ["قدر", "قلاية"]},
             {"category": "حيوان", "letter": "ب", "answers": ["بطة", "بقرة"]},
@@ -63,30 +63,75 @@ class CategoryGame(BaseGame):
             {"category": "اداة", "letter": "م", "answers": ["مطرقة", "منشار"]},
             {"category": "لعبة", "letter": "ش", "answers": ["شطرنج", "شبكة"]},
             {"category": "الة موسيقية", "letter": "ع", "answers": ["عود", "عصا"]},
-            {"category": "مكان عبادة", "letter": "م", "answers": ["مسجد", "معبد"]}
+            {"category": "مكان عبادة", "letter": "م", "answers": ["مسجد", "معبد"]},
+            {"category": "حيوان مفترس", "letter": "ا", "answers": ["اسد", "ارنب"]},
+            {"category": "طير جارح", "letter": "ص", "answers": ["صقر", "صرد"]},
+            {"category": "سمك", "letter": "ت", "answers": ["تونة", "تونا"]},
+            {"category": "خضار", "letter": "ب", "answers": ["بصل", "باذنجان"]},
+            {"category": "فاكهة استوائية", "letter": "م", "answers": ["مانجو", "موز"]},
+            {"category": "مكسرات", "letter": "ل", "answers": ["لوز", "لب"]},
+            {"category": "بهارات", "letter": "ك", "answers": ["كمون", "كركم"]},
+            {"category": "اداة طبخ", "letter": "س", "answers": ["سكين", "ساطور"]},
+            {"category": "مشروب بارد", "letter": "ع", "answers": ["عصير", "عرقسوس"]},
+            {"category": "وجبة", "letter": "غ", "answers": ["غداء", "غبقة"]},
+            {"category": "لحم", "letter": "د", "answers": ["دجاج", "ديك"]},
+            {"category": "سلطة", "letter": "ف", "answers": ["فتوش", "فواكه"]},
+            {"category": "شوربة", "letter": "ع", "answers": ["عدس", "عظم"]},
+            {"category": "معكرونة", "letter": "ب", "answers": ["باستا", "بيني"]},
+            {"category": "خبز", "letter": "ت", "answers": ["تميس", "تنور"]},
+            {"category": "جبنة", "letter": "ح", "answers": ["حلوم", "حلومي"]},
+            {"category": "صلصة", "letter": "ط", "answers": ["طماطم", "طحينة"]},
+            {"category": "حلى", "letter": "ب", "answers": ["بودينج", "بسكويت"]},
+            {"category": "ايس كريم", "letter": "ف", "answers": ["فانيلا", "فراولة"]},
+            {"category": "كيك", "letter": "ش", "answers": ["شوكولاتة", "شيز"]},
+            {"category": "بسكويت", "letter": "ا", "answers": ["اوريو", "اولكر"]},
+            {"category": "شوكولاتة", "letter": "ك", "answers": ["كادبوري", "كيت كات"]},
+            {"category": "حلوى غربية", "letter": "د", "answers": ["دونات", "دوريتوس"]},
+            {"category": "مربى", "letter": "ت", "answers": ["توت", "تين"]},
+            {"category": "عسل", "letter": "س", "answers": ["سدر", "سمر"]},
+            {"category": "زيت", "letter": "ز", "answers": ["زيتون", "زهرة"]},
+            {"category": "خل", "letter": "ت", "answers": ["تفاح", "تمر"]},
+            {"category": "ملح", "letter": "ب", "answers": ["بحر", "بحري"]},
+            {"category": "سكر", "letter": "ن", "answers": ["نبات", "ناعم"]},
+            {"category": "دقيق", "letter": "ا", "answers": ["ابيض", "اسمر"]},
+            {"category": "ارز", "letter": "ب", "answers": ["بسمتي", "بني"]},
+            {"category": "مكرونة", "letter": "م", "answers": ["معكرونة", "مكرونة"]},
+            {"category": "قهوة", "letter": "ع", "answers": ["عربية", "عربي"]},
+            {"category": "شاي", "letter": "ا", "answers": ["احمر", "اخضر"]},
+            {"category": "عصير", "letter": "ب", "answers": ["برتقال", "بطيخ"]},
+            {"category": "ماء", "letter": "م", "answers": ["معدني", "مفلتر"]},
+            {"category": "حليب", "letter": "ك", "answers": ["كامل", "كامل الدسم"]},
+            {"category": "لبن", "letter": "ر", "answers": ["روب", "رائب"]},
+            {"category": "قشطة", "letter": "ط", "answers": ["طازج", "طازجة"]},
+            {"category": "زبدة", "letter": "ح", "answers": ["حيوانية", "حليب"]},
+            {"category": "سمنة", "letter": "ب", "answers": ["بلدي", "بقري"]},
+            {"category": "بيض", "letter": "د", "answers": ["دجاج", "دواجن"]},
+            {"category": "لحم", "letter": "غ", "answers": ["غنم", "غزال"]},
+            {"category": "سمك", "letter": "ه", "answers": ["هامور", "هامر"]},
+            {"category": "دجاج", "letter": "م", "answers": ["محمر", "مشوي"]},
+            {"category": "ربيان", "letter": "ج", "answers": ["جمبري", "جامبو"]},
+            {"category": "كبدة", "letter": "د", "answers": ["دجاج", "ديك"]},
+            {"category": "نقانق", "letter": "ح", "answers": ["حار", "حراق"]},
+            {"category": "همبرجر", "letter": "ل", "answers": ["لحم", "لحمة"]},
+            {"category": "بيتزا", "letter": "ج", "answers": ["جبن", "جبنة"]}
         ]
         
         self.used_challenges = []
 
     def get_question(self):
-        """الحصول على السؤال التالي"""
-        # اختيار التحديات المتاحة
         available = [
             c for c in self.challenges
             if c not in self.used_challenges
         ]
         
-        # إعادة تعيين إذا انتهت التحديات
         if not available:
             self.used_challenges = []
             available = self.challenges.copy()
             random.shuffle(available)
         
-        # اختيار تحدي عشوائي
         challenge = random.choice(available)
         self.used_challenges.append(challenge)
         
-        # تعيين الإجابة
         self.current_answer = challenge["answers"]
         self.previous_question = f"{challenge['category']} حرف {challenge['letter']}"
         
@@ -96,23 +141,19 @@ class CategoryGame(BaseGame):
         )
 
     def check_answer(self, user_answer, user_id, display_name):
-        """التحقق من الإجابة"""
         if not self.game_active or user_id in self.answered_users:
             return None
 
         normalized = self.normalize_text(user_answer)
 
-        # إيقاف اللعبة
         if normalized == "ايقاف":
             return self.handle_withdrawal(user_id, display_name)
 
-        # التلميح
         if self.supports_hint and normalized == "لمح":
             sample = self.current_answer[0]
             hint = f"يبدا بحرف: {sample[0]}\nعدد الحروف: {len(sample)}"
             return {"response": self.build_text_message(hint), "points": 0}
 
-        # إظهار الجواب
         if self.supports_reveal and normalized == "جاوب":
             answers = " - ".join(self.current_answer)
             self.previous_answer = answers
@@ -128,7 +169,6 @@ class CategoryGame(BaseGame):
                 "next_question": True
             }
 
-        # التحقق من الإجابة الصحيحة
         valid_answers = [self.normalize_text(a) for a in self.current_answer]
         
         if normalized in valid_answers:
