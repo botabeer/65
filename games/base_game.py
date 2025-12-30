@@ -14,10 +14,10 @@ class BaseGame(ABC):
             "text2": "#64748B",
             "text3": "#94A3B8",
             "bg": "#F8FAFC",
-            "card": "#FFFFFF",
+            "card": "#F8FAFC",  # الخلفية تأخذ لون الثيم نفسه
             "border": "#E2E8F0",
-            "button": "#3B82F6",
-            "button_text": "#FFFFFF",
+            "button": "#F5F5F5",  # موحد لكل الأزرار
+            "button_text": "#000000",  # نص أسود على الأزرار
             "success": "#10B981",
             "warning": "#F59E0B",
             "error": "#EF4444",
@@ -30,10 +30,10 @@ class BaseGame(ABC):
             "text2": "#94A3B8",
             "text3": "#64748B",
             "bg": "#0F172A",
-            "card": "#1E293B",
+            "card": "#0F172A",  # الخلفية تأخذ لون الثيم
             "border": "#334155",
-            "button": "#3B82F6",
-            "button_text": "#FFFFFF",
+            "button": "#F5F5F5",  # موحد لكل الأزرار
+            "button_text": "#000000",  # نص أسود
             "success": "#10B981",
             "warning": "#F59E0B",
             "error": "#EF4444",
@@ -92,6 +92,21 @@ class BaseGame(ABC):
     def get_theme_colors(self):
         colors = self.THEMES.get(self.theme, self.THEMES['light']).copy()
         return colors
+
+    def build_button(self, label, text):
+        colors = self.get_theme_colors()
+        return {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "action": {
+                "type": "message",
+                "label": label,
+                "text": text
+            },
+            "color": colors["button"],
+            "flex": 1
+        }
 
     def build_text_message(self, text):
         return TextMessage(text=text)
@@ -155,7 +170,7 @@ class BaseGame(ABC):
                     "type": "box",
                     "layout": "vertical",
                     "margin": "sm",
-                    "backgroundColor": colors["card"],
+                    "backgroundColor": colors["bg"],  # الخلفية تأخذ لون الثيم
                     "cornerRadius": "6px",
                     "paddingAll": "8px",
                     "contents": [
@@ -200,42 +215,10 @@ class BaseGame(ABC):
 
         footer_buttons = []
         if self.supports_hint:
-            footer_buttons.append({
-                "type": "button",
-                "style": "secondary",
-                "height": "sm",
-                "action": {
-                    "type": "message",
-                    "label": "لمح",
-                    "text": "لمح"
-                },
-                "flex": 1
-            })
-        
+            footer_buttons.append(self.build_button("لمح", "لمح"))
         if self.supports_reveal:
-            footer_buttons.append({
-                "type": "button",
-                "style": "secondary",
-                "height": "sm",
-                "action": {
-                    "type": "message",
-                    "label": "جاوب",
-                    "text": "جاوب"
-                },
-                "flex": 1
-            })
-        
-        footer_buttons.append({
-            "type": "button",
-            "style": "secondary",
-            "height": "sm",
-            "action": {
-                "type": "message",
-                "label": "ايقاف",
-                "text": "ايقاف"
-            },
-            "flex": 1
-        })
+            footer_buttons.append(self.build_button("جاوب", "جاوب"))
+        footer_buttons.append(self.build_button("ايقاف", "ايقاف"))
 
         bubble = {
             "type": "bubble",
@@ -253,7 +236,7 @@ class BaseGame(ABC):
                 "contents": footer_buttons,
                 "spacing": "sm",
                 "paddingAll": "12px",
-                "backgroundColor": colors["card"]
+                "backgroundColor": colors["bg"]
             }
         }
 
@@ -425,7 +408,7 @@ class BaseGame(ABC):
                         "margin": "sm"
                     }
                 ],
-                "backgroundColor": colors["card"],
+                "backgroundColor": colors["bg"],  # الخلفية تأخذ لون الثيم
                 "cornerRadius": "12px",
                 "paddingAll": "16px"
             }
