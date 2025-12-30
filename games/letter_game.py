@@ -1,7 +1,6 @@
 import random
 from games.base_game import BaseGame
 
-
 class LetterGame(BaseGame):
     """لعبة الحروف - اسئلة تبدأ بحرف معين"""
 
@@ -209,32 +208,45 @@ class LetterGame(BaseGame):
         self.letters = list(self.questions_db.keys())
         random.shuffle(self.letters)
 
-        # ✅ تتبع الاسئلة المستخدمة لكل حرف (dict + set = آمن)
-        self.used_questions = {letter: set() for letter in self.letters}
+        # حماية used_questions ضد BaseGame
+        self._ensure_used_questions()
 
         self.current_letter = None
         self.current_question_data = None
 
+    # حماية used_questions
+    def _ensure_used_questions(self):
+        if not isinstance(self.used_questions, dict):
+            self.used_questions = {letter: set() for letter in self.letters}
+
     def get_question(self):
+        self._ensure_used_questions()
+
         if self.current_question >= self.questions_count:
             return self.end_game()
 
+        # اختيار الحرف الحالي
         self.current_letter = self.letters[
             self.current_question % len(self.letters)
         ]
 
+        # الحصول على الاسئلة المستخدمة لهذا الحرف
         used = self.used_questions.setdefault(self.current_letter, set())
         total = len(self.questions_db[self.current_letter])
 
+        # البحث عن الاسئلة المتاحة
         available = [i for i in range(total) if i not in used]
 
+        # اذا استخدمنا كل الاسئلة نعيد تهيئة القائمة
         if not available:
             used.clear()
             available = list(range(total))
 
+        # اختيار سؤال عشوائي
         idx = random.choice(available)
         used.add(idx)
 
+        # تعيين السؤال والاجابة
         self.current_question_data = self.questions_db[self.current_letter][idx]
         self.current_answer = self.current_question_data["a"]
 
@@ -263,34 +275,28 @@ class LetterGame(BaseGame):
             self.previous_answer = " او ".join(self.current_answer)
             self.current_question += 1
             self.answered_users.clear()
-
+            
             if self.current_question >= self.questions_count:
                 return self.end_game()
-
+            
             return {
                 "response": self.get_question(),
                 "points": 0,
                 "next_question": True,
             }
 
+        # التحقق من الاجابة
         for correct in self.current_answer:
             if normalized == self.normalize_text(correct):
                 self.answered_users.add(user_id)
                 points = self.add_score(user_id, display_name, 1)
-
-                self.previous_answer = correct
+                self.previous_answer = " او ".join(self.current_answer)
                 self.current_question += 1
                 self.answered_users.clear()
 
                 if self.current_question >= self.questions_count:
-                    result = self.end_game()
-                    result["points"] = points
-                    return result
+                    return {"response": self.end_game()["response"], "points": points, "game_over": True}
 
-                return {
-                    "response": self.get_question(),
-                    "points": points,
-                    "next_question": True,
-                }
+                return {"response": self.get_question(), "points": points, "next_question": True}
 
         return None
