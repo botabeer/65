@@ -6,36 +6,38 @@ from abc import ABC, abstractmethod
 class BaseGame(ABC):
     """الفئة الأساسية لجميع الألعاب"""
     
-    BUTTON_COLOR = "#F8FBFC"
-    
     THEMES = {
         "light": {
             "primary": "#1E293B",
+            "secondary": "#475569",
             "text": "#334155",
             "text2": "#64748B",
             "text3": "#94A3B8",
-            "bg": "#FFFFFF",
-            "card": "#F8FAFC",
+            "bg": "#F8FAFC",
+            "card": "#FFFFFF",
             "border": "#E2E8F0",
-            "button": "#F2F2F7",
-            "success": "#0EA5E9",
-            "accent": "#3B82F6",
+            "button": "#3B82F6",
+            "button_text": "#FFFFFF",
+            "success": "#10B981",
             "warning": "#F59E0B",
-            "error": "#EF4444"
+            "error": "#EF4444",
+            "accent": "#3B82F6"
         },
         "dark": {
             "primary": "#F1F5F9",
-            "text": "#CBD5E1",
+            "secondary": "#CBD5E1",
+            "text": "#E2E8F0",
             "text2": "#94A3B8",
             "text3": "#64748B",
             "bg": "#0F172A",
             "card": "#1E293B",
             "border": "#334155",
-            "button": "#F2F2F7",
-            "success": "#38BDF8",
-            "accent": "#60A5FA",
-            "warning": "#FBBF24",
-            "error": "#F87171"
+            "button": "#3B82F6",
+            "button_text": "#FFFFFF",
+            "success": "#10B981",
+            "warning": "#F59E0B",
+            "error": "#EF4444",
+            "accent": "#60A5FA"
         }
     }
 
@@ -89,13 +91,6 @@ class BaseGame(ABC):
 
     def get_theme_colors(self):
         colors = self.THEMES.get(self.theme, self.THEMES['light']).copy()
-        defaults = {
-            "warning": colors.get("accent", "#F59E0B"),
-            "error": colors.get("primary", "#EF4444")
-        }
-        for key, value in defaults.items():
-            if key not in colors:
-                colors[key] = value
         return colors
 
     def build_text_message(self, text):
@@ -149,7 +144,6 @@ class BaseGame(ABC):
             }
         ]
 
-        # عرض الجواب السابق فقط بدون السؤال السابق
         if self.previous_answer:
             contents.extend([
                 {
@@ -215,7 +209,6 @@ class BaseGame(ABC):
                     "label": "لمح",
                     "text": "لمح"
                 },
-                "color": self.BUTTON_COLOR,
                 "flex": 1
             })
         
@@ -229,7 +222,6 @@ class BaseGame(ABC):
                     "label": "جاوب",
                     "text": "جاوب"
                 },
-                "color": self.BUTTON_COLOR,
                 "flex": 1
             })
         
@@ -242,7 +234,6 @@ class BaseGame(ABC):
                 "label": "ايقاف",
                 "text": "ايقاف"
             },
-            "color": self.BUTTON_COLOR,
             "flex": 1
         })
 
@@ -312,7 +303,7 @@ class BaseGame(ABC):
             return None
         
         answer_sample = self.current_answer[0] if isinstance(self.current_answer, list) else str(self.current_answer)
-        hint = f"يبدأ بـ: {answer_sample[0]}\nعدد الحروف: {len(answer_sample)}"
+        hint = f"يبدا ب: {answer_sample[0]}\nعدد الحروف: {len(answer_sample)}"
         
         return {
             "response": self.build_text_message(hint),
