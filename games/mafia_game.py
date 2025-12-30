@@ -28,46 +28,46 @@ class MafiaGame(BaseGame):
         return self.registration_message()
 
     def get_theme_colors(self):
-        """ألوان محسنة للثيمين محايدة مع ازرق للادوار"""
+        """ألوان محسنة للثيمين"""
         if self.theme == "dark":
             return {
-                "primary": "#F1F5F9",      # أبيض مزرق
-                "text": "#CBD5E1",         # رمادي فاتح
-                "text2": "#94A3B8",        # رمادي متوسط
-                "text3": "#64748B",        # رمادي غامق
-                "bg": "#0F172A",           # كحلي داكن
-                "card": "#1E293B",         # كحلي متوسط
-                "border": "#334155",       # رمادي مزرق غامق
-                "button": "#F8FBFC",       # أبيض ثلجي
-                "success": "#38BDF8",      # أزرق سماوي
-                "accent": "#60A5FA",       # أزرق فاتح
-                "warning": "#94A3B8",      # رمادي تحذيري
-                "error": "#CBD5E1",        # رمادي فاتح
-                "mafia": "#1E293B",        # كحلي داكن
-                "detective": "#3B82F6",    # أزرق قوي
-                "doctor": "#0EA5E9",       # أزرق طبي
-                "citizen": "#64748B"       # رمادي محايد
+                "primary": "#ECF0F1",
+                "text": "#BDC3C7",
+                "text2": "#95A5A6",
+                "text3": "#7F8C8D",
+                "bg": "#1C2833",
+                "card": "#273746",
+                "border": "#34495E",
+                "button": "#F8FBFC",
+                "success": "#27AE60",
+                "accent": "#3498DB",
+                "warning": "#F39C12",
+                "error": "#E74C3C",
+                "mafia": "#C0392B",
+                "detective": "#3498DB",
+                "doctor": "#1ABC9C",
+                "citizen": "#95A5A6"
             }
         else:
             return {
-                "primary": "#1E293B",      # كحلي داكن
-                "text": "#334155",         # رمادي غامق
-                "text2": "#64748B",        # رمادي متوسط
-                "text3": "#94A3B8",        # رمادي فاتح
-                "bg": "#FFFFFF",           # أبيض
-                "card": "#F8FAFC",         # أبيض مائل للرمادي
-                "border": "#E2E8F0",       # رمادي فاتح
-                "button": "#F8FBFC",       # أبيض ثلجي
-                "success": "#0EA5E9",      # أزرق سماوي
-                "accent": "#3B82F6",       # أزرق قوي
-                "warning": "#94A3B8",      # رمادي تحذيري
-                "error": "#64748B",        # رمادي غامق
-                "mafia": "#1E293B",        # كحلي داكن
-                "detective": "#3B82F6",    # أزرق قوي
-                "doctor": "#0EA5E9",       # أزرق طبي
-                "citizen": "#64748B"       # رمادي محايد
+                "primary": "#2C3E50",
+                "text": "#34495E",
+                "text2": "#7F8C8D",
+                "text3": "#95A5A6",
+                "bg": "#FFFFFF",
+                "card": "#F8F9FA",
+                "border": "#E9ECEF",
+                "button": "#F8FBFC",
+                "success": "#27AE60",
+                "accent": "#3498DB",
+                "warning": "#F39C12",
+                "error": "#E74C3C",
+                "mafia": "#C0392B",
+                "detective": "#3498DB",
+                "doctor": "#1ABC9C",
+                "citizen": "#7F8C8D"
             }
-
+            
     def registration_message(self):
         """شاشة التسجيل الرئيسية"""
         c = self.get_theme_colors()
