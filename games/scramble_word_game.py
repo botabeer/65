@@ -5,35 +5,19 @@ class ScrambleGame(BaseGame):
     def __init__(self, line_bot_api, difficulty=1, theme='light'):
         super().__init__(line_bot_api, difficulty=difficulty, theme=theme)
         self.game_name = "ترتيب"
+        self.supports_hint = True
+        self.total_questions = 5  # عدد الأسئلة لكل لعبة
 
-        # خمس مستويات صعوبة، كل مستوى كلمات أطول وأكثر تحديًا
+        # خمس مستويات صعوبة مع كلمات حقيقية
         self.difficulty_levels = {
-            1: [
-                "قلم","باب","كتاب","وردة","شمس","قمر","نهر","بيت","نملة","سمكة",
-                "حوت","نجمة","كرسي","سيارة","طاولة","نافذة","حديقة","شجرة","فراشة","شارع"
-            ],
-            2: [
-                "مدرسة","مستشفى","جامعة","مكتبة","متحف","مطار","محطة","ملعب","مسبح","سوق",
-                "مسجد","كنيسة","حديقة_الحيوان","حديقة_النبات","مقهى","مطعم","مخبز","جسر","طريق","ميدان"
-            ],
-            3: [
-                "مكتبة_جامعية","مركز_تجاري","مستشفى_خاص","مسجد_جامع","كنيسة_قديمة",
-                "نهر_الأردن","بحيرة_طبريا","جبل_المرتفعات","حديقة_الوطن","ساحة_الشهداء",
-                "شارع_الرياض","ميدان_التحرير","جسر_الملك","برج_الحرية","قصر_الملك",
-                "بيت_الشاعر","مدينة_الذهب","قرية_الزهور","واحة_النخيل","شمس_الصباح"
-            ],
-            4: [
-                "قمر_الليل","نجمة_الصحراء","مطر_الربيع","ثلج_الشتاء","سحابة_السماء",
-                "سمكة_النهر","حوت_المحيط","فراشة_الحديقة","نملة_الغابة","كرسي_الحديقة",
-                "طاولة_المكتبة","قلم_الكتابة","كتاب_المدرسة","مدرسة_التعليم","سيارة_المدرسة",
-                "طائرة_الرحلة","حديقة_الزهور","جبل_الشمس","شاطئ_البحر","وادي_النهر"
-            ],
-            5: [
-                "مدينة_التاريخ","قرية_العراقة","مستشفى_المدينة","جامعة_العلم","مركز_البحث",
-                "ساحة_الثقافة","جسر_الحضارة","برج_المجد","قصر_الأساطير","مكتبة_التراث",
-                "متحف_الآثار","مطار_الدولي","محطة_القطار","ميدان_الشهداء","شارع_الذكرى",
-                "حديقة_الوطن","نهر_الخير","بحيرة_الأمل","جبل_الشموخ","صحراء_النجوم"
-            ]
+            1: ["قلم","باب","كتاب","وردة","شمس","قمر","نهر","بيت","نملة","سمكة"],
+            2: ["مدرسة","مستشفى","جامعة","مكتبة","متحف","مطار","محطة","ملعب","مسبح","سوق"],
+            3: ["مكتبة_جامعية","مركز_تجاري","مستشفى_خاص","مسجد_جامع","كنيسة_قديمة",
+                "نهر_الأردن","بحيرة_طبريا","جبل_المرتفعات","حديقة_الوطن","ساحة_الشهداء"],
+            4: ["قمر_الليل","نجمة_الصحراء","مطر_الربيع","ثلج_الشتاء","سحابة_السماء",
+                "سمكة_النهر","حوت_المحيط","فراشة_الحديقة","نملة_الغابة","كرسي_الحديقة"],
+            5: ["مدينة_التاريخ","قرية_العراقة","مستشفى_المدينة","جامعة_العلم","مركز_البحث",
+                "ساحة_الثقافة","جسر_الحضارة","برج_المجد","قصر_الأساطير","مكتبة_التراث"]
         }
 
         self.used_words = []
@@ -41,8 +25,8 @@ class ScrambleGame(BaseGame):
         self.current_question = 0
         self.answered_users = set()
         self.game_active = False
-        self.current_level = difficulty  # مستوى الصعوبة الحالي
-        self.supports_hint = True  # لدعم التلميح
+        self.current_level = difficulty
+        self.hint_count = 0
 
     def scramble_word(self, word):
         letters = list(word)
@@ -53,10 +37,12 @@ class ScrambleGame(BaseGame):
         self.game_active = True
         self.current_question = 0
         self.answered_users.clear()
+        self.hint_count = 0
+        self.used_words = []
         return self.get_question()
 
     def get_question(self):
-        # اختر الكلمة حسب المستوى الحالي
+        # اختر الكلمة حسب المستوى الحالي بدون تكرار
         level_words = [w for w in self.difficulty_levels[self.current_level] if w not in self.used_words]
 
         if not level_words:
@@ -68,6 +54,7 @@ class ScrambleGame(BaseGame):
         self.used_words.append(word)
         self.current_answer = word
         self.current_question += 1
+        self.hint_count = 0  # إعادة عداد التلميح لكل سؤال جديد
 
         return self.build_question_message(
             f"رتب الحروف:\n{self.scramble_word(word)}"
@@ -83,22 +70,43 @@ class ScrambleGame(BaseGame):
         if normalized in ["ايقاف", "ايقاف"]:
             return self.handle_withdrawal(user_id, display_name)
 
-        # التلميح
+        # التلميح التدريجي
         if self.supports_hint and normalized == "لمح":
+            self.hint_count += 1
             first_char = self.current_answer[0]
-            length = len(self.current_answer.replace("_", " "))  # حساب عدد الحروف بما فيها المسافات
+            length = len(self.current_answer.replace("_", " "))
             words = self.current_answer.split("_")
-            hint = f"أول حرف: {first_char}, عدد الحروف: {length}, كلمة/كلمتين: {' '.join(words)}"
+
+            if self.hint_count == 1:
+                hint = f"أول حرف: {first_char}, عدد الحروف: {length}"
+            elif self.hint_count == 2:
+                hint = f"أول حرف: {first_char}, عدد الحروف: {length}, كلمة: {words[0]}"
+            else:
+                hint = f"أول حرف: {first_char}, عدد الحروف: {length}, كلمة/كلمتين: {' '.join(words)}"
+
             return {"response": self.build_text_message(hint), "points": 0}
+
+        # إظهار الإجابة عند "جاوب"
+        if normalized == "جاوب":
+            answer_text = self.current_answer.replace("_", " ")
+            return {"response": self.build_text_message(f"الإجابة الصحيحة: {answer_text}"), "points": 0}
 
         # التحقق من الإجابة الصحيحة
         if normalized == self.normalize_text(self.current_answer):
             points = self.add_score(user_id, display_name, 1)
             self.answered_users.clear()
+            self.hint_count = 0
 
-            # كل 5 أسئلة نرفع المستوى حتى 5
-            if self.current_question % 5 == 0 and self.current_level < 5:
-                self.current_level += 1
+            # إذا وصلنا للسؤال الأخير نعلن الفائز مباشرة
+            if self.current_question >= self.total_questions:
+                self.game_active = False
+                top_score = max((v['score'] for v in self.scores.values()), default=0)
+                winners = [v['name'] for v in self.scores.values() if v['score'] == top_score]
+                winner_text = ", ".join(winners)
+                return {
+                    "response": self.build_text_message(f"انتهت اللعبة! الفائز: {winner_text} مع {top_score} نقاط"),
+                    "points": points
+                }
 
             return {
                 "response": self.get_question(),
