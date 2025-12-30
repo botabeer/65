@@ -7,7 +7,6 @@ from contextlib import contextmanager
 
 logger = logging.getLogger(__name__)
 
-# Smart DB path handling
 if os.getenv("RENDER"):
     DB_PATH = "/opt/render/project/src/data/bot65.db"
 else:
@@ -61,7 +60,6 @@ class DB:
     def init():
         try:
             with DB.conn() as c:
-                # Users table
                 c.execute('''CREATE TABLE IF NOT EXISTS users (
                     user_id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -73,7 +71,6 @@ class DB:
                     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )''')
 
-                # History table
                 c.execute('''CREATE TABLE IF NOT EXISTS history (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT,
@@ -84,7 +81,6 @@ class DB:
                     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
                 )''')
 
-                # Indexes
                 c.execute('CREATE INDEX IF NOT EXISTS idx_points ON users(points DESC)')
                 c.execute('CREATE INDEX IF NOT EXISTS idx_activity ON users(activity DESC)')
                 c.execute('CREATE INDEX IF NOT EXISTS idx_history_user ON history(user_id)')
@@ -199,17 +195,14 @@ class DB:
     
     @staticmethod
     def cleanup_inactive_users(days=7):
-        """Remove users inactive for specified days"""
         try:
             cutoff_date = datetime.now() - timedelta(days=days)
             with DB.conn() as c:
-                # Delete history first (foreign key)
                 c.execute('''DELETE FROM history WHERE user_id IN (
                             SELECT user_id FROM users 
                             WHERE activity < ?
                         )''', (cutoff_date,))
                 
-                # Delete inactive users
                 result = c.execute('''DELETE FROM users 
                                      WHERE activity < ?''', 
                                   (cutoff_date,))
@@ -222,28 +215,13 @@ class DB:
             return 0
     
     @staticmethod
-    def backup_database():
-        """Create database backup"""
-        try:
-            import shutil
-            backup_path = DB_PATH + '.backup'
-            shutil.copy2(DB_PATH, backup_path)
-            logger.info(f"Backup created: {backup_path}")
-            return True
-        except Exception as e:
-            logger.error(f"Backup failed: {e}")
-            return False
-    
-    @staticmethod
     def get_stats():
-        """Get database statistics"""
         try:
             with DB.conn() as c:
                 users_count = c.execute('SELECT COUNT(*) as count FROM users').fetchone()['count']
                 games_count = c.execute('SELECT COUNT(*) as count FROM history').fetchone()['count']
                 total_points = c.execute('SELECT SUM(points) as total FROM users').fetchone()['total'] or 0
                 
-                # Get inactive users count (7 days)
                 cutoff = datetime.now() - timedelta(days=7)
                 inactive_count = c.execute(
                     'SELECT COUNT(*) as count FROM users WHERE activity < ?', 
