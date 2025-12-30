@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 class BaseGame(ABC):
     """الفئة الأساسية لجميع الألعاب"""
     
-    BUTTON_COLOR = "#F8FBFC"
+    BUTTON_COLOR = "#F5F5F5"
     
     THEMES = {
         "light": {
@@ -17,8 +17,8 @@ class BaseGame(ABC):
             "bg": "#FFFFFF",
             "card": "#F8FAFC",
             "border": "#E2E8F0",
-            "button": "#F2F2F7",
-            "success": "#0EA5E9",
+            "button": "#F5F5F5",
+            "success": "#10B981",
             "accent": "#3B82F6",
             "warning": "#F59E0B",
             "error": "#EF4444"
@@ -31,11 +31,11 @@ class BaseGame(ABC):
             "bg": "#0F172A",
             "card": "#1E293B",
             "border": "#334155",
-            "button": "#F2F2F7",
-            "success": "#38BDF8",
-            "accent": "#60A5FA",
-            "warning": "#FBBF24",
-            "error": "#F87171"
+            "button": "#F5F5F5",
+            "success": "#10B981",
+            "accent": "#3B82F6",
+            "warning": "#F59E0B",
+            "error": "#EF4444"
         }
     }
 
@@ -149,7 +149,7 @@ class BaseGame(ABC):
             }
         ]
 
-        # عرض الجواب السابق فقط بدون السؤال السابق
+        # عرض الجواب السابق فقط
         if self.previous_answer:
             contents.extend([
                 {
@@ -162,8 +162,8 @@ class BaseGame(ABC):
                     "layout": "vertical",
                     "margin": "sm",
                     "backgroundColor": colors["card"],
-                    "cornerRadius": "6px",
-                    "paddingAll": "8px",
+                    "cornerRadius": "8px",
+                    "paddingAll": "12px",
                     "contents": [
                         {
                             "type": "text",
@@ -455,10 +455,13 @@ class BaseGame(ABC):
                     "type": "box",
                     "layout": "horizontal",
                     "margin": "sm",
+                    "backgroundColor": colors["card"],
+                    "cornerRadius": "8px",
+                    "paddingAll": "10px",
                     "contents": [
                         {
                             "type": "text",
-                            "text": f"{i+1}",
+                            "text": f"#{i+1}",
                             "size": "sm",
                             "color": colors["text2"],
                             "flex": 0
