@@ -158,7 +158,7 @@ class LetterGame(BaseGame):
         self.letters = list(self.questions_db.keys())
         random.shuffle(self.letters)
         
-        # استخدام قاموس لتتبع الأسئلة المستخدمة لكل حرف
+        # استخدام قاموس لتتبع الأسئلة المستخدمة لكل حرف - تغيير من set إلى list
         self.used_questions = {letter: [] for letter in self.letters}
         
         # متغيرات اللعبة
