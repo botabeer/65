@@ -54,19 +54,23 @@ class UI:
         }
 
     @staticmethod
-    def get_quick_reply():
-        """قائمة الردود السريعة"""
-        items = [
-            ("بداية", "بداية"),
-            ("العاب", "العاب"),
-            ("نص", "نص"),
-            ("نقاطي", "نقاطي"),
-            ("الصدارة", "الصدارة"),
-            ("مساعدة", "مساعدة")
-        ]
-        return QuickReply(
-            items=[QuickReplyItem(action=MessageAction(label=l, text=t)) for l, t in items]
-        )
+def get_quick_reply():
+    """الأزرار الثابتة الدائمة أسفل الصفحة حسب الترتيب الأفضل"""
+    items = [
+        ("بداية", "بداية"),
+        ("تسجيل", "تسجيل"),
+        ("انسحب", "انسحب"),
+        ("نص", "نص"),
+        ("العاب", "العاب"),
+        ("نقاطي", "نقاطي"),
+        ("الصدارة", "الصدارة"),
+        ("ايقاف", "ايقاف"),
+        ("ثيم", "ثيم"),
+        ("مساعدة", "مساعدة")
+    ]
+    return QuickReply(
+        items=[QuickReplyItem(action=MessageAction(label=l, text=t)) for l, t in items]
+    )
 
     @staticmethod
     def welcome(name, registered, theme="light"):
