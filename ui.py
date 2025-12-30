@@ -188,7 +188,7 @@ class UI:
             },
             {
                 "type": "text",
-                "text": "Bot 65 - 2025",
+                "text": "تم إنشاء هذا البوت بواسطة عبير الدوسري @ 2025",
                 "size": "xxs",
                 "color": c["text3"],
                 "align": "center",
