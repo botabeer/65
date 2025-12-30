@@ -28,45 +28,47 @@ class MafiaGame(BaseGame):
         return self.registration_message()
 
     def get_theme_colors(self):
-        """ألوان محسنة للثيمين"""
-        if self.theme == "dark":
-            return {
-                "primary": "#ECF0F1",
-                "text": "#BDC3C7",
-                "text2": "#95A5A6",
-                "text3": "#7F8C8D",
-                "bg": "#1C2833",
-                "card": "#1C2833",
-                "border": "#34495E",
-                "button": "#F8FBFC",
-                "success": "#27AE60",
-                "accent": "#3498DB",
-                "warning": "#F39C12",
-                "error": "#E74C3C",
-                "mafia": "#C0392B",
-                "detective": "#3498DB",
-                "doctor": "#1ABC9C",
-                "citizen": "#95A5A6"
-            }
-        else:
-            return {
-                "primary": "#2C3E50",
-                "text": "#34495E",
-                "text2": "#7F8C8D",
-                "text3": "#95A5A6",
-                "bg": "#FFFFFF",
-                "card": "#FFFFFF",
-                "border": "#E9ECEF",
-                "button": "#F8FBFC",
-                "success": "#27AE60",
-                "accent": "#3498DB",
-                "warning": "#F39C12",
-                "error": "#E74C3C",
-                "mafia": "#C0392B",
-                "detective": "#3498DB",
-                "doctor": "#1ABC9C",
-                "citizen": "#7F8C8D"
-            }
+    """ألوان محسنة للثيمين حسب ستايل البوت"""
+    if self.theme == "dark":
+        return {
+            "primary": "#FFFFFF",       # اللون الأساسي للنصوص الكبيرة
+            "text": "#E6E6E6",          # النصوص العامة
+            "text2": "#B3B3B3",         # النصوص الثانوية
+            "text3": "#808080",         # النصوص الأقل أهمية
+            "bg": "#1A1A1A",            # خلفية اللعبة
+            "card": "#1A1A1A",          # خلفية البطاقات / مربعات المحتوى
+            "border": "#404040",        # حدود البطاقات أو الفواصل
+            "button": "#F5F5F5",        # لون الأزرار
+            "button_text": "#000000",   # لون النص على الأزرار
+            "success": "#FFFFFF",       # عند النجاح / الإجابة الصحيحة
+            "accent": "#B3B3B3",        # أزرق مميز لعناصر مهمة
+            "warning": "#808080",       # تحذيرات أو تنبيهات
+            "error": "#FFFFFF",         # عند الخطأ
+            "mafia": "#C0392B",         # لون المافيا
+            "detective": "#3498DB",     # لون المحقق
+            "doctor": "#1ABC9C",        # لون الطبيب
+            "citizen": "#95A5A6"        # لون المواطن العادي
+        }
+    else:
+        return {
+            "primary": "#000000",       # اللون الأساسي للنصوص الكبيرة
+            "text": "#1A1A1A",          # النصوص العامة
+            "text2": "#4D4D4D",         # النصوص الثانوية
+            "text3": "#808080",         # النصوص الأقل أهمية
+            "bg": "#FFFFFF",            # خلفية اللعبة
+            "card": "#FFFFFF",          # خلفية البطاقات / مربعات المحتوى
+            "border": "#E0E0E0",        # حدود البطاقات أو الفواصل
+            "button": "#F5F5F5",        # لون الأزرار
+            "button_text": "#000000",   # لون النص على الأزرار
+            "success": "#000000",       # عند النجاح / الإجابة الصحيحة
+            "accent": "#4D4D4D",        # أزرق مميز لعناصر مهمة
+            "warning": "#808080",       # تحذيرات أو تنبيهات
+            "error": "#000000",         # عند الخطأ
+            "mafia": "#C0392B",         # لون المافيا
+            "detective": "#3498DB",     # لون المحقق
+            "doctor": "#1ABC9C",        # لون الطبيب
+            "citizen": "#7F8C8D"        # لون المواطن العادي
+        }
             
     def registration_message(self):
         """شاشة التسجيل الرئيسية"""
