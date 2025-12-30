@@ -12,9 +12,7 @@ class LetterGame(BaseGame):
         self.supports_hint = True
         self.supports_reveal = True
 
-        # =========================
-        # بنك الأسئلة
-        # =========================
+        # بنك الاسئلة
         self.questions_db = {
             "أ": [
                 {"q": "من هو اول نبي", "a": ["آدم", "ادم"]},
@@ -74,21 +72,16 @@ class LetterGame(BaseGame):
             ],
         }
 
-        # =========================
         # تجهيز الحروف
-        # =========================
         self.letters = list(self.questions_db.keys())
         random.shuffle(self.letters)
 
-        # تتبع الأسئلة المستخدمة لكل حرف
+        # تتبع الاسئلة المستخدمة لكل حرف - الحل الصحيح
         self.used_questions = {letter: set() for letter in self.letters}
 
         self.current_letter = None
         self.current_question_data = None
 
-    # =========================
-    # جلب السؤال
-    # =========================
     def get_question(self):
         if self.current_question >= self.questions_count:
             return self.end_game()
@@ -118,31 +111,25 @@ class LetterGame(BaseGame):
 
         return self.build_question_message(
             question_text,
-            f"الإجابة تبدأ بحرف {self.current_letter}",
+            f"الاجابة تبدا بحرف {self.current_letter}",
         )
 
-    # =========================
-    # التحقق من الإجابة
-    # =========================
     def check_answer(self, user_answer, user_id, display_name):
         if not self.game_active or user_id in self.answered_users:
             return None
 
         normalized = self.normalize_text(user_answer)
 
-        # ايقاف اللعبة
         if normalized == "ايقاف":
             return self.handle_withdrawal(user_id, display_name)
 
-        # تلميح
         if self.supports_hint and normalized == "لمح":
             ans = self.current_answer[0]
-            hint = f"يبدأ بحرف: {ans[0]}\nعدد الحروف: {len(ans)}"
+            hint = f"يبدا بحرف: {ans[0]}\nعدد الحروف: {len(ans)}"
             return {"response": self.build_text_message(hint), "points": 0}
 
-        # اظهار الجواب
         if self.supports_reveal and normalized == "جاوب":
-            self.previous_answer = " أو ".join(self.current_answer)
+            self.previous_answer = " او ".join(self.current_answer)
             self.current_question += 1
             self.answered_users.clear()
             return {
@@ -151,7 +138,6 @@ class LetterGame(BaseGame):
                 "next_question": True,
             }
 
-        # تحقق من صحة الإجابة
         for correct in self.current_answer:
             if normalized == self.normalize_text(correct):
                 self.answered_users.add(user_id)
