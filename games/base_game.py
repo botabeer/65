@@ -10,32 +10,32 @@ class BaseGame(ABC):
     
     THEMES = {
         "light": {
-            "primary": "#1E293B",
-            "text": "#334155",
-            "text2": "#64748B",
-            "text3": "#94A3B8",
+            "primary": "#000000",
+            "text": "#1A1A1A",
+            "text2": "#4D4D4D",
+            "text3": "#808080",
             "bg": "#FFFFFF",
-            "card": "#F8FAFC",
-            "border": "#E2E8F0",
+            "card": "#F5F5F5",
+            "border": "#E0E0E0",
             "button": "#F5F5F5",
-            "success": "#10B981",
-            "accent": "#3B82F6",
-            "warning": "#F59E0B",
-            "error": "#EF4444"
+            "success": "#000000",
+            "accent": "#4D4D4D",
+            "warning": "#808080",
+            "error": "#000000"
         },
         "dark": {
-            "primary": "#F1F5F9",
-            "text": "#CBD5E1",
-            "text2": "#94A3B8",
-            "text3": "#64748B",
-            "bg": "#0F172A",
-            "card": "#1E293B",
-            "border": "#334155",
+            "primary": "#FFFFFF",
+            "text": "#E6E6E6",
+            "text2": "#B3B3B3",
+            "text3": "#808080",
+            "bg": "#1A1A1A",
+            "card": "#2D2D2D",
+            "border": "#404040",
             "button": "#F5F5F5",
-            "success": "#10B981",
-            "accent": "#3B82F6",
-            "warning": "#F59E0B",
-            "error": "#EF4444"
+            "success": "#FFFFFF",
+            "accent": "#B3B3B3",
+            "warning": "#808080",
+            "error": "#FFFFFF"
         }
     }
 
@@ -90,8 +90,8 @@ class BaseGame(ABC):
     def get_theme_colors(self):
         colors = self.THEMES.get(self.theme, self.THEMES['light']).copy()
         defaults = {
-            "warning": colors.get("accent", "#F59E0B"),
-            "error": colors.get("primary", "#EF4444")
+            "warning": colors.get("accent", "#808080"),
+            "error": colors.get("primary", "#000000")
         }
         for key, value in defaults.items():
             if key not in colors:
@@ -149,7 +149,6 @@ class BaseGame(ABC):
             }
         ]
 
-        # عرض الجواب السابق فقط
         if self.previous_answer:
             contents.extend([
                 {
