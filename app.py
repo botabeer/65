@@ -133,7 +133,7 @@ def handle_message(event):
         except Exception as e:
             logger.error(f"خطأ في معالجة الرسالة: {e}", exc_info=True)
             try:
-                error_msg = TextMessage(text="عذراً، حدث خطأ. حاول مرة أخرى")
+                error_msg = TextMessage(text="عذرا حدث خطأ حاول مرة اخرى")
                 error_msg.quick_reply = UI.get_quick_reply()
                 line_api.reply_message(
                     ReplyMessageRequest(
@@ -194,7 +194,7 @@ def process_message(text, user_id, group_id, line_api):
     # قائمة الألعاب
     if normalized_text in ['العاب', 'ألعاب', 'الالعاب']:
         return FlexMessage(
-            alt_text="قائمة الألعاب",
+            alt_text="قائمة الالعاب",
             contents=FlexContainer.from_dict(UI.games_menu(theme))
         )
     
@@ -202,17 +202,17 @@ def process_message(text, user_id, group_id, line_api):
     if normalized_text in ['تسجيل', 'تغيير']:
         silent_users.discard(user_id)
         waiting_for_name.add(user_id)
-        msg = TextMessage(text="اكتب اسمك الآن")
+        msg = TextMessage(text="اكتب اسمك الان")
         msg.quick_reply = UI.get_quick_reply()
         return msg
     
     # عرض النقاط
     if normalized_text == 'نقاطي':
         if not user:
-            return create_error_message("يجب التسجيل أولاً - اكتب: تسجيل")
+            return create_error_message("يجب التسجيل اولا - اكتب: تسجيل")
         DB.update_activity(user_id)
         return FlexMessage(
-            alt_text="إحصائياتك",
+            alt_text="احصائياتك",
             contents=FlexContainer.from_dict(UI.stats(user, theme))
         )
     
@@ -227,12 +227,12 @@ def process_message(text, user_id, group_id, line_api):
     # تغيير الثيم
     if normalized_text == 'ثيم':
         if not user:
-            return create_error_message("يجب التسجيل أولاً")
+            return create_error_message("يجب التسجيل اولا")
         new_theme = 'dark' if theme == 'light' else 'light'
         DB.set_theme(user_id, new_theme)
         user_themes[user_id] = new_theme
         theme_name = 'الداكن' if new_theme == 'dark' else 'الفاتح'
-        return create_success_message(f"تم التغيير إلى الثيم {theme_name}")
+        return create_success_message(f"تم التغيير الى الثيم {theme_name}")
     
     # الانسحاب
     if normalized_text == 'انسحب':
@@ -243,7 +243,7 @@ def process_message(text, user_id, group_id, line_api):
         silent_users.add(user_id)
         logger.info(f"المستخدم {user_id} دخل وضع الصمت")
         
-        msg = TextMessage(text="تم الانسحاب - لن يتم احتساب إجاباتك\nللعودة اضغط: تسجيل")
+        msg = TextMessage(text="تم الانسحاب - لن يتم احتساب اجاباتك\nللعودة اضغط: تسجيل")
         msg.quick_reply = UI.get_quick_reply()
         return msg
     
@@ -251,7 +251,7 @@ def process_message(text, user_id, group_id, line_api):
     if normalized_text == 'ايقاف':
         if group_id in game_sessions:
             del game_sessions[group_id]
-            return create_success_message("تم إيقاف اللعبة")
+            return create_success_message("تم ايقاف اللعبة")
         return None
     
     # التحقق من التسجيل للألعاب (ماعدا المافيا والتوافق)
@@ -290,7 +290,7 @@ def handle_name_registration(name, user_id):
         return msg
     
     waiting_for_name.discard(user_id)
-    return create_error_message("الاسم يجب أن يكون بين 1 و 20 حرف")
+    return create_error_message("الاسم يجب ان يكون بين 1 و 20 حرف")
 
 def create_welcome_message(user, theme):
     """إنشاء رسالة الترحيب"""
