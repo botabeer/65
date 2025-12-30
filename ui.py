@@ -10,7 +10,7 @@ class UI:
             "text2": "#4D4D4D",
             "text3": "#808080",
             "bg": "#FFFFFF",
-            "card": "#F5F5F5",
+            "card": "#FFFFFF",
             "border": "#E0E0E0",
             "button": "#F5F5F5",
             "button_text": "#000000",
